@@ -1,0 +1,21 @@
+# Joe Goldberg — configuration
+# Copy this to config.yaml and adjust as needed
+
+model: mistral:7b-instruct
+ollama_url: http://localhost:11434
+
+assets_dir: assets
+cases_dir: cases
+joe_image: joe.jpeg
+
+tools:
+  sherlock: true
+  maigret: true
+  whois: true
+  dns: true
+  crt_sh: true
+  nmap: false
+
+ui:
+  mode: desktop      # desktop | cli
+  theme: warm_cream

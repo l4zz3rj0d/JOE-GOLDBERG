@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Joe Goldberg</title>
+<style>
+/* ── Reset + Base ─────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+     background:#f5f0e5;height:100vh;display:flex;
+     flex-direction:column;overflow:hidden;user-select:none}
+
+/* ── Titlebar ─────────────────────────────── */
+.titlebar{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 20px;background:#ece6d8;border-bottom:1px solid #d8cdb8;
+  -webkit-app-region:drag;flex-shrink:0}
+.dots{display:flex;gap:6px;-webkit-app-region:no-drag}
+.dot{width:12px;height:12px;border-radius:50%;cursor:pointer}
+.dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
+.brand-name{font-size:14px;font-weight:700;color:#2c1810;margin-left:14px}
+.brand-sub{font-size:9px;color:#a08060;letter-spacing:2px;
+  text-transform:uppercase;margin-left:6px}
+.active-pill{font-size:10px;font-weight:600;color:#9a2a0a;
+  background:#fdf0e8;border:1px solid #e8b090;
+  padding:4px 12px;border-radius:20px;
+  display:flex;align-items:center;gap:6px;-webkit-app-region:no-drag}
+.a-dot{width:6px;height:6px;border-radius:50%;background:#c0392b}
+.a-dot.pulse{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Body layout ──────────────────────────── */
+.body{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ──────────────────────────────── */
+.sidebar{width:220px;background:#e8e0d0;border-right:1px solid #d8cdb8;
+  display:flex;flex-direction:column;padding:16px 0;flex-shrink:0}
+.sl{font-size:8px;font-weight:800;letter-spacing:2.5px;color:#b09878;
+  text-transform:uppercase;padding:0 16px 8px}
+.case-item{padding:9px 16px;cursor:pointer;border-left:3px solid transparent;
+  transition:all .15s}
+.case-item:hover{background:rgba(160,80,20,.06)}
+.case-item.active{border-left-color:#b03010;background:rgba(160,80,20,.1)}
+.case-name{font-size:12px;font-weight:600;color:#6a4030}
+.case-item.active .case-name{color:#8b2010}
+.case-meta{font-size:10px;color:#b09878;margin-top:2px}
+.case-item.active .case-meta{color:#c06040}
+.sdiv{height:1px;background:#d0c8b8;margin:12px 0}
+.srow{display:flex;justify-content:space-between;
+  padding:4px 16px;font-size:11px;color:#a09070}
+.srow span:last-child{font-weight:700;color:#5a2810}
+.model-row{display:flex;align-items:center;gap:7px;padding:6px 16px}
+.mdot{width:7px;height:7px;border-radius:50%;background:#c0392b}
+.mname{font-size:11px;font-weight:600;color:#5a2810}
+.tools-wrap{padding:12px 16px 0;margin-top:auto;border-top:1px solid #d0c8b8}
+.tl{font-size:8px;font-weight:800;letter-spacing:2px;color:#b09878;
+  text-transform:uppercase;margin-bottom:8px}
+.pill{display:inline-block;font-size:9px;font-weight:600;
+  padding:3px 9px;border-radius:20px;margin:2px 2px 2px 0}
+.pill.on{background:#fdf0e8;color:#9a3020;border:1px solid #e8b090}
+.pill.off{background:#e8e0d0;color:#c0b090;border:1px solid #d0c8b8}
+
+/* ── Chat area ────────────────────────────── */
+.chat{flex:1;display:flex;flex-direction:column;
+  background:#f5f0e5;position:relative;overflow:hidden}
+.joe-bg{position:absolute;right:0;top:0;bottom:0;width:50%;
+  pointer-events:none;z-index:0;opacity:.05}
+.joe-bg img{width:100%;height:100%;object-fit:contain;object-position:right center}
+.joe-fade{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(to right,#f5f0e5 28%,transparent 58%,#f5f0e5 95%)}
+
+.msgs{flex:1;padding:20px 22px;display:flex;flex-direction:column;
+  gap:16px;overflow-y:auto;position:relative;z-index:1}
+.msgs::-webkit-scrollbar{width:4px}
+.msgs::-webkit-scrollbar-track{background:transparent}
+.msgs::-webkit-scrollbar-thumb{background:#d8cdb8;border-radius:2px}
+
+/* ── Message bubbles ──────────────────────── */
+.msg{display:flex;flex-direction:column;gap:4px}
+.mmeta{font-size:10px;font-weight:600;padding:0 4px;color:#b09878}
+.msg-u{align-items:flex-end}
+.msg-u .mmeta{color:#c06040}
+.msg-j{align-items:flex-start}
+.bubble{padding:12px 16px;border-radius:14px;font-size:12.5px;line-height:1.78}
+.msg-u .bubble{background:#8b2010;color:#fdf0e8;max-width:65%;
+  border-bottom-right-radius:3px;border:1px solid #a03020}
+.msg-j .bubble{background:#fdfaf4;color:#3a2010;max-width:90%;
+  border:1px solid #e0d4c0;border-bottom-left-radius:3px}
+
+/* ── Scan lines inside Joe bubble ─────────── */
+.scan{font-family:'SF Mono',Monaco,monospace;font-size:11px;
+  color:#c0a880;line-height:2}
+.hit-row{display:flex;align-items:center;gap:8px;line-height:2.2;padding-left:10px}
+.hit-check{color:#2d7a3a;font-weight:700}
+.hit-warn{color:#b03010;font-weight:700}
+.hit-name{font-size:12px;font-weight:700;color:#3a2010}
+.hit-tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;
+  text-transform:uppercase;letter-spacing:.5px}
+.hit-tag.found{background:#eef6ee;color:#2d7a3a;border:1px solid #b8dfc0}
+.hit-tag.breach{background:#fdf0e8;color:#b03010;border:1px solid #e8c0a0}
+.joe-quote{font-size:12px;color:#7a5030;font-style:italic;
+  padding:8px 12px 8px 14px;border-left:3px solid #c8945a;
+  background:#fdf6ec;border-radius:0 8px 8px 0;margin:5px 0;line-height:1.8}
+.findings-head{font-size:8px;font-weight:800;letter-spacing:3px;
+  color:#b09070;text-transform:uppercase;margin:10px 0 6px}
+.f-row{display:flex;align-items:center;gap:10px;font-size:11.5px;line-height:2.1}
+.f-key{font-size:9px;font-weight:800;color:#c0a070;min-width:88px;
+  text-transform:uppercase;letter-spacing:.5px}
+.f-val{color:#3a2010;font-weight:500}
+.fdiv{border:none;border-top:1px solid #e8dfc8;margin:10px 0}
+.ftag{display:inline-block;font-size:9px;font-weight:700;
+  padding:2px 8px;border-radius:10px;margin-left:4px}
+.ftag-r{background:#fdf0e8;color:#9a2a0a;border:1px solid #e8b090}
+.ftag-g{background:#eef6ee;color:#2a7a3a;border:1px solid #b8dfc0}
+.risk-wrap{display:flex;align-items:center;gap:8px}
+.rbar{height:4px;width:100px;background:#e8dfc8;border-radius:2px}
+.rfill{height:100%;background:linear-gradient(90deg,#c8760a,#c0392b);border-radius:2px}
+.rnum{font-size:11px;font-weight:800;color:#b03010}
+.monologue{font-size:12px;color:#5a3820;font-style:italic;line-height:1.95;
+  padding:14px 16px;background:#fdf8f0;border:1px solid #e8d8c0;
+  border-left:3px solid #b03010;border-radius:0 10px 10px 0;margin-top:8px}
+.monologue strong{color:#2c1810;font-style:normal;font-weight:700}
+
+/* ── Typing indicator ─────────────────────── */
+.typing{display:flex;gap:4px;padding:8px 4px;align-items:center}
+.typing span{width:6px;height:6px;border-radius:50%;background:#c8945a;
+  animation:bounce .8s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ── Input bar ────────────────────────────── */
+.input-wrap{padding:14px 20px;background:#ece6d8;
+  border-top:1px solid #d8cdb8;display:flex;
+  align-items:center;gap:10px;z-index:2;flex-shrink:0}
+.pbadge{font-size:12px;font-weight:800;color:#fdf0e8;background:#8b2010;
+  padding:6px 14px;border-radius:8px;white-space:nowrap;
+  border:1px solid #a03020}
+#msg-input{flex:1;font-size:13px;color:#3a2010;background:#fdfaf4;
+  border:1px solid #d8cdb8;border-radius:8px;padding:9px 14px;
+  outline:none;font-family:inherit;transition:border-color .15s}
+#msg-input:focus{border-color:#8b2010}
+.sbtn{width:36px;height:36px;background:#8b2010;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:none;flex-shrink:0;transition:background .15s}
+.sbtn:hover{background:#a03020}
+.sbtn svg{width:14px;height:14px;fill:none;stroke:#fff;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── Status bar ───────────────────────────── */
+.sbar{display:flex;align-items:center;background:#e8e0d0;
+  border-top:1px solid #d0c8b8;flex-shrink:0}
+.sb{font-size:9px;font-weight:600;color:#b09878;padding:6px 14px;
+  border-right:1px solid #d0c8b8;display:flex;align-items:center;gap:5px}
+.sb .v{color:#5a2810;font-weight:700}
+.sb:last-child{margin-left:auto;border-right:none}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#c0392b}
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div style="display:flex;align-items:center">
+    <div class="dots">
+      <div class="dot dr" onclick="window.close()"></div>
+      <div class="dot dy"></div>
+      <div class="dot dg"></div>
+    </div>
+    <span class="brand-name">Joe Goldberg</span>
+    <span class="brand-sub">OSINT</span>
+  </div>
+  <div class="active-pill">
+    <div class="a-dot" id="status-dot"></div>
+    <span id="status-text">Ready</span>
+  </div>
+</div>
+
+<div class="body">
+  <div class="sidebar">
+    <div class="sl">Cases</div>
+    <div id="case-list"></div>
+    <div class="sdiv"></div>
+    <div class="sl">Session</div>
+    <div class="srow"><span>Entities</span><span id="s-entities">0</span></div>
+    <div class="srow"><span>Breaches</span><span id="s-breaches">0</span></div>
+    <div class="srow"><span>Pivots</span><span id="s-pivots">0</span></div>
+    <div class="srow"><span>Risk</span><span id="s-risk">—</span></div>
+    <div class="sdiv"></div>
+    <div class="sl">Model</div>
+    <div class="model-row">
+      <div class="mdot"></div>
+      <span class="mname">mistral:7b-instruct</span>
+    </div>
+    <div class="tools-wrap">
+      <div class="tl">Tools</div>
+      <span class="pill on">sherlock</span>
+      <span class="pill on">maigret</span>
+      <span class="pill on">whois</span>
+      <span class="pill on">nmap</span>
+      <span class="pill on">crt.sh</span>
+    </div>
+  </div>
+
+  <div class="chat">
+    <div class="joe-bg">
+      <img src="../assets/joe.jpg" alt="" id="joe-face">
+    </div>
+    <div class="joe-fade"></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="input-wrap">
+      <div class="pbadge">joe ›</div>
+      <input id="msg-input" placeholder="stalk target@email.com — or ask Joe anything..."
+             autocomplete="off" spellcheck="false">
+      <button class="sbtn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="sbar">
+  <div class="sb"><div class="live-dot" id="ollama-dot"></div>
+    <span class="v" id="ollama-status">checking...</span></div>
+  <div class="sb">Model <span class="v">mistral:7b</span></div>
+  <div class="sb">Case <span class="v" id="sb-case">none</span></div>
+  <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
+  <div class="sb">Entities <span class="v" id="sb-entities">0</span></div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+const state = {
+  currentTarget: null,
+  entities: 0, breaches: 0, pivots: 0,
+  startTime: Date.now(),
+  scanning: false,
+};
+
+// ── Uptime counter ───────────────────────────────────────────
+setInterval(() => {
+  const s = Math.floor((Date.now() - state.startTime) / 1000);
+  const m = Math.floor(s / 60).toString().padStart(2,'0');
+  const sec = (s % 60).toString().padStart(2,'0');
+  document.getElementById('sb-uptime').textContent = `${m}:${sec}`;
+}, 1000);
+
+// ── Send message ─────────────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addUserBubble(text);
+
+  const parts = text.split(' ');
+  const cmd = parts[0].toLowerCase();
+
+  if (cmd === 'stalk' || cmd === 'pivot') {
+    if (cmd === 'pivot') state.pivots++;
+    window.pywebview.api.stalk(parts.slice(1).join(' '));
+    setStatus('Investigating', true);
+  } else if (cmd === 'resume') {
+    window.pywebview.api.resume(parts.slice(1).join(' '));
+  } else if (cmd === 'cases') {
+    window.pywebview.api.list_cases();
+  } else if (cmd === 'export') {
+    window.pywebview.api.export_report();
+  } else if (cmd === 'notes') {
+    window.pywebview.api.add_note(parts.slice(1).join(' '));
+  } else {
+    showTyping();
+    window.pywebview.api.ask(text);
+  }
+}
+
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+// ── Python → JS event receiver ───────────────────────────────
+window.joe = {
+  receive(event, data) {
+    switch (event) {
+
+      case 'scan_status':
+        appendScanLine(data.message);
+        break;
+
+      case 'entity_found':
+        appendHitRow(data);
+        state.entities++;
+        if (data.type === 'breach') state.breaches++;
+        updateStats();
+        break;
+
+      case 'investigation_done':
+        finishInvestigation(data);
+        setStatus('Ready', false);
+        break;
+
+      case 'joe_answer':
+        removeTyping();
+        addJoeMonologue(data.text);
+        break;
+
+      case 'cases_loaded':
+        renderCaseList(data.cases);
+        break;
+
+      case 'resumed':
+        resumeCase(data);
+        break;
+
+      case 'report_ready':
+        addJoeMonologue(`Report saved to: ${data.path}`);
+        break;
+
+      case 'error':
+        addJoeMonologue(data.message);
+        break;
+    }
+  }
+};
+
+// ── DOM helpers ──────────────────────────────────────────────
+let currentJoeBubble = null;
+let currentScanBlock = null;
+
+function addUserBubble(text) {
+  currentJoeBubble = null;
+  currentScanBlock = null;
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML += `
+    <div class="msg msg-u">
+      <div class="mmeta">You • ${now()}</div>
+      <div class="bubble">${esc(text)}</div>
+    </div>`;
+  scrollBottom();
+}
+
+function getJoeBubble() {
+  if (currentJoeBubble) return currentJoeBubble;
+  const msgs = document.getElementById('msgs');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg msg-j';
+  wrap.innerHTML = `<div class="mmeta">Joe • ${now()}</div>
+                    <div class="bubble" id="jb-${Date.now()}"></div>`;
+  msgs.appendChild(wrap);
+  currentJoeBubble = wrap.querySelector('.bubble');
+  scrollBottom();
+  return currentJoeBubble;
+}
+
+function appendScanLine(msg) {
+  const b = getJoeBubble();
+  const line = document.createElement('div');
+  line.className = 'scan';
+  line.textContent = `› ${msg}`;
+  b.appendChild(line);
+  scrollBottom();
+}
+
+function appendHitRow(data) {
+  const b = getJoeBubble();
+  const isBreach = data.type === 'breach';
+  const row = document.createElement('div');
+  row.className = 'hit-row';
+  row.innerHTML = `
+    <span class="${isBreach?'hit-warn':'hit-check'}">${isBreach?'⚠':'✓'}</span>
+    <span class="hit-name">${esc(data.value)}</span>
+    ${data.platform ? `<span class="hit-tag ${isBreach?'breach':'found'}">
+      ${esc(data.platform)}</span>` : ''}
+  `;
+  b.appendChild(row);
+  if (data.quote) {
+    const q = document.createElement('div');
+    q.className = 'joe-quote';
+    q.textContent = `"${data.quote}"`;
+    b.appendChild(q);
+  }
+  scrollBottom();
+}
+
+function finishInvestigation(data) {
+  const b = getJoeBubble();
+  const t = data.target;
+  state.entities = t.entities.length;
+  state.breaches = t.breaches.length;
+
+  let html = `<div class="fdiv"></div>
+    <div class="findings-head">Findings</div>`;
+
+  t.entities.slice(0, 6).forEach(e => {
+    html += `<div class="f-row">
+      <span class="f-key">${esc(e.entity_type)}</span>
+      <span class="f-val">${esc(e.value)}
+        ${e.platform ? `<span class="ftag ftag-g">${esc(e.platform)}</span>`:''}
+      </span>
+    </div>`;
+  });
+
+  t.breaches.forEach(b2 => {
+    html += `<div class="f-row">
+      <span class="f-key">breach</span>
+      <span class="f-val">${esc(b2.name)}
+        <span class="ftag ftag-r">${esc(b2.date)}</span>
+      </span>
+    </div>`;
+  });
+
+  const fillW = Math.round(t.risk_score * 100);
+  html += `<div class="f-row">
+    <span class="f-key">risk</span>
+    <div class="risk-wrap">
+      <div class="rbar"><div class="rfill" style="width:${fillW}%"></div></div>
+      <span class="rnum">${t.risk_score.toFixed(2)}</span>
+    </div>
+  </div>
+  <div class="fdiv"></div>
+  <div class="monologue">${formatMonologue(data.monologue)}</div>`;
+
+  b.insertAdjacentHTML('beforeend', html);
+  updateStats();
+  document.getElementById('sb-case').textContent = t.primary;
+  scrollBottom();
+}
+
+function addJoeMonologue(text) {
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML += `
+    <div class="msg msg-j">
+      <div class="mmeta">Joe • ${now()}</div>
+      <div class="bubble">
+        <div class="monologue">${formatMonologue(text)}</div>
+      </div>
+    </div>`;
+  scrollBottom();
+}
+
+function showTyping() {
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML += `<div class="msg msg-j" id="typing-indicator">
+    <div class="mmeta">Joe</div>
+    <div class="bubble">
+      <div class="typing">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>`;
+  scrollBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function renderCaseList(cases) {
+  const list = document.getElementById('case-list');
+  list.innerHTML = cases.map(c => `
+    <div class="case-item" onclick="loadCase('${esc(c.primary)}')">
+      <div class="case-name">${esc(c.primary)}</div>
+      <div class="case-meta">${c.target_type} · ${c.breaches} breaches</div>
+    </div>`).join('');
+}
+
+function resumeCase(data) {
+  state.entities = data.entities.length;
+  state.breaches = data.breaches.length;
+  updateStats();
+  document.getElementById('sb-case').textContent = data.primary;
+  addJoeMonologue(`Resumed: ${data.primary}. I remember everything.`);
+}
+
+function loadCase(target) {
+  window.pywebview.api.resume(target);
+  document.querySelectorAll('.case-item').forEach(el => {
+    el.classList.toggle('active',
+      el.querySelector('.case-name')?.textContent === target);
+  });
+}
+
+function setStatus(text, pulsing) {
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-dot').classList.toggle('pulse', pulsing);
+}
+
+function updateStats() {
+  document.getElementById('s-entities').textContent = state.entities;
+  document.getElementById('s-breaches').textContent = state.breaches;
+  document.getElementById('s-pivots').textContent = state.pivots;
+  document.getElementById('sb-entities').textContent = state.entities;
+}
+
+function formatMonologue(text) {
+  return esc(text)
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function now() {
+  return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+function scrollBottom() {
+  const msgs = document.getElementById('msgs');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Load cases on boot
+window.addEventListener('pywebviewready', () => {
+  window.pywebview.api.list_cases();
+  document.getElementById('ollama-status').textContent = 'ollama';
+  document.getElementById('ollama-dot').style.background = '#c0392b';
+});
+</script>
+</body>
+</html>

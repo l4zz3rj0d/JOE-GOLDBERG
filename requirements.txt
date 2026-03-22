@@ -1,6 +1,7 @@
-requests
-pyfiglet
-colorama
-termcolor
-
-
+textual>=0.47.0
+httpx>=0.26.0
+python-whois>=0.9.4
+dnspython>=2.6.0
+pywebview>=5.0.0
+rich>=13.7.0
+setuptools>=68.0.0
