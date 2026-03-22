@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/joe.png" alt="Joe Goldberg" width="180" style="border-radius: 12px"/>
+  <img src="assets/joe.png" alt="Joe Goldberg" width="600"/>
 
   # Joe Goldberg
 
