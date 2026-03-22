@@ -54,3 +54,5 @@ build/
 *.ggml
 ```
 
+cases/
+config.yaml
