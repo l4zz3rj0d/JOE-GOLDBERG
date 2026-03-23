@@ -1,11 +1,15 @@
 # narrative/joe_voice.py
+import os
+import time
 import httpx
-import json
 from typing import List, Dict, Optional
 from core.target_model import Target
 
+# ── Config ────────────────────────────────────────────────────
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "mistral:7b-instruct"
+OLLAMA_MODEL = "llama3.2:3b"
 
 JOE_SYSTEM = """You are Joe Goldberg — the investigator, not the murderer.
 You are precise, obsessive, and speak in short punchy sentences.
@@ -21,33 +25,86 @@ End with one quiet unsettling observation. No markdown."""
 
 
 class JoeVoice:
-    def __init__(self, model: str = DEFAULT_MODEL):
-        self.model = model
+    def __init__(self):
+        self.gemini_key = os.environ.get("GEMINI_API_KEY") or self._load_key_from_config()
         self.client = httpx.Client(timeout=30)
+        self._last_request_time = 0
+        self._request_count = 0
 
-    def _ask(self, prompt: str, context: str = "", monologue: bool = False) -> str:
-        system = JOE_MONOLOGUE_SYSTEM if monologue else JOE_SYSTEM
-        full_prompt = f"{context}\n\n{prompt}" if context else prompt
+    def _load_key_from_config(self) -> Optional[str]:
+        try:
+            import yaml
+            from pathlib import Path
+            config_path = Path(__file__).parent.parent / "config.yaml"
+            if config_path.exists():
+                with open(config_path) as f:
+                    config = yaml.safe_load(f)
+                    return config.get("gemini_api_key")
+        except:
+            pass
+        return None
+
+    def _rate_limit(self):
+        """Enforce 15 req/min — wait if needed."""
+        now = time.time()
+        if now - self._last_request_time < 4.1:  # 60s / 15 req = 4s per req
+            wait = 4.1 - (now - self._last_request_time)
+            time.sleep(wait)
+        self._last_request_time = time.time()
+
+    def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 150) -> str:
+        """Call Gemini API."""
+        if not self.gemini_key:
+            return self._ask_ollama(prompt, system, max_tokens)
+
+        self._rate_limit()
+
+        url = GEMINI_URL.format(model=DEFAULT_GEMINI_MODEL)
+        try:
+            r = self.client.post(
+                f"{url}?key={self.gemini_key}",
+                json={
+                    "system_instruction": {
+                        "parts": [{"text": system}]
+                    },
+                    "contents": [
+                        {"parts": [{"text": prompt}]}
+                    ],
+                    "generationConfig": {
+                        "maxOutputTokens": max_tokens,
+                        "temperature": 0.85,
+                        "topP": 0.9,
+                    }
+                },
+                timeout=15,
+            )
+            data = r.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        except Exception as e:
+            # Fall back to Ollama if Gemini fails
+            return self._ask_ollama(prompt, system, max_tokens)
+
+    def _ask_ollama(self, prompt: str, system: str, max_tokens: int = 150) -> str:
+        """Ollama fallback."""
         try:
             r = self.client.post(
                 OLLAMA_URL,
                 json={
-                    "model": self.model,
+                    "model": OLLAMA_MODEL,
                     "system": system,
-                    "prompt": full_prompt,
+                    "prompt": prompt,
                     "stream": False,
                     "options": {
-                        "temperature": 0.75,
-                        "top_p": 0.85,
-                        "num_predict": 120,   # short answers fast
-                        "num_ctx": 1024,      # smaller context = faster
-                        "repeat_penalty": 1.1,
+                        "temperature": 0.85,
+                        "num_predict": max_tokens,
+                        "num_ctx": 1024,
                     },
                 },
+                timeout=60,
             )
             return r.json().get("response", "").strip()
         except Exception as e:
-            return f"[offline: {e}]"
+            return f"[joe offline: {e}]"
 
     def inline_quote(self, finding_type: str, value: str, platform: str = "", context: str = "") -> str:
         prompt = (
@@ -55,7 +112,7 @@ class JoeVoice:
             + (f" on {platform}" if platform else "")
             + "\nOne observation. Max 15 words. No quotes needed."
         )
-        return self._ask(prompt, context)
+        return self._ask_gemini(prompt, JOE_SYSTEM, max_tokens=60)
 
     def closing_monologue(self, target: Target, session_context: str = "") -> str:
         findings = self._build_findings_summary(target)
@@ -64,33 +121,12 @@ class JoeVoice:
             f"Findings:\n{findings}\n\n"
             f"Write the closing monologue."
         )
-        # Monologue gets more tokens
-        try:
-            r = self.client.post(
-                OLLAMA_URL,
-                json={
-                    "model": self.model,
-                    "system": JOE_MONOLOGUE_SYSTEM,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": 0.85,
-                        "top_p": 0.9,
-                        "num_predict": 350,
-                        "num_ctx": 2048,
-                        "repeat_penalty": 1.1,
-                    },
-                },
-                timeout=90,
-            )
-            return r.json().get("response", "").strip()
-        except Exception as e:
-            return f"[joe is thinking... try again: {e}]"
+        return self._ask_gemini(prompt, JOE_MONOLOGUE_SYSTEM, max_tokens=400)
 
     def answer(self, question: str, target: Target, history: List[Dict]) -> str:
         history_text = "\n".join(
             f"{m['role'].upper()}: {m['content']}"
-            for m in history[-6:]   # only last 6 turns — keeps context small
+            for m in history[-6:]
         )
         findings = self._build_findings_summary(target)
         context = (
@@ -98,11 +134,12 @@ class JoeVoice:
             f"Findings:\n{findings}\n\n"
             f"Recent conversation:\n{history_text}"
         )
-        return self._ask(question, context)
+        prompt = f"{context}\n\nUser asked: {question}"
+        return self._ask_gemini(prompt, JOE_SYSTEM, max_tokens=200)
 
     def chat(self, question: str) -> str:
-        """Answer without any investigation context — for freeform chat."""
-        return self._ask(question)
+        """Answer without investigation context."""
+        return self._ask_gemini(question, JOE_SYSTEM, max_tokens=150)
 
     def _build_findings_summary(self, target: Target) -> str:
         lines = []
