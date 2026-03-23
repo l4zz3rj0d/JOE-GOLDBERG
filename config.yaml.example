@@ -1,8 +1,18 @@
 # Joe Goldberg — configuration
-# Copy this to config.yaml and adjust as needed
+# Copy this file to config.yaml and fill in your values
+# NEVER commit config.yaml — it contains secrets
 
-model: mistral:7b-instruct
+model: llama3.2:3b
 ollama_url: http://localhost:11434
+
+# ── Gemini API (recommended — free tier, fast) ─────────────────
+# Get your free key at: https://aistudio.google.com/apikey
+# Then set it as an environment variable (recommended):
+#   export GEMINI_API_KEY="your_key_here"
+#   echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.bashrc
+#
+# Or paste it here (less secure — make sure config.yaml is gitignored):
+gemini_api_key: YOUR_GEMINI_API_KEY_HERE
 
 assets_dir: assets
 cases_dir: cases
@@ -17,5 +27,5 @@ tools:
   nmap: false
 
 ui:
-  mode: desktop      # desktop | cli
+  mode: desktop
   theme: warm_cream

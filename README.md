@@ -58,6 +58,31 @@ After installation, `joe` is registered as a system command available from any d
 
 ---
 
+## API Configuration
+
+Joe uses **Gemini 2.0 Flash** for narration (free tier — no credit card needed).
+
+### Get your free Gemini API key
+
+1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Click **Create API key**
+3. Copy the key
+
+### Set it as an environment variable (recommended)
+```bash
+export GEMINI_API_KEY="your_key_here"
+echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+> **Never hardcode your API key in config.yaml and commit it.**
+> The `.gitignore` already blocks `config.yaml` — but environment variables
+> are safer and work across all terminals automatically.
+
+Joe falls back to local Ollama automatically if Gemini is unavailable.
+
+---
+
 ## Usage
 ```bash
 # Launch desktop app

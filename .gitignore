@@ -56,3 +56,12 @@ build/
 
 cases/
 config.yaml
+
+# API Keys — never commit these
+.env
+.env.*
+*.env
+config.yaml
+*_secret*
+*_key*
+api_keys*
