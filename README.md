@@ -3,10 +3,10 @@
 
   # Joe Goldberg
 
-  **Autonomous OSINT Investigator — fully local, zero APIs, zero cost**
+  **Autonomous OSINT Investigator — fully local, zero cost**
 
   ![Python](https://img.shields.io/badge/Python-3.10%2B-c0392b?style=flat-square&logo=python&logoColor=white)
-  ![Ollama](https://img.shields.io/badge/LLM-Ollama%20%2B%20Mistral-e8a020?style=flat-square)
+  ![LLM](https://img.shields.io/badge/LLM-Gemini%20%7C%20Ollama-e8a020?style=flat-square)
   ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-8b2010?style=flat-square)
   ![License](https://img.shields.io/badge/License-MIT-c8945a?style=flat-square)
   ![Status](https://img.shields.io/badge/Status-Active%20Development-2d7a3a?style=flat-square)
@@ -19,179 +19,122 @@
 
 ## What is Joe Goldberg?
 
-Joe Goldberg is a local OSINT investigation tool built for penetration testers, bug bounty hunters, and security researchers. It aggregates publicly available information about a target — emails, usernames, domains, breach history, linked accounts — and narrates findings in the voice of a meticulous, obsessive investigator.
+Joe Goldberg is an OSINT investigation tool named after the obsessive, detail-oriented character from the series YOU. Just like Joe, this tool notices everything — it gathers publicly available information about a target, connects the dots, and narrates findings in his voice.
 
-No API keys. No subscriptions. No data leaving your machine. Everything runs locally.
+Built for penetration testers, bug bounty hunters, CTF players, and security researchers. No API keys for recon. No subscriptions. No data leaving your machine.
+
+---
+
+## What it does
+
+Give Joe a target — an email, username, domain, IP, or full name — and he investigates it. He scans hundreds of platforms for linked accounts, checks breach databases, pulls DNS and certificate records, harvests linked emails, and builds a complete picture of the target's digital footprint.
+
+While scanning, Joe speaks. Every significant find gets a brief observation in his voice. When the investigation is complete, he delivers a full closing monologue — connecting every dot, reading between the lines, the way only Joe would.
+
+Everything is saved as a case file. You can resume any investigation later, add notes, ask Joe follow-up questions, and export a full HTML report.
 
 ---
 
 ## Features
 
-- **Zero API dependency** — uses Sherlock, Maigret, dnspython, python-whois, and crt.sh scraping. Nothing requires registration or payment.
-- **Local LLM narration** — Joe speaks using Ollama + Mistral 7B running entirely on your hardware. His voice comments on findings inline as they arrive, then delivers a full closing monologue.
-- **Multi-target support** — investigates emails, domains, IPs, usernames, and full names with automatic pipeline routing per target type.
-- **Auto-pivot** — when a new entity is discovered mid-investigation (e.g. a secondary email found in a GitHub commit), Joe automatically continues the investigation on it.
-- **Persistent case files** — every investigation is saved as structured JSON under `cases/`. Resume any case at any time with full context intact.
-- **HTML report export** — export any investigation as a standalone HTML report with a timeline, entity table, breach summary, and risk score.
-- **Dual interface** — runs as a desktop app (PyWebView, warm cream + crimson UI) or a clean terminal CLI from anywhere in the system.
+- Investigates emails, usernames, domains, IPs, and full names
+- Username enumeration across 300+ platforms via Sherlock and Maigret
+- DNS records, WHOIS, subdomain discovery via certificate transparency logs
+- Breach database lookups with exposed field details
+- Joe narrates inline as findings arrive — one quiet observation per discovery
+- Full closing monologue after every investigation
+- Persistent case files — resume any investigation at any time
+- Free-form chat — ask Joe anything about the current investigation
+- HTML report export with timeline, entity table, and risk score
+- Desktop app with red cinematic UI + Joe's image in the background
+- Terminal CLI with the same full experience
+- Callable as a system command from anywhere — just type `joe`
+
+---
+
+## Requirements
+
+- Python 3.10+
+- Git
+- Ollama (for local LLM fallback)
+- Gemini API key (free — for fast narration)
 
 ---
 
 ## Installation
-
-**Requirements:** Python 3.10+, Git, Ollama
 ```bash
-# Clone the repository
-git clone https://github.com/l4zz3rj0d/joe-goldberg.git
-cd joe-goldberg
+git clone https://github.com/l4zz3rj0d/JOE-GOLDBERG.git
+cd JOE-GOLDBERG
 
-# Linux / macOS — one shot
+# Linux / macOS
 bash install.sh
 
 # Windows
 install.bat
 ```
 
-The installer handles everything: Python dependencies, Sherlock, Maigret, Ollama, and the Mistral 7B model pull (~4GB, one time only).
+The installer handles Python dependencies, Sherlock, Maigret, Ollama, and pulls the local model automatically.
 
-After installation, `joe` is registered as a system command available from any directory.
+After installation `joe` works as a system command from any directory — no need to activate a virtualenv or navigate to the project folder.
 
 ---
 
-## API Configuration
+## Narration Setup (Gemini — free)
 
-Joe uses **Gemini 2.0 Flash** for narration (free tier — no credit card needed).
+Joe uses Gemini 2.0 Flash for narration. It's free, fast, and requires no credit card.
 
-### Get your free Gemini API key
-
+**Get your key:**
 1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-2. Click **Create API key**
-3. Copy the key
-
-### Set it as an environment variable (recommended)
+2. Create an API key
+3. Set it as an environment variable:
 ```bash
 export GEMINI_API_KEY="your_key_here"
 echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-> **Never hardcode your API key in config.yaml and commit it.**
-> The `.gitignore` already blocks `config.yaml` — but environment variables
-> are safer and work across all terminals automatically.
-
-Joe falls back to local Ollama automatically if Gemini is unavailable.
+Joe falls back to local Ollama automatically if Gemini is unavailable. Never hardcode the key in any file — environment variable only.
 
 ---
 
 ## Usage
 ```bash
-# Launch desktop app
-joe
-
-# Launch terminal CLI
-joe --cli
-
-# Start an investigation directly
-joe stalk target@email.com
-joe stalk johndoe_87
-joe stalk target.com
-joe stalk 192.168.1.1
-joe stalk "john doe"
+joe                              # desktop app
+joe --cli                        # terminal CLI
+joe stalk target@email.com       # investigate directly
+joe stalk johndoe_87             # username
+joe stalk target.com             # domain
+joe stalk "john doe"             # full name
 ```
 
-### CLI Commands
+### Commands
 
 | Command | Description |
 |---|---|
 | `stalk <target>` | Start a new investigation |
-| `resume <target>` | Load and continue a saved case |
-| `pivot <entity>` | Investigate a newly discovered entity |
+| `resume <target>` | Continue a saved case |
+| `pivot <entity>` | Investigate a discovered entity |
 | `cases` | List all saved investigations |
-| `notes <text>` | Add an investigator note to the current case |
-| `export` | Export the current case as an HTML report |
+| `notes <text>` | Add a note to the current case |
+| `export` | Export case as HTML report |
 | `help` | Show all commands |
 | `exit` | Leave |
 
-Or type anything freely — Joe answers questions about the current investigation with full session memory.
+Or just type anything — Joe answers questions about the current investigation with full memory of everything found so far.
 
 ---
 
-## How It Works
-```
-Input (email / domain / IP / username / name)
-    ↓
-Input Parser — classifies and normalises target
-    ↓
-Orchestrator — routes to appropriate module pipeline
-    ↓
-┌─────────────────────────────────────────────┐
-│  Sherlock · Maigret · python-whois          │
-│  dnspython · crt.sh scraper · nmap          │
-└─────────────────────────────────────────────┘
-    ↓
-Correlation Engine — links entities, scores risk
-    ↓
-Joe Voice (Ollama + Mistral 7B)
-  — inline quote per finding
-  — closing monologue after full scan
-    ↓
-Case File (JSON) + HTML Report
-```
+## Desktop Icon (Linux)
 
----
-
-## Stack
-
-| Component | Technology |
-|---|---|
-| Language | Python 3.10+ |
-| Terminal UI | Rich |
-| Desktop UI | PyWebView |
-| Local LLM | Ollama + mistral:7b-instruct |
-| Username enum | Sherlock, Maigret |
-| Domain intel | dnspython, python-whois, crt.sh |
-| Case storage | Local JSON |
-
----
-
-## Project Structure
-```
-joe-goldberg/
-├── joe.py                  # Entry point — CLI vs desktop detection
-├── setup.py                # Package registration
-├── install.sh              # Linux/macOS installer
-├── install.bat             # Windows installer
-├── config.yaml             # Model and tool configuration
-├── assets/
-│   └── joe.jpeg            # Interface background image
-├── cases/                  # Investigation case files (auto-created)
-├── core/
-│   ├── input_parser.py     # Target type classification
-│   ├── target_model.py     # Data structures + case persistence
-│   └── orchestrator.py     # Investigation pipeline coordinator
-├── narrative/
-│   ├── joe_voice.py        # Ollama integration + Joe persona
-│   └── session_memory.py   # Conversation context manager
-├── modules/
-│   ├── social_enum.py      # Username enumeration
-│   └── domain_intel.py     # Domain, DNS, certificate intelligence
-├── frontend/
-│   ├── desktop.py          # PyWebView app + Python-JS bridge
-│   └── app.html            # Desktop UI
-├── tui/
-│   └── joe_cli.py          # Terminal CLI interface
-└── exporters/
-    ├── case_file.py        # JSON export
-    └── html_report.py      # HTML report generation
-```
+After installation, Joe appears in your GNOME app grid. Search **Joe Goldberg** or find it under Security. Right-click and **Add to Favorites** to pin it to your dock.
 
 ---
 
 ## Ethical Use
 
-Joe Goldberg is built for authorized security work only — penetration testing engagements, bug bounty programs, CTF challenges, and authorized investigations.
+This tool is for authorized security work only — penetration testing engagements, bug bounty programs, CTF challenges, and authorized investigations.
 
-Do not use this tool against individuals or systems without explicit written authorization. The author assumes no responsibility for misuse.
+Do not use against individuals or systems without explicit written authorization. The author assumes no responsibility for misuse.
 
 ---
 
