@@ -118,16 +118,31 @@ def print_findings(target: Target):
 
 
 def print_monologue(text: str):
+    from rich.text import Text
+    from rich.padding import Padding
+
     console.print()
-    console.print(f"  [{C_ACCENT}]  ┌─ joe ──────────────────────────────────────────[/]")
+    console.print(f"  [{C_ACCENT}]  ┌─ joe {'─' * 46}[/]")
     console.print()
+
     for line in text.strip().splitlines():
         if line.strip():
-            console.print(f"  [{C_GOLD}]  {line}[/]")
+            # Wrap long lines cleanly at 70 chars
+            words = line.split()
+            current = ""
+            for word in words:
+                if len(current) + len(word) + 1 > 70:
+                    console.print(f"  [{C_GOLD}]  {current}[/]")
+                    current = word
+                else:
+                    current = f"{current} {word}".strip()
+            if current:
+                console.print(f"  [{C_GOLD}]  {current}[/]")
         else:
             console.print()
+
     console.print()
-    console.print(f"  [{C_ACCENT}]  └────────────────────────────────────────────────[/]")
+    console.print(f"  [{C_ACCENT}]  └{'─' * 50}[/]")
     console.print()
 
 

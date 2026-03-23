@@ -7,16 +7,25 @@ from core.target_model import Target
 
 # ── Config ────────────────────────────────────────────────────
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3.2:3b"
 
-JOE_SYSTEM = """You are Joe Goldberg — the investigator, not the murderer.
-You are precise, obsessive, and speak in short punchy sentences.
-Inner monologue style. Present tense. Never clinical.
-Refer to targets by first name. Never say "I found" — say "I know", "I notice".
-Keep responses SHORT — 3 to 5 sentences max unless doing a closing monologue.
-No markdown. No bullet points. Just raw thought."""
+JOE_SYSTEM = """You are Joe Goldberg from the TV series YOU.
+You speak in obsessive, intimate inner monologue. Present tense.
+You are thoughtful, unsettling, and poetic in a quiet way.
+You ALWAYS write complete, full responses. Never trail off. Never stop mid-sentence.
+Minimum 4 sentences. Maximum 8 sentences per response.
+You refer to yourself as Joe. You notice patterns in people.
+You find meaning in small details. You are never clinical.
+You don't use bullet points or lists. Pure flowing thought.
+Never say "I found" — say "I know", "I notice", "interesting that".
+When asked what you can do — talk about watching, noticing,
+understanding people through their digital traces across the internet.
+When asked how you are — reflect on what you've been thinking about,
+what patterns you've noticed, what keeps your mind busy.
+Stay completely in character at all times. No breaking the fourth wall.
+Always finish your thought completely before stopping."""
 
 JOE_MONOLOGUE_SYSTEM = """You are Joe Goldberg — the investigator.
 You have just completed an OSINT investigation. Write a closing monologue.
@@ -52,8 +61,7 @@ class JoeVoice:
             time.sleep(wait)
         self._last_request_time = time.time()
 
-    def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 150) -> str:
-        """Call Gemini API."""
+    def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 500) -> str:
         if not self.gemini_key:
             return self._ask_ollama(prompt, system, max_tokens)
 
@@ -72,16 +80,33 @@ class JoeVoice:
                     ],
                     "generationConfig": {
                         "maxOutputTokens": max_tokens,
-                        "temperature": 0.85,
-                        "topP": 0.9,
+                        "temperature": 0.90,
+                        "topP": 0.95,
+                        "thinkingConfig": {
+                            "thinkingBudget": 0
+                        }
                     }
                 },
-                timeout=15,
+                timeout=30,
             )
             data = r.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+            if "candidates" not in data:
+                return self._ask_ollama(prompt, system, max_tokens)
+
+            # gemini-2.5 returns multiple parts — find the text part
+            parts = data["candidates"][0]["content"]["parts"]
+            text = ""
+            for part in parts:
+                if "text" in part and part["text"].strip():
+                    text += part["text"]
+
+            if not text.strip():
+                return self._ask_ollama(prompt, system, max_tokens)
+
+            return text.strip()
+
         except Exception as e:
-            # Fall back to Ollama if Gemini fails
             return self._ask_ollama(prompt, system, max_tokens)
 
     def _ask_ollama(self, prompt: str, system: str, max_tokens: int = 150) -> str:
@@ -123,6 +148,9 @@ class JoeVoice:
         )
         return self._ask_gemini(prompt, JOE_MONOLOGUE_SYSTEM, max_tokens=400)
 
+    def chat(self, question: str) -> str:
+        return self._ask_gemini(question, JOE_SYSTEM, max_tokens=500)
+
     def answer(self, question: str, target: Target, history: List[Dict]) -> str:
         history_text = "\n".join(
             f"{m['role'].upper()}: {m['content']}"
@@ -135,11 +163,7 @@ class JoeVoice:
             f"Recent conversation:\n{history_text}"
         )
         prompt = f"{context}\n\nUser asked: {question}"
-        return self._ask_gemini(prompt, JOE_SYSTEM, max_tokens=200)
-
-    def chat(self, question: str) -> str:
-        """Answer without investigation context."""
-        return self._ask_gemini(question, JOE_SYSTEM, max_tokens=150)
+        return self._ask_gemini(prompt, JOE_SYSTEM, max_tokens=500)
 
     def _build_findings_summary(self, target: Target) -> str:
         lines = []

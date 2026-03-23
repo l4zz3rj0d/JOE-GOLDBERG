@@ -122,32 +122,32 @@ body{
   border:1px solid #aa2a10;
 }
 .msg-j .bubble{
-  background:#1e0606;color:#e8c0a8;
+  background:#1e0606;color:#ffddcc;
   border:1px solid #3d1010;
   border-bottom-left-radius:3px;max-width:90%;
 }
 
-.scan{font-family:'SF Mono',Monaco,monospace;font-size:13px;color:#8a4040;line-height:2.1}
+.scan{font-family:'SF Mono',Monaco,monospace;font-size:13px;color:#aa6050;line-height:2.1}
 .hit-row{display:flex;align-items:center;gap:10px;line-height:2.4;padding-left:12px}
 .hit-check{color:#3aad50;font-weight:700;font-size:15px}
 .hit-warn{color:#cc4422;font-weight:700;font-size:15px}
-.hit-name{font-size:14px;font-weight:700;color:#e8c0a8}
+.hit-name{font-size:14px;font-weight:700;color:#ffddcc
 .hit-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
 .hit-tag.found{background:#0d2018;color:#3aad50;border:1px solid #1a4030}
 .hit-tag.breach{background:#2d0808;color:#cc4422;border:1px solid #5a1818}
 
 .joe-quote{
-  font-size:14px;color:#cc7755;font-style:italic;
+  font-size:14px;color:#ffaa80;font-style:italic;
   padding:10px 14px 10px 16px;
-  border-left:3px solid #6a2a10;
-  background:rgba(180,60,20,.08);
+  border-left:3px solid #aa4422;
+  background:rgba(200,80,20,.1);
   border-radius:0 8px 8px 0;margin:6px 0;line-height:1.9;
 }
 
 .findings-head{font-size:10px;font-weight:800;letter-spacing:3px;color:#7a3030;text-transform:uppercase;margin:12px 0 8px}
 .f-row{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:2.2}
 .f-key{font-size:11px;font-weight:800;color:#6a3030;min-width:100px;text-transform:uppercase;letter-spacing:.5px}
-.f-val{color:#e8c0a8;font-weight:500}
+.f-val{color:#ffddcc;font-weight:500}
 .fdiv{border:none;border-top:1px solid #2d0e0e;margin:10px 0}
 .ftag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px}
 .ftag-r{background:#2d0808;color:#cc4422;border:1px solid #5a1818}
@@ -158,12 +158,14 @@ body{
 .rnum{font-size:13px;font-weight:800;color:#ff4422}
 
 .monologue{
-  font-size:14px;color:#cc9980;font-style:italic;
+  font-size:14px;color:#ffcca8;font-style:italic;
   line-height:2;padding:16px 18px;
-  background:rgba(140,20,10,.1);
-  border:1px solid #3d1010;
-  border-left:3px solid #cc3311;
+  background:rgba(140,20,10,.12);
+  border:1px solid #5d1a10;
+  border-left:3px solid #ff4422;
   border-radius:0 10px 10px 0;margin-top:10px;
+  font-weight:400;
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
 }
 .monologue strong{color:#ff8866;font-style:normal;font-weight:700}
 
@@ -254,7 +256,7 @@ body{
     <div class="sl">Model</div>
     <div class="mrow">
       <div class="mdot"></div>
-      <span class="mname">mistral:7b-instruct</span>
+      <span class="mname" id="model-name">gemini-2.5-flash</span>
     </div>
     <div class="tw">
       <div class="tl">Tools</div>
@@ -289,7 +291,7 @@ body{
 
 <div class="sbar">
   <div class="sb"><div class="live-dot"></div><span class="v" id="ollama-status">ollama</span></div>
-  <div class="sb">Model <span class="v">mistral:7b</span></div>
+  <div class="sb">Model <span class="v">gemini-2.5-flash</span></div>
   <div class="sb">Case <span class="v" id="sb-case">none</span></div>
   <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
   <div class="sb">Entities <span class="v" id="sb-entities">0</span></div>
