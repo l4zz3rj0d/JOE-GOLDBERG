@@ -5,14 +5,14 @@
 <title>Joe Goldberg</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   background:#140404;
   height:100vh;
   display:flex;
   flex-direction:column;
-  overflow:hidden;
-  color:#e8c8b8;
+  color:#ffddcc;
   font-size:15px;
 }
 
@@ -20,7 +20,8 @@ body{
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 22px;background:#1e0606;
   border-bottom:1px solid #3d1010;
-  -webkit-app-region:drag;flex-shrink:0;
+  flex-shrink:0;
+  -webkit-app-region:drag;
 }
 .dots{display:flex;gap:6px;-webkit-app-region:no-drag}
 .dot{width:13px;height:13px;border-radius:50%;cursor:pointer}
@@ -39,13 +40,14 @@ body{
 .a-dot.pulse{animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 
-.body{display:flex;flex:1;overflow:hidden}
+.body{display:flex;flex:1;overflow:hidden;min-height:0}
 
 .sidebar{
   width:235px;background:#180606;
   border-right:1px solid #2d0e0e;
   display:flex;flex-direction:column;
   padding:16px 0;flex-shrink:0;
+  overflow-y:auto;
 }
 .sl{
   font-size:9px;font-weight:800;letter-spacing:2.5px;
@@ -57,25 +59,26 @@ body{
 }
 .case-item:hover{background:rgba(200,50,20,.07)}
 .case-item.active{border-left-color:#cc3311;background:rgba(200,50,20,.12)}
-.cn{font-size:13px;font-weight:600;color:#a05040}
+.cn{font-size:13px;font-weight:600;color:#ff9977}
 .case-item.active .cn{color:#ff7755}
-.cm{font-size:11px;color:#6a3030;margin-top:3px}
+.cm{font-size:11px;color:#8a4030;margin-top:3px}
 .case-item.active .cm{color:#cc6644}
 .sdiv{height:1px;background:#250808;margin:12px 0}
-.srow{display:flex;justify-content:space-between;padding:5px 16px;font-size:13px;color:#7a3535}
-.srow span:last-child{font-weight:700;color:#ff6644}
+.srow{display:flex;justify-content:space-between;padding:5px 16px;font-size:13px;color:#cc7755}
+.srow span:last-child{font-weight:700;color:#ff8866}
 .mrow{display:flex;align-items:center;gap:8px;padding:7px 16px}
 .mdot{width:8px;height:8px;border-radius:50%;background:#cc3311}
 .mname{font-size:13px;font-weight:600;color:#ff7755}
 .tw{padding:12px 16px 0;margin-top:auto;border-top:1px solid #250808}
 .tl{font-size:9px;font-weight:800;letter-spacing:2px;color:#6a2020;text-transform:uppercase;margin-bottom:8px}
 .pill{display:inline-block;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;margin:2px 2px 2px 0}
-.pill.on{background:#2d0808;color:#ff7755;border:1px solid #6a2020}
+.pill.on{background:#2d0808;color:#ff9977;border:1px solid #6a2020}
 .pill.off{background:#180606;color:#4a2020;border:1px solid #250808}
 
 .chat{
   flex:1;display:flex;flex-direction:column;
-  background:#140404;position:relative;overflow:hidden;
+  background:#140404;position:relative;
+  overflow:hidden;min-height:0;
 }
 .joe-bg{
   position:absolute;right:0;top:0;bottom:0;width:65%;
@@ -103,17 +106,18 @@ body{
   display:flex;flex-direction:column;
   gap:18px;overflow-y:auto;
   position:relative;z-index:1;
+  min-height:0;
 }
 .msgs::-webkit-scrollbar{width:3px}
 .msgs::-webkit-scrollbar-track{background:transparent}
 .msgs::-webkit-scrollbar-thumb{background:#3d1010;border-radius:2px}
 
 .msg{display:flex;flex-direction:column;gap:5px}
-.mmeta{font-size:11px;font-weight:600;padding:0 4px;color:#6a3030}
+.mmeta{font-size:11px;font-weight:600;padding:0 4px;color:#8a4030}
 .msg-u{align-items:flex-end}
 .msg-u .mmeta{color:#cc5533}
 .msg-j{align-items:flex-start}
-.msg-j .mmeta{color:#7a3030}
+.msg-j .mmeta{color:#8a4030}
 
 .bubble{padding:14px 18px;border-radius:14px;font-size:14.5px;line-height:1.85}
 .msg-u .bubble{
@@ -123,18 +127,18 @@ body{
 }
 .msg-j .bubble{
   background:#1e0606;color:#ffddcc;
-  border:1px solid #3d1010;
+  border:1px solid #4d1515;
   border-bottom-left-radius:3px;max-width:90%;
 }
 
 .scan{font-family:'SF Mono',Monaco,monospace;font-size:13px;color:#aa6050;line-height:2.1}
 .hit-row{display:flex;align-items:center;gap:10px;line-height:2.4;padding-left:12px}
 .hit-check{color:#3aad50;font-weight:700;font-size:15px}
-.hit-warn{color:#cc4422;font-weight:700;font-size:15px}
-.hit-name{font-size:14px;font-weight:700;color:#ffddcc
+.hit-warn{color:#ff5533;font-weight:700;font-size:15px}
+.hit-name{font-size:14px;font-weight:700;color:#ffddcc}
 .hit-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
 .hit-tag.found{background:#0d2018;color:#3aad50;border:1px solid #1a4030}
-.hit-tag.breach{background:#2d0808;color:#cc4422;border:1px solid #5a1818}
+.hit-tag.breach{background:#2d0808;color:#ff5533;border:1px solid #5a1818}
 
 .joe-quote{
   font-size:14px;color:#ffaa80;font-style:italic;
@@ -144,18 +148,18 @@ body{
   border-radius:0 8px 8px 0;margin:6px 0;line-height:1.9;
 }
 
-.findings-head{font-size:10px;font-weight:800;letter-spacing:3px;color:#7a3030;text-transform:uppercase;margin:12px 0 8px}
+.findings-head{font-size:10px;font-weight:800;letter-spacing:3px;color:#aa5040;text-transform:uppercase;margin:12px 0 8px}
 .f-row{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:2.2}
-.f-key{font-size:11px;font-weight:800;color:#6a3030;min-width:100px;text-transform:uppercase;letter-spacing:.5px}
+.f-key{font-size:11px;font-weight:800;color:#aa5040;min-width:100px;text-transform:uppercase;letter-spacing:.5px}
 .f-val{color:#ffddcc;font-weight:500}
-.fdiv{border:none;border-top:1px solid #2d0e0e;margin:10px 0}
+.fdiv{border:none;border-top:1px solid #3d1010;margin:10px 0}
 .ftag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px}
-.ftag-r{background:#2d0808;color:#cc4422;border:1px solid #5a1818}
+.ftag-r{background:#2d0808;color:#ff5533;border:1px solid #5a1818}
 .ftag-g{background:#0d2018;color:#3aad50;border:1px solid #1a4030}
 .risk-wrap{display:flex;align-items:center;gap:10px}
 .rbar{height:5px;width:120px;background:#2d0e0e;border-radius:2px}
 .rfill{height:100%;background:linear-gradient(90deg,#aa2a10,#ff4422);border-radius:2px}
-.rnum{font-size:13px;font-weight:800;color:#ff4422}
+.rnum{font-size:13px;font-weight:800;color:#ff5533}
 
 .monologue{
   font-size:14px;color:#ffcca8;font-style:italic;
@@ -165,9 +169,8 @@ body{
   border-left:3px solid #ff4422;
   border-radius:0 10px 10px 0;margin-top:10px;
   font-weight:400;
-  text-shadow:0 1px 2px rgba(0,0,0,0.5);
 }
-.monologue strong{color:#ff8866;font-style:normal;font-weight:700}
+.monologue strong{color:#ff9977;font-style:normal;font-weight:700}
 
 .typing{display:flex;gap:5px;padding:8px 4px;align-items:center}
 .typing span{
@@ -180,7 +183,7 @@ body{
 
 .input-wrap{
   padding:15px 22px;background:#1e0606;
-  border-top:1px solid #2d0e0e;
+  border-top:1px solid #3d1010;
   display:flex;align-items:center;gap:12px;
   z-index:2;flex-shrink:0;
 }
@@ -190,14 +193,14 @@ body{
   white-space:nowrap;border:1px solid #aa2a10;
 }
 #msg-input{
-  flex:1;font-size:14px;color:#e8c0a8;
-  background:#140404;border:1px solid #3d1010;
+  flex:1;font-size:14px;color:#ffddcc;
+  background:#0d0202;border:1px solid #4d1515;
   border-radius:8px;padding:11px 16px;
   outline:none;font-family:inherit;
   transition:border-color .15s;
 }
 #msg-input:focus{border-color:#cc3311}
-#msg-input::placeholder{color:#4a1818;font-size:13px}
+#msg-input::placeholder{color:#6a3030;font-size:13px}
 .sbtn{
   width:40px;height:40px;background:#8b1a08;
   border-radius:8px;display:flex;
@@ -210,14 +213,15 @@ body{
 
 .sbar{
   display:flex;align-items:center;
-  background:#180606;border-top:1px solid #250808;flex-shrink:0;
+  background:#180606;border-top:1px solid #250808;
+  flex-shrink:0;flex-wrap:nowrap;overflow:hidden;
 }
 .sb{
-  font-size:11px;font-weight:600;color:#5a2525;
+  font-size:11px;font-weight:600;color:#8a4030;
   padding:8px 16px;border-right:1px solid #250808;
-  display:flex;align-items:center;gap:6px;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
 }
-.sb .v{color:#cc5533;font-weight:700}
+.sb .v{color:#ff7755;font-weight:700}
 .sb:last-child{margin-left:auto;border-right:none}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#cc3311;animation:pulse 1.5s ease-in-out infinite}
 </style>
@@ -245,7 +249,7 @@ body{
 <div class="body">
   <div class="sidebar">
     <div class="sl">Cases</div>
-    <div id="case-list"></div>
+    <div id="case-list"><div style="padding:8px 16px;font-size:12px;color:#4a2020">No cases yet</div></div>
     <div class="sdiv"></div>
     <div class="sl">Session</div>
     <div class="srow"><span>Entities</span><span id="s-entities">0</span></div>
@@ -256,7 +260,7 @@ body{
     <div class="sl">Model</div>
     <div class="mrow">
       <div class="mdot"></div>
-      <span class="mname" id="model-name">gemini-2.5-flash</span>
+      <span class="mname">gemini-2.5-flash</span>
     </div>
     <div class="tw">
       <div class="tl">Tools</div>
@@ -270,7 +274,7 @@ body{
 
   <div class="chat">
     <div class="joe-bg">
-      <img src="joe.jpeg" alt="" id="joe-face" onerror="this.style.display='none'">
+      <img src="joe.jpeg" alt="" onerror="this.style.display='none'">
     </div>
     <div class="joe-fade"></div>
     <div class="msgs" id="msgs"></div>
@@ -290,7 +294,7 @@ body{
 </div>
 
 <div class="sbar">
-  <div class="sb"><div class="live-dot"></div><span class="v" id="ollama-status">ollama</span></div>
+  <div class="sb"><div class="live-dot"></div><span class="v">ollama</span></div>
   <div class="sb">Model <span class="v">gemini-2.5-flash</span></div>
   <div class="sb">Case <span class="v" id="sb-case">none</span></div>
   <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
@@ -299,7 +303,6 @@ body{
 
 <script>
 const state = {
-  currentTarget: null,
   entities: 0, breaches: 0, pivots: 0,
   startTime: Date.now(),
 };
@@ -469,6 +472,7 @@ function addJoeMonologue(text) {
 }
 
 function showTyping() {
+  currentJoeBubble = null;
   const msgs = document.getElementById('msgs');
   const div = document.createElement('div');
   div.className = 'msg msg-j';
@@ -530,6 +534,7 @@ function updateStats() {
 function formatMonologue(text) {
   return esc(text)
     .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 
