@@ -86,14 +86,68 @@ Joe uses Gemini 2.0 Flash for narration. It's free, fast, and requires no credit
 **Get your key:**
 1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 2. Create an API key
-3. Set it as an environment variable:
+3. Set it as an environment variable — pick the block for **your shell**:
+
+---
+
+### bash (default on most Linux distros)
 ```bash
-export GEMINI_API_KEY="your_key_here"
 echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.bashrc
 source ~/.bashrc
+echo $GEMINI_API_KEY   # verify
 ```
 
-Joe falls back to local Ollama automatically if Gemini is unavailable. Never hardcode the key in any file — environment variable only.
+### zsh (default on macOS, popular on Linux)
+```zsh
+echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.zshrc
+source ~/.zshrc
+echo $GEMINI_API_KEY   # verify
+```
+
+> **Note (zsh users):** If your `.zshrc` sources `.bashrc`, you may see `shopt` errors because `shopt` is bash-only.  
+> Check with `grep bashrc ~/.zshrc` and remove the offending line if found:
+> ```zsh
+> sed -i '/bashrc/d' ~/.zshrc
+> ```
+
+### fish
+```fish
+set -Ux GEMINI_API_KEY "your_key_here"
+echo $GEMINI_API_KEY   # verify
+```
+
+### ksh / dash
+```sh
+echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.profile
+. ~/.profile
+echo $GEMINI_API_KEY   # verify
+```
+
+---
+
+### System wrapper (applies to all shells)
+
+The `joe` system command at `/usr/local/bin/joe` is a bash script. If you want the key baked in at the wrapper level (so it works regardless of which shell calls it), edit it with:
+
+```bash
+sudo nano /usr/local/bin/joe
+```
+
+The file should look like this — add the `export` line:
+
+```bash
+#!/bin/bash
+export GEMINI_API_KEY="your_key_here"
+source /path/to/your/venv/bin/activate   # added by installer
+cd /path/to/JOE-GOLDBERG
+exec python /path/to/JOE-GOLDBERG/joe.py "$@"
+```
+
+This guarantees narration works even when Joe is launched from a desktop icon, a cron job, or any shell that hasn't loaded your personal config.
+
+---
+
+Joe falls back to local Ollama automatically if Gemini is unavailable. **Never hardcode the key inside source code** — environment variable only.
 
 ---
 

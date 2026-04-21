@@ -114,9 +114,38 @@ echo "  ✓ system command registered — run: joe"
 echo "  ✓ desktop icon created — search 'Joe Goldberg' in app grid"
 echo "  ✓ ollama configured to start automatically on login"
 echo ""
-echo "  one more thing — set your Gemini API key for fast narration:"
-echo "  (free key at https://aistudio.google.com/apikey)"
+echo "  ─────────────────────────────────────────────────────────"
+echo "  Gemini API key setup  (free key at https://aistudio.google.com/apikey)"
+echo "  ─────────────────────────────────────────────────────────"
 echo ""
-echo "  export GEMINI_API_KEY=\"your_key_here\""
-echo "  echo 'export GEMINI_API_KEY=\"your_key_here\"' >> ~/.bashrc"
+
+# Detect the user's login shell and print the right config command
+USER_SHELL="$(basename "$(getent passwd "$USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-bash}")")"
+
+case "$USER_SHELL" in
+  zsh)
+    echo "  Your shell: zsh"
+    echo ""
+    echo "  echo 'export GEMINI_API_KEY=\"your_key_here\"' >> ~/.zshrc"
+    echo "  source ~/.zshrc"
+    echo ""
+    echo "  (if you see shopt errors, remove any 'source ~/.bashrc' line from ~/.zshrc)"
+    ;;
+  fish)
+    echo "  Your shell: fish"
+    echo ""
+    echo "  set -Ux GEMINI_API_KEY \"your_key_here\""
+    ;;
+  *)
+    echo "  Your shell: bash / other"
+    echo ""
+    echo "  echo 'export GEMINI_API_KEY=\"your_key_here\"' >> ~/.bashrc"
+    echo "  source ~/.bashrc"
+    ;;
+esac
+
+echo ""
+echo "  To make narration work from the desktop icon too, also set:"
+echo "  sudo nano /usr/local/bin/joe"
+echo "  Add: export GEMINI_API_KEY=\"your_key_here\" (below the shebang)"
 echo ""
