@@ -35,6 +35,16 @@ Everything is saved as a case file. You can resume any investigation later, add 
 
 ---
 
+## Interface
+
+<div align="center">
+  <img src="assets/Interface.png" alt="Joe Goldberg Interface" width="800"/>
+  <br/>
+  <sub>Joe's cinematic terminal UI — red-on-black, inline narration, live findings</sub>
+</div>
+
+---
+
 ## Features
 
 - Investigates emails, usernames, domains, IPs, and full names
