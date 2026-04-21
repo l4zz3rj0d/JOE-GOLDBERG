@@ -8,7 +8,7 @@
   ![Python](https://img.shields.io/badge/Python-3.10%2B-c0392b?style=flat-square&logo=python&logoColor=white)
   ![LLM](https://img.shields.io/badge/LLM-Gemini%20%7C%20Ollama-e8a020?style=flat-square)
   ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-8b2010?style=flat-square)
-  ![License](https://img.shields.io/badge/License-MIT-c8945a?style=flat-square)
+  ![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square)
   ![Status](https://img.shields.io/badge/Status-Active%20Development-2d7a3a?style=flat-square)
 
   > *"I notice everything."*
@@ -134,7 +134,7 @@ After installation, Joe appears in your GNOME app grid. Search **Joe Goldberg** 
 
 This tool is for authorized security work only — penetration testing engagements, bug bounty programs, CTF challenges, and authorized investigations.
 
-Do not use against individuals or systems without explicit written authorization. The author assumes no responsibility for misuse.
+Do not use against individuals or systems without explicit written authorization. This software is licensed under the **GNU General Public License v3 (GPLv3)**.
 
 ---
 
