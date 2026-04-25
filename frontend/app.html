@@ -162,7 +162,7 @@ body{
 .rnum{font-size:13px;font-weight:800;color:#ff5533}
 
 .monologue{
-  font-size:14px;color:#ffcca8;font-style:italic;
+  font-size:14.5px;color:#ffcca8;font-style:italic;
   line-height:2;padding:16px 18px;
   background:rgba(140,20,10,.12);
   border:1px solid #5d1a10;
@@ -171,6 +171,7 @@ body{
   font-weight:400;
 }
 .monologue strong{color:#ff9977;font-style:normal;font-weight:700}
+.monologue em{color:#ffb38a;font-style:italic;}
 
 .typing{display:flex;gap:5px;padding:8px 4px;align-items:center}
 .typing span{
@@ -224,6 +225,7 @@ body{
 .sb .v{color:#ff7755;font-weight:700}
 .sb:last-child{margin-left:auto;border-right:none}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#cc3311;animation:pulse 1.5s ease-in-out infinite}
+.stream-text { white-space: pre-wrap; font-style: italic; color: #ffcca8; }
 </style>
 </head>
 <body>
@@ -242,7 +244,7 @@ body{
   </div>
   <div class="active-pill">
     <div class="a-dot" id="status-dot"></div>
-    <span id="status-text">Ready</span>
+    <span id="status-text">API Active</span>
   </div>
 </div>
 
@@ -294,7 +296,7 @@ body{
 </div>
 
 <div class="sbar">
-  <div class="sb"><div class="live-dot"></div><span class="v">ollama</span></div>
+  <div class="sb"><div class="live-dot"></div><span class="v">API Active</span></div>
   <div class="sb">Model <span class="v">gemini-2.5-flash</span></div>
   <div class="sb">Case <span class="v" id="sb-case">none</span></div>
   <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
@@ -358,10 +360,8 @@ window.joe = {
         finishInvestigation(data);
         setStatus('Ready', false);
         break;
-      case 'joe_answer':
-        removeTyping();
-        addJoeMonologue(data.text);
-        break;
+      case 'joe_stream': handleJoeStream(data.chunk); break;
+      case 'joe_answer': finalizeJoeStream(data.text); break;
       case 'cases_loaded': renderCaseList(data.cases); break;
       case 'resumed': resumeCase(data); break;
       case 'report_ready': addJoeMonologue(`Report saved to: ${data.path}`); break;
@@ -471,6 +471,32 @@ function addJoeMonologue(text) {
   scrollBottom();
 }
 
+let activeStreamBubble = null;
+function handleJoeStream(chunk) {
+  removeTyping();
+  if (!activeStreamBubble) {
+    const msgs = document.getElementById('msgs');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg msg-j';
+    wrap.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
+                      <div class="bubble"><div class="stream-text"></div></div>`;
+    msgs.appendChild(wrap);
+    activeStreamBubble = wrap.querySelector('.stream-text');
+  }
+  activeStreamBubble.textContent += chunk;
+  scrollBottom();
+}
+
+function finalizeJoeStream(fullText) {
+  if (activeStreamBubble) {
+    activeStreamBubble.parentElement.innerHTML = `<div class="monologue">${formatMonologue(fullText)}</div>`;
+    activeStreamBubble = null;
+  } else {
+    addJoeMonologue(fullText);
+  }
+  scrollBottom();
+}
+
 function showTyping() {
   currentJoeBubble = null;
   const msgs = document.getElementById('msgs');
@@ -535,7 +561,8 @@ function formatMonologue(text) {
   return esc(text)
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
 
 function esc(s) {

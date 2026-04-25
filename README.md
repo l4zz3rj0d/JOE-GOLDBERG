@@ -66,8 +66,8 @@ Everything is saved as a case file. You can resume any investigation later, add 
 
 - Python 3.10+
 - Git
-- Ollama (for local LLM fallback)
-- Gemini API key (free — for fast narration)
+- Gemini API key (free — for instant narration)
+- curl (installed by default on Linux/macOS)
 
 ---
 
@@ -91,12 +91,18 @@ After installation `joe` works as a system command from any directory — no nee
 
 ## Narration Setup (Gemini — free)
 
-Joe uses Gemini 2.0 Flash for narration. It's free, fast, and requires no credit card.
+Joe uses **Gemini 2.5 Flash** for narration. It's free, supports a massive context window, and is incredibly fast.
 
 **Get your key:**
 1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 2. Create an API key
-3. Set it as an environment variable — pick the block for **your shell**:
+3. Paste it into `config.yaml` in the project root:
+
+```yaml
+gemini_api_key: "AIzaSy..."
+```
+
+*(Alternatively, you can set it as an environment variable `GEMINI_API_KEY`, but `config.yaml` is recommended for reliability.)*
 
 ---
 

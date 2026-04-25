@@ -5,8 +5,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 import webview
 import asyncio
-import webview
-import asyncio
 import threading
 import json
 from pathlib import Path
@@ -36,10 +34,12 @@ class JoeAPI:
         )
 
     def stalk(self, target: str):
+        print(f"\n[desktop] Starting investigation: {target}")
         self._memory.add("user", f"stalk {target}")
         threading.Thread(target=self._run_stalk, args=(target,), daemon=True).start()
 
     def ask(self, question: str):
+        print(f"\n[desktop] User asked: {question}")
         self._memory.add("user", question)
         threading.Thread(target=self._run_ask, args=(question,), daemon=True).start()
 
@@ -89,12 +89,25 @@ class JoeAPI:
         loop.close()
 
     def _run_ask(self, question: str):
-        if not self._target:
-            answer = self._voice.chat(question)
+        full_answer = ""
+        print("[desktop] Starting stream...")
+        
+        # Use stream_chat instead of simple chat
+        history = self._memory.last_n()
+        if self._target:
+            # Context-aware chat
+            history_text = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in history[-6:])
+            prompt = f"Investigation: {self._target.primary}\nRecent conversation:\n{history_text}\n\nUser asked: {question}"
         else:
-            answer = self._voice.answer(question, self._target, self._memory.last_n())
-        self._memory.add("joe", answer)
-        self._emit("joe_answer", {"text": answer})
+            prompt = question
+
+        for chunk in self._voice.stream_chat(prompt):
+            full_answer += chunk
+            self._emit("joe_stream", {"chunk": chunk})
+        
+        print(f"[desktop] Stream complete. Total length: {len(full_answer)} chars")
+        self._memory.add("joe", full_answer)
+        self._emit("joe_answer", {"text": full_answer})
 
     async def _on_status(self, msg: str):
         self._emit("scan_status", {"message": msg})
@@ -123,7 +136,6 @@ class JoeAPI:
 
     def _emit(self, event: str, data: dict):
         if self._window:
-            payload = json.dumps(data).replace("'", "\\'")
             self._window.evaluate_js(
                 f"window.joe && window.joe.receive('{event}', {json.dumps(data)})"
             )
@@ -131,7 +143,6 @@ class JoeAPI:
 
 class JoeDesktop:
     def launch(self):
-        # Copy joe image to frontend folder for correct relative path
         import shutil
         src = ROOT.parent / "assets" / "joe.jpeg"
         dst = ROOT / "joe.jpeg"
@@ -139,11 +150,10 @@ class JoeDesktop:
             shutil.copy(src, dst)
 
         api = JoeAPI()
-
         window = webview.create_window(
             title="Joe Goldberg",
             url=str(HTML_PATH),
-            js_api=api,          # ← correct way in pywebview 5+
+            js_api=api,
             width=1200,
             height=780,
             min_size=(900, 600),
