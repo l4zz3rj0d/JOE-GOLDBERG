@@ -200,6 +200,18 @@ class JoeVoice:
                 timeout=30,
             )
             data = r.json()
+            if "error" in data:
+                error_obj = data["error"]
+                if error_obj.get("code") == 429:
+                    delay = "60"
+                    for detail in error_obj.get("details", []):
+                        if "retryDelay" in detail:
+                            delay = detail["retryDelay"].replace("s", "")
+                    fallback = self._ask_ollama(prompt, system, max_tokens)
+                    return f"{fallback}\n\n[Retry in {delay}s]"
+                print(f"[joe_voice] API error: {data}")
+                return self._ask_ollama(prompt, system, max_tokens)
+
             if "candidates" not in data:
                 print(f"[joe_voice] No candidates: {data}")
                 return self._ask_ollama(prompt, system, max_tokens)

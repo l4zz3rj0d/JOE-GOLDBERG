@@ -327,6 +327,7 @@ const state = {
   startTime: Date.now(),
 };
 let isWorking = false;
+let rateLimitTimer = null;
 
 function setWorkingState(working) {
   isWorking = working;
@@ -345,6 +346,30 @@ function setWorkingState(working) {
   }
 }
 
+function blockForRateLimit(delaySeconds) {
+  setWorkingState(true);
+  const input = document.getElementById('msg-input');
+  let remaining = delaySeconds;
+  
+  if (rateLimitTimer) clearInterval(rateLimitTimer);
+  
+  rateLimitTimer = setInterval(() => {
+    if (remaining <= 0) {
+      clearInterval(rateLimitTimer);
+      rateLimitTimer = null;
+      setWorkingState(false);
+      setStatus('Ready', false);
+      document.getElementById('status-dot').style.background = '';
+      input.placeholder = "stalk target@email.com — or ask Joe anything...";
+    } else {
+      input.placeholder = `API Rate Limited. Retrying in ${remaining}s...`;
+      setStatus(`Rate Limited (${remaining}s)`, true);
+      document.getElementById('status-dot').style.background = '#ffbc2e';
+      remaining--;
+    }
+  }, 1000);
+}
+
 setInterval(() => {
   const s = Math.floor((Date.now() - state.startTime) / 1000);
   const m = Math.floor(s / 60).toString().padStart(2,'0');
@@ -353,7 +378,7 @@ setInterval(() => {
 }, 1000);
 
 function sendMessage() {
-  if (isWorking) return;
+  if (isWorking || rateLimitTimer) return;
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
@@ -401,27 +426,41 @@ window.joe = {
         updateStats();
         break;
       case 'investigation_done':
-        finishInvestigation(data);
-        if (data.monologue && data.monologue.includes('- API ratelimiting me')) {
-          setStatus('Rate Limited', true);
-          document.getElementById('status-dot').style.background = '#ffbc2e';
-        } else {
-          setStatus('Ready', false);
-          document.getElementById('status-dot').style.background = '';
+        if (data.monologue) {
+          let m = data.monologue.match(/\[Retry in (\d+(?:\.\d+)?)s\]/);
+          if (m) {
+            blockForRateLimit(Math.ceil(parseFloat(m[1])));
+            data.monologue = data.monologue.replace(m[0], '').trim();
+          } else if (data.monologue.includes('- API ratelimiting me')) {
+            setStatus('Rate Limited', true);
+            document.getElementById('status-dot').style.background = '#ffbc2e';
+            setWorkingState(false);
+          } else {
+            setStatus('Ready', false);
+            document.getElementById('status-dot').style.background = '';
+            setWorkingState(false);
+          }
         }
-        setWorkingState(false);
+        finishInvestigation(data);
         break;
       case 'joe_stream': handleJoeStream(data.chunk); break;
       case 'joe_answer': 
-        finalizeJoeStream(data.text); 
-        if (data.text && data.text.includes('- API ratelimiting me')) {
-          setStatus('Rate Limited', true);
-          document.getElementById('status-dot').style.background = '#ffbc2e';
-        } else {
-          setStatus('Ready', false);
-          document.getElementById('status-dot').style.background = '';
+        if (data.text) {
+          let m = data.text.match(/\[Retry in (\d+(?:\.\d+)?)s\]/);
+          if (m) {
+            blockForRateLimit(Math.ceil(parseFloat(m[1])));
+            data.text = data.text.replace(m[0], '').trim();
+          } else if (data.text.includes('- API ratelimiting me')) {
+            setStatus('Rate Limited', true);
+            document.getElementById('status-dot').style.background = '#ffbc2e';
+            setWorkingState(false);
+          } else {
+            setStatus('Ready', false);
+            document.getElementById('status-dot').style.background = '';
+            setWorkingState(false);
+          }
         }
-        setWorkingState(false); 
+        finalizeJoeStream(data.text); 
         break;
       case 'cases_loaded': renderCaseList(data.cases); break;
       case 'resumed': resumeCase(data); break;
