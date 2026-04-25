@@ -17,7 +17,7 @@ async def _run_sherlock(target, username, on_find):
     try:
         proc = await asyncio.create_subprocess_exec(
             "sherlock", username,
-            "--print-found", "--no-color",
+            "--print-found", "--no-color", "--no-txt",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )

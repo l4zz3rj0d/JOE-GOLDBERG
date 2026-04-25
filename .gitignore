@@ -20,6 +20,7 @@ tools/
 
 # Joe case files — don't commit investigations
 cases/
+/*.txt
 
 # Logs
 logs/

@@ -49,8 +49,13 @@ Everything is saved as a case file. You can resume any investigation later, add 
 
 - Investigates emails, usernames, domains, IPs, and full names
 - Username enumeration across 300+ platforms via Sherlock and Maigret
+- Email tracking via Holehe (120+ sites) and Gravatar
+- Code, commit, and profile intel via deep GitHub reconnaissance
+- Paste site mentions via psbdmp and Google Dorking
+- IP Geolocation, Proxy/VPN detection, and AbuseIPDB scraping
+- Historical domain snapshots via Wayback Machine
 - DNS records, WHOIS, subdomain discovery via certificate transparency logs
-- Breach database lookups with exposed field details
+- Breach database lookups (BreachDirectory) with exposed field details
 - Joe narrates inline as findings arrive — one quiet observation per discovery
 - Full closing monologue after every investigation
 - Persistent case files — resume any investigation at any time
