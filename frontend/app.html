@@ -402,11 +402,27 @@ window.joe = {
         break;
       case 'investigation_done':
         finishInvestigation(data);
-        setStatus('Ready', false);
+        if (data.monologue && data.monologue.includes('- API ratelimiting me')) {
+          setStatus('Rate Limited', true);
+          document.getElementById('status-dot').style.background = '#ffbc2e';
+        } else {
+          setStatus('Ready', false);
+          document.getElementById('status-dot').style.background = '';
+        }
         setWorkingState(false);
         break;
       case 'joe_stream': handleJoeStream(data.chunk); break;
-      case 'joe_answer': finalizeJoeStream(data.text); setWorkingState(false); break;
+      case 'joe_answer': 
+        finalizeJoeStream(data.text); 
+        if (data.text && data.text.includes('- API ratelimiting me')) {
+          setStatus('Rate Limited', true);
+          document.getElementById('status-dot').style.background = '#ffbc2e';
+        } else {
+          setStatus('Ready', false);
+          document.getElementById('status-dot').style.background = '';
+        }
+        setWorkingState(false); 
+        break;
       case 'cases_loaded': renderCaseList(data.cases); break;
       case 'resumed': resumeCase(data); break;
       case 'report_ready': addJoeMonologue(`Report saved to: ${data.path}`); break;
