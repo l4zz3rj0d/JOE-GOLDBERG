@@ -203,12 +203,26 @@ class JoeVoice:
             if "error" in data:
                 error_obj = data["error"]
                 if error_obj.get("code") == 429:
-                    delay = "60"
+                    is_daily = False
                     for detail in error_obj.get("details", []):
-                        if "retryDelay" in detail:
-                            delay = detail["retryDelay"].replace("s", "")
+                        if "violations" in detail:
+                            for v in detail["violations"]:
+                                if "PerDay" in v.get("quotaId", ""):
+                                    is_daily = True
+
                     fallback = self._ask_ollama(prompt, system, max_tokens)
-                    return f"{fallback}\n\n[Retry in {delay}s]"
+                    if fallback.endswith("- API ratelimiting me"):
+                        if is_daily:
+                            daily_msg = "My mind is exhausted. We've done enough for today. Come back tomorrow. - API ratelimiting me"
+                            return f"{daily_msg}\n\n[Daily Quota]"
+                        else:
+                            delay = "60"
+                            for detail in error_obj.get("details", []):
+                                if "retryDelay" in detail:
+                                    delay = detail["retryDelay"].replace("s", "")
+                            return f"{fallback}\n\n[Retry in {delay}s]"
+                    return fallback
+
                 print(f"[joe_voice] API error: {data}")
                 return self._ask_ollama(prompt, system, max_tokens)
 

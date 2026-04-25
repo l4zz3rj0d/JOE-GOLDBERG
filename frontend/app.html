@@ -427,8 +427,15 @@ window.joe = {
         break;
       case 'investigation_done':
         if (data.monologue) {
+          let daily = data.monologue.match(/\[Daily Quota\]/);
           let m = data.monologue.match(/\[Retry in (\d+(?:\.\d+)?)s\]/);
-          if (m) {
+          if (daily) {
+            data.monologue = data.monologue.replace(daily[0], '').trim();
+            setStatus('Daily Limit', true);
+            document.getElementById('status-dot').style.background = '#ff4422';
+            setWorkingState(true);
+            document.getElementById('msg-input').placeholder = "Daily quota reached. See you tomorrow.";
+          } else if (m) {
             blockForRateLimit(Math.ceil(parseFloat(m[1])));
             data.monologue = data.monologue.replace(m[0], '').trim();
           } else if (data.monologue.includes('- API ratelimiting me')) {
@@ -446,8 +453,15 @@ window.joe = {
       case 'joe_stream': handleJoeStream(data.chunk); break;
       case 'joe_answer': 
         if (data.text) {
+          let daily = data.text.match(/\[Daily Quota\]/);
           let m = data.text.match(/\[Retry in (\d+(?:\.\d+)?)s\]/);
-          if (m) {
+          if (daily) {
+            data.text = data.text.replace(daily[0], '').trim();
+            setStatus('Daily Limit', true);
+            document.getElementById('status-dot').style.background = '#ff4422';
+            setWorkingState(true);
+            document.getElementById('msg-input').placeholder = "Daily quota reached. See you tomorrow.";
+          } else if (m) {
             blockForRateLimit(Math.ceil(parseFloat(m[1])));
             data.text = data.text.replace(m[0], '').trim();
           } else if (data.text.includes('- API ratelimiting me')) {
