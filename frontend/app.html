@@ -314,6 +314,24 @@ const state = {
   entities: 0, breaches: 0, pivots: 0,
   startTime: Date.now(),
 };
+let isWorking = false;
+
+function setWorkingState(working) {
+  isWorking = working;
+  const input = document.getElementById('msg-input');
+  const btn = document.querySelector('.sbtn');
+  input.disabled = working;
+  if (working) {
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" fill="#fff" stroke="none"/></svg>`;
+    btn.style.cursor = 'not-allowed';
+    btn.style.background = '#4d1515';
+  } else {
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/></svg>`;
+    btn.style.cursor = 'pointer';
+    btn.style.background = '';
+    setTimeout(() => input.focus(), 100);
+  }
+}
 
 setInterval(() => {
   const s = Math.floor((Date.now() - state.startTime) / 1000);
@@ -323,11 +341,15 @@ setInterval(() => {
 }, 1000);
 
 function sendMessage() {
+  if (isWorking) return;
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
   addUserBubble(text);
+  
+  setWorkingState(true);
+
   const parts = text.split(' ');
   const cmd = parts[0].toLowerCase();
   if (cmd === 'stalk' || cmd === 'pivot') {
@@ -336,12 +358,16 @@ function sendMessage() {
     setStatus('Investigating', true);
   } else if (cmd === 'resume') {
     window.pywebview.api.resume(parts.slice(1).join(' '));
+    setWorkingState(false);
   } else if (cmd === 'cases') {
     window.pywebview.api.list_cases();
+    setWorkingState(false);
   } else if (cmd === 'export') {
     window.pywebview.api.export_report();
+    setWorkingState(false);
   } else if (cmd === 'notes') {
     window.pywebview.api.add_note(parts.slice(1).join(' '));
+    setWorkingState(false);
   } else {
     showTyping();
     window.pywebview.api.ask(text);
@@ -365,13 +391,14 @@ window.joe = {
       case 'investigation_done':
         finishInvestigation(data);
         setStatus('Ready', false);
+        setWorkingState(false);
         break;
       case 'joe_stream': handleJoeStream(data.chunk); break;
-      case 'joe_answer': finalizeJoeStream(data.text); break;
+      case 'joe_answer': finalizeJoeStream(data.text); setWorkingState(false); break;
       case 'cases_loaded': renderCaseList(data.cases); break;
       case 'resumed': resumeCase(data); break;
       case 'report_ready': addJoeMonologue(`Report saved to: ${data.path}`); break;
-      case 'error': addJoeMonologue(data.message); break;
+      case 'error': addJoeMonologue(data.message); setWorkingState(false); break;
     }
   }
 };
