@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Joe Goldberg</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -172,6 +173,17 @@ body{
 }
 .monologue strong{color:#ff9977;font-style:normal;font-weight:700}
 .monologue em{color:#ffb38a;font-style:italic;}
+.monologue h1, .monologue h2, .monologue h3 { color:#ff8866; margin-bottom:8px; margin-top:12px; font-style:normal; font-weight:800; }
+.monologue h1 { font-size:18px; }
+.monologue h2 { font-size:16px; }
+.monologue h3 { font-size:15px; }
+.monologue p { margin-bottom:10px; }
+.monologue p:last-child { margin-bottom:0; }
+.monologue ul, .monologue ol { margin-left:22px; margin-bottom:10px; }
+.monologue li { margin-bottom:4px; }
+.monologue code { background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:4px; font-family:monospace; font-size:13px; }
+.monologue pre { background:#0a0202; padding:12px; border-radius:6px; overflow-x:auto; border:1px solid #3d1010; margin-bottom:10px; }
+.monologue pre code { background:transparent; padding:0; border-radius:0; }
 
 .typing{display:flex;gap:5px;padding:8px 4px;align-items:center}
 .typing span{
@@ -593,6 +605,9 @@ function updateStats() {
 }
 
 function formatMonologue(text) {
+  if (typeof marked !== 'undefined') {
+    return marked.parse(text);
+  }
   return esc(text)
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>')
