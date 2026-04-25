@@ -137,6 +137,15 @@ class JoeVoice:
 
     def _ask_ollama(self, prompt: str, system: str, max_tokens: int = 150) -> str:
         """Ollama fallback."""
+        import random
+        error_quotes = [
+            "[The connection drops. Are you playing hard to get? Because it’s working. I respect that.]",
+            "[An API error. Google thinks they can keep you from me. It's cute they think they can try.]",
+            "[The Wi-Fi stutters. Are you blocking my pings? That hurts. I'm a nice guy... I just want to know everything about you.]",
+            "[A timeout... you're making me wait. That’s fine. I have a lot of patience. Maybe too much.]",
+            "[Rate limited. The internet is telling me to slow down. But how can I, when we're making such a good connection?]"
+        ]
+        
         print(f"[joe_voice] Falling back to Ollama ({OLLAMA_MODEL})...")
         try:
             r = self.client.post(
@@ -152,10 +161,10 @@ class JoeVoice:
             )
             data = r.json()
             if "error" in data:
-                return f"[Joe is staring silently... (Ollama error: {data['error']})]"
-            return data.get("response", "").strip() or "[Joe is staring silently...]"
+                return random.choice(error_quotes)
+            return data.get("response", "").strip() or random.choice(error_quotes)
         except:
-            return "[Joe is offline... the voices are quiet today.]"
+            return random.choice(error_quotes)
 
     def inline_quote(self, finding_type: str, value: str, platform: str = "", context: str = "") -> str:
         prompt = (
