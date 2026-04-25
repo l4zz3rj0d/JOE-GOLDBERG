@@ -45,11 +45,16 @@ class Target:
     risk_score: float = 0.0
 
     def add_entity(self, entity: Entity) -> bool:
+        """Add entity — deduplicate by value + platform combination."""
         for e in self.entities:
-            if e.value == entity.value and e.entity_type == entity.entity_type:
+            if (e.value == entity.value and
+                e.entity_type == entity.entity_type and
+                e.platform == entity.platform):
+                # Exact duplicate — merge sources only
                 e.sources = list(set(e.sources + entity.sources))
                 e.confidence = max(e.confidence, entity.confidence)
                 return False
+        # New entity or same value on different platform
         self.entities.append(entity)
         self.log("entity_found", {"type": entity.entity_type, "value": entity.value})
         return True

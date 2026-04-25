@@ -155,15 +155,122 @@ class JoeVoice:
             return "[Joe is offline]"
 
     def inline_quote(self, finding_type: str, value: str, platform: str = "", context: str = "") -> str:
-        prompt = f"Finding: {finding_type} — {value}" + (f" on {platform}" if platform else "") + "\nOne short observation."
-        # Non-streaming for small quotes
-        return "".join(list(self.stream_chat(prompt, JOE_SYSTEM, max_tokens=60)))
+        prompt = (
+            f"You just discovered: {finding_type} '{value}'"
+            + (f" registered on {platform}" if platform else "")
+            + f"\n\nWrite ONE sentence (15-25 words) as Joe Goldberg would think about this discovery. "
+            f"Make it personal, observational, and unsettling. Not generic. React to the specific platform or value."
+        )
+        return "".join(list(self.stream_chat(prompt, JOE_SYSTEM, max_tokens=80)))
+
+    def _ask_gemini_sync(self, prompt: str, system: str, max_tokens: int = 1000) -> str:
+        """Direct httpx call — reliable, returns complete response."""
+        if not self.gemini_key:
+            return self._ask_ollama(prompt, system, max_tokens)
+
+        self._rate_limit()
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{DEFAULT_GEMINI_MODEL}:generateContent"
+
+        try:
+            r = self.client.post(
+                url,
+                params={"key": self.gemini_key},
+                json={
+                    "system_instruction": {"parts": [{"text": system}]},
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "maxOutputTokens": max_tokens,
+                        "temperature": 0.90,
+                        "topP": 0.95,
+                    }
+                },
+                timeout=30,
+            )
+            data = r.json()
+            if "candidates" not in data:
+                print(f"[joe_voice] No candidates: {data}")
+                return self._ask_ollama(prompt, system, max_tokens)
+
+            parts = data["candidates"][0]["content"]["parts"]
+            text = ""
+            for part in parts:
+                if "text" in part:
+                    text += part["text"]
+            return text.strip()
+
+        except Exception as e:
+            print(f"[joe_voice] Sync error: {e}")
+            return self._ask_ollama(prompt, system, max_tokens)
 
     def chat(self, question: str) -> str:
-        return "".join(list(self.stream_chat(question, JOE_SYSTEM, max_tokens=1000)))
+        return self._ask_gemini_sync(question, JOE_SYSTEM, max_tokens=1000)
 
     def answer(self, question: str, target: Target, history: List[Dict]) -> str:
-        history_text = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in history[-6:])
-        context = f"Investigation: {target.primary}\nRecent conversation:\n{history_text}"
-        prompt = f"{context}\n\nUser asked: {question}"
-        return "".join(list(self.stream_chat(prompt, JOE_SYSTEM, max_tokens=1000)))
+        history_text = "\n".join(
+            f"{m['role'].upper()}: {m['content']}"
+            for m in history[-6:]
+        )
+        findings = self._build_findings_summary(target)
+        context = (
+            f"Investigation: {target.primary}\n"
+            f"Findings so far:\n{findings}\n\n"
+            f"Recent conversation:\n{history_text}"
+        )
+        prompt = f"{context}\n\nUser asked: {question}\n\nNarrate everything you know about this target as Joe would."
+        return self._ask_gemini_sync(prompt, JOE_SYSTEM, max_tokens=1000)
+
+    def closing_monologue(self, target: Target, session_context: str = "") -> str:
+        findings = self._build_findings_summary(target)
+        prompt = (
+            f"Target: {target.primary} ({target.target_type})\n\n"
+            f"Everything discovered:\n{findings}\n\n"
+            f"Write the closing monologue. Make it personal and specific to these exact findings."
+        )
+        return self._ask_gemini_sync(prompt, JOE_MONOLOGUE_SYSTEM, max_tokens=1000)
+
+    def _build_findings_summary(self, target: Target) -> str:
+        lines = []
+        
+        # Group usernames by platform
+        usernames = [e for e in target.entities if e.entity_type == "username"]
+        emails = [e for e in target.entities if e.entity_type == "email"]
+        domains = [e for e in target.entities if e.entity_type == "domain"]
+        ips = [e for e in target.entities if e.entity_type == "ip"]
+        pastes = [e for e in target.entities if e.entity_type == "paste"]
+        others = [e for e in target.entities if e.entity_type not in
+                  ("username", "email", "domain", "ip", "paste")]
+
+        if emails:
+            lines.append(f"Emails: {', '.join(e.value for e in emails)}")
+            email_platforms = [e.platform for e in emails if e.platform]
+            if email_platforms:
+                lines.append(f"Email registered on: {', '.join(email_platforms)}")
+
+        if usernames:
+            platforms = [e.platform for e in usernames if e.platform]
+            lines.append(f"Username '{usernames[0].value}' found on {len(usernames)} platforms:")
+            lines.append(f"  {', '.join(platforms)}")
+
+        if domains:
+            lines.append(f"Domains: {', '.join(e.value for e in domains)}")
+
+        if ips:
+            lines.append(f"IPs: {', '.join(e.value for e in ips)}")
+
+        if pastes:
+            lines.append(f"Paste mentions: {len(pastes)}")
+            for p in pastes[:3]:
+                lines.append(f"  {p.value}")
+
+        for e in others:
+            lines.append(f"{e.entity_type}: {e.value} ({e.platform or e.sources[0]})")
+
+        for b in target.breaches:
+            fields = ", ".join(b.exposed_fields[:4])
+            lines.append(f"Breach: {b.name} ({b.date}) — exposed: {fields}")
+
+        if target.notes:
+            lines.append(f"Investigator notes: {'; '.join(target.notes)}")
+
+        return "\n".join(lines) or "No findings yet."
