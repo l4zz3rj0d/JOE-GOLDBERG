@@ -150,9 +150,12 @@ class JoeVoice:
                 },
                 timeout=60,
             )
-            return r.json().get("response", "").strip()
+            data = r.json()
+            if "error" in data:
+                return f"[Joe is staring silently... (Ollama error: {data['error']})]"
+            return data.get("response", "").strip() or "[Joe is staring silently...]"
         except:
-            return "[Joe is offline]"
+            return "[Joe is offline... the voices are quiet today.]"
 
     def inline_quote(self, finding_type: str, value: str, platform: str = "", context: str = "") -> str:
         prompt = (

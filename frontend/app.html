@@ -521,6 +521,8 @@ function handleJoeStream(chunk) {
 }
 
 function finalizeJoeStream(fullText) {
+  removeTyping();
+  if (!fullText) fullText = "[Silence...]";
   if (activeStreamBubble) {
     activeStreamBubble.parentElement.innerHTML = `<div class="monologue">${formatMonologue(fullText)}</div>`;
     activeStreamBubble = null;
