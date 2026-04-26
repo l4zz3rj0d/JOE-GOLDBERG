@@ -129,7 +129,7 @@ Or just type anything — Joe answers questions about the current investigation 
 
 ## Desktop Icon (Linux)
 
-After installation, Joe appears in your GNOME app grid. Search **Joe Goldberg** or find it under Security. Right-click and **Add to Favorites** to pin it to your dock.
+After installation, Joe will appear in your system's application menu. Search for **Joe Goldberg** or look under the Security category. You can pin it to your dock or panel just like any other application.
 
 ---
 

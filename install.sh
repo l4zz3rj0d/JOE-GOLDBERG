@@ -74,12 +74,12 @@ EOF
 
 chmod +x ~/.local/share/applications/joe-goldberg.desktop
 
-# Refresh GNOME app grid
+# Refresh desktop application menu
 if command -v update-desktop-database &> /dev/null; then
     update-desktop-database ~/.local/share/applications/ 2>/dev/null
 fi
 
-# Try to refresh GNOME shell if running
+# Try to refresh desktop shell if running
 if command -v xdg-desktop-menu &> /dev/null; then
     xdg-desktop-menu forceupdate 2>/dev/null
 fi
@@ -111,7 +111,7 @@ systemctl --user start ollama.service 2>/dev/null
 echo ""
 echo "  ✓ joe installed"
 echo "  ✓ system command registered — run: joe"
-echo "  ✓ desktop icon created — search 'Joe Goldberg' in app grid"
+echo "  ✓ desktop icon created — search 'Joe Goldberg' in your application menu"
 echo "  ✓ ollama configured to start automatically on login"
 echo ""
 echo "  ─────────────────────────────────────────────────────────"
