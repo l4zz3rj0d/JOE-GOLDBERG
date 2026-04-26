@@ -77,7 +77,7 @@ Everything is saved as a case file. You can resume any investigation later, add 
 
 ## Installation
 ```bash
-git clone https://github.com/l4zz3rj0d/JOE-GOLDBERG.git
+git clone https://github.com/project-hellhound-org/JOE-GOLDBERG.git
 cd JOE-GOLDBERG
 
 # Linux / macOS
@@ -143,14 +143,11 @@ Do not use against individuals or systems without explicit written authorization
 
 ## Author
 
-**Sree Danush S** (L4ZZ3RJ0D)
-
-Cybersecurity student · Offensive security builder · CyArt intern
-
-[![GitHub](https://img.shields.io/badge/GitHub-l4zz3rj0d-c0392b?style=flat-square&logo=github)](https://github.com/l4zz3rj0d)
-[![TryHackMe](https://img.shields.io/badge/TryHackMe-Top%201%25-e8a020?style=flat-square)](https://tryhackme.com/p/l4zz3rj0d)
-[![Medium](https://img.shields.io/badge/Medium-@l4zz3rj0d-c8945a?style=flat-square&logo=medium)](https://medium.com/@l4zz3rj0d)
-
+<div align="center">
+  <a href="https://l4zz3rj0d.github.io">
+    <img src="https://img.shields.io/badge/Founder-L4ZZ3RJ0D-c0392b?style=for-the-badge" alt="L4ZZ3RJ0D"/>
+  </a>
+</div>
 ---
 
 
