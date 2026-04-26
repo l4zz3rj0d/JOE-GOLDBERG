@@ -24,13 +24,15 @@ class JoeAPI:
         self._memory = SessionMemory()
         self._voice = JoeVoice()
         self._orch = None
+        self._stalk_loop = None
+        self._stalk_task = None
 
     def set_window(self, window):
         self._window = window
         self._orch = Orchestrator(
             on_status=self._on_status,
             on_find=self._on_find,
-            on_done=self._on_done,
+            on_done=lambda t: self._on_done(t, aborted=False),
         )
 
     def stalk(self, target: str):
@@ -38,10 +40,19 @@ class JoeAPI:
         self._memory.add("user", f"stalk {target}")
         threading.Thread(target=self._run_stalk, args=(target,), daemon=True).start()
 
+    def smart_stalk(self, text: str):
+        print(f"\n[desktop] Analyzing intent: {text}")
+        self._memory.add("user", text)
+        threading.Thread(target=self._run_smart_stalk, args=(text,), daemon=True).start()
+
     def ask(self, question: str):
-        print(f"\n[desktop] User asked: {question}")
         self._memory.add("user", question)
         threading.Thread(target=self._run_ask, args=(question,), daemon=True).start()
+
+    def get_model_info(self):
+        model = self._voice.slm_model
+        using_gemini = self._voice.gemini_available and not self._voice.gemini_rate_limited
+        self._emit("model_info", {"model": model, "using_gemini": using_gemini})
 
     def resume(self, target: str):
         try:
@@ -82,32 +93,54 @@ class JoeAPI:
         path = generate(self._target)
         self._emit("report_ready", {"path": str(path)})
 
+    def open_url(self, url: str):
+        import webbrowser
+        webbrowser.open(url)
+
+    def _run_smart_stalk(self, text: str):
+        target_str = self._voice.extract_target(text, self._target)
+        if not target_str or target_str.lower() == "none":
+            self._emit("error", {"message": "Who do you want me to look into? I need a clear target."})
+            return
+        
+        self._emit("scan_status", {"message": f"Target locked: {target_str}"})
+        self._emit("scan_status", {"message": "Spinning up background engines..."})
+        self._run_stalk(target_str)
+
     def _run_stalk(self, target: str):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self._orch.stalk(target))
-        loop.close()
+        self._stalk_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._stalk_loop)
+        self._stalk_task = self._stalk_loop.create_task(self._orch.stalk(target))
+        try:
+            self._stalk_loop.run_until_complete(self._stalk_task)
+        except asyncio.CancelledError:
+            print("[desktop] Investigation cancelled by user.")
+            if self._target:
+                self._target.save()
+                self._stalk_loop.run_until_complete(self._on_done(self._target, aborted=True))
+            else:
+                self._emit("error", {"message": "Investigation aborted before any data was gathered."})
+        except Exception as e:
+            print(f"[desktop] Error in stalk: {e}")
+            self._emit("error", {"message": f"I hit an error: {str(e)}"})
+        finally:
+            self._stalk_loop.close()
+            self._stalk_loop = None
+            self._stalk_task = None
+
+    def stop(self):
+        if self._stalk_task and self._stalk_loop:
+            self._stalk_loop.call_soon_threadsafe(self._stalk_task.cancel)
 
     def _run_ask(self, question: str):
-        full_answer = ""
-        print("[desktop] Starting stream...")
-        
-        # Use stream_chat instead of simple chat
-        history = self._memory.last_n()
-        if self._target:
-            # Context-aware chat
-            history_text = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in history[-6:])
-            prompt = f"Investigation: {self._target.primary}\nRecent conversation:\n{history_text}\n\nUser asked: {question}"
-        else:
-            prompt = question
-
-        for chunk in self._voice.stream_chat(prompt):
-            full_answer += chunk
-            self._emit("joe_stream", {"chunk": chunk})
-        
-        print(f"[desktop] Stream complete. Total length: {len(full_answer)} chars")
-        self._memory.add("joe", full_answer)
-        self._emit("joe_answer", {"text": full_answer})
+        result = self._voice.chat(question, self._target)
+        if result.get("rate_limited"):
+            self._emit("rate_limited", {})
+        self._emit("joe_answer", {
+            "text": result["text"],
+            "rate_limited": result.get("rate_limited", False),
+            "mode": result.get("mode", "advisor")
+        })
 
     async def _on_status(self, msg: str):
         self._emit("scan_status", {"message": msg})
@@ -122,16 +155,27 @@ class JoeAPI:
             "value": entity.value,
             "platform": entity.platform or "",
             "confidence": entity.confidence,
+            "url": entity.metadata.get("url", ""),
             "quote": quote,
         })
 
-    async def _on_done(self, target):
+    async def _on_done(self, target, aborted=False):
         self._target = target
-        monologue = self._voice.closing_monologue(target)
-        self._memory.add("joe", monologue)
+        if aborted:
+            text = "Investigation aborted. You pulled me away. But I remember what we found so far."
+            used_gemini = False
+        else:
+            result = self._voice.closing_monologue(target)
+            text = result["text"]
+            used_gemini = result.get("used_gemini", False)
+            if result.get("rate_limited"):
+                self._emit("rate_limited", {})
+        
+        self._memory.add("joe", text)
         self._emit("investigation_done", {
             "target": target.to_dict(),
-            "monologue": monologue,
+            "monologue": text,
+            "used_gemini": used_gemini,
         })
 
     def _emit(self, event: str, data: dict):

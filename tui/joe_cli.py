@@ -263,18 +263,20 @@ class JoeCLI:
             console.print(f"\n  [{C_ORANGE}]  No case found for: {target}[/]\n")
 
     def _ask(self, question: str):
-        self.memory.add("user", question)
-        console.print(f"\n  [{C_DIM}]  thinking...[/]")
-
-        if not self.current_target:
-            answer = self.voice.chat(question)
+        if not self.current_target or not self.current_target.entities:
+            console.print(f"\n  [{C_DIM}]  thinking...[/]")
+            result = self.voice.chat(question, None)
         else:
-            answer = self.voice.answer(
-                question, self.current_target, self.memory.last_n()
-            )
+            console.print(f"\n  [{C_DIM}]  thinking...[/]")
+            result = self.voice.chat(question, self.current_target)
 
-        self.memory.add("joe", answer)
-        print_monologue(answer)
+        self.memory.add("user", question)
+        self.memory.add("joe", result["text"])
+
+        if result.get("rate_limited"):
+            console.print(f"\n  [{C_ORANGE}]  ⚠ Rate limited — using local SLM[/]")
+
+        print_monologue(result["text"])
 
     def _export(self):
         from exporters.html_report import generate
@@ -300,9 +302,11 @@ class JoeCLI:
     async def _on_done(self, target: Target):
         print_findings(target)
         console.print(f"  [{C_DIM}]  composing...[/]")
-        monologue = self.voice.closing_monologue(target)
-        self.memory.add("joe", monologue)
-        print_monologue(monologue)
+        result = self.voice.closing_monologue(target)
+        if result.get("rate_limited"):
+            console.print(f"  [{C_ORANGE}]  ⚠ Gemini rate limited — using local SLM for monologue[/]")
+        self.memory.add("joe", result["text"])
+        print_monologue(result["text"])
 
 
 def run(initial_target: str = None):

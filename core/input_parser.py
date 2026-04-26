@@ -12,7 +12,7 @@ class ParsedTarget:
 
 
 def parse(raw: str) -> ParsedTarget:
-    raw = raw.strip()
+    raw = raw.strip().strip("'\"")
 
     # Email
     if re.match(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$", raw):

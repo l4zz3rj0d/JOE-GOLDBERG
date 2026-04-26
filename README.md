@@ -7,7 +7,7 @@
 
   ![Python](https://img.shields.io/badge/Python-3.10%2B-c0392b?style=flat-square&logo=python&logoColor=white)
   ![LLM](https://img.shields.io/badge/LLM-Gemini%20%7C%20Ollama-e8a020?style=flat-square)
-  ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-8b2010?style=flat-square)
+  ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-8b2010?style=flat-square)
   ![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square)
   ![Status](https://img.shields.io/badge/Status-Active%20Development-2d7a3a?style=flat-square)
 
@@ -83,9 +83,6 @@ cd JOE-GOLDBERG
 
 # Linux / macOS
 bash install.sh
-
-# Windows
-install.bat
 ```
 
 The installer handles Python dependencies, Sherlock, Maigret, Ollama, and pulls the local model automatically.

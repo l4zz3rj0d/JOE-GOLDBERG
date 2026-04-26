@@ -18,8 +18,8 @@ def boot_checks():
         r = httpx.get("http://localhost:11434/api/tags", timeout=3)
         if r.status_code == 200:
             models = [m["name"] for m in r.json().get("models", [])]
-            if not any("mistral" in m for m in models):
-                issues.append("mistral:7b-instruct not pulled.\n  Run: ollama pull mistral:7b-instruct")
+            if not any("gemma2" in m for m in models):
+                issues.append("gemma2:2b not pulled.\n  Run: ollama pull gemma2:2b")
     except:
         issues.append("Ollama not running.\n  Run: ollama serve")
 

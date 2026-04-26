@@ -7,7 +7,7 @@ echo ""
 
 # ── Python deps ───────────────────────────────────────────────
 pip install -e . --quiet
-pip install sherlock-project maigret --quiet
+pip install sherlock-project maigret holehe --quiet
 
 # ── Ollama ────────────────────────────────────────────────────
 if ! command -v ollama &> /dev/null; then
@@ -23,9 +23,9 @@ if ! pgrep -x "ollama" > /dev/null; then
 fi
 
 # ── Pull model ────────────────────────────────────────────────
-if ! ollama list 2>/dev/null | grep -q "llama3.2:3b"; then
-    echo "  pulling llama3.2:3b (fast local fallback)..."
-    ollama pull llama3.2:3b
+if ! ollama list 2>/dev/null | grep -q "gemma2:2b"; then
+    echo "  pulling gemma2:2b (fast local fallback)..."
+    ollama pull gemma2:2b
 fi
 
 # ── System command ────────────────────────────────────────────

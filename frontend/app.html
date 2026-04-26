@@ -3,151 +3,130 @@
 <head>
 <meta charset="UTF-8">
 <title>Joe Goldberg</title>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:#140404;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  color:#ffddcc;
-  font-size:15px;
+  background:#140404;height:100vh;
+  display:flex;flex-direction:column;
+  color:#ffddcc;font-size:15px;
 }
 
+/* ── Toast notification ─────────────────────────────── */
+.toast{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%);
+  z-index:999;display:flex;align-items:center;gap:10px;
+  padding:10px 20px;border-radius:8px;
+  font-size:12px;font-weight:600;letter-spacing:0.5px;
+  opacity:0;transition:opacity .3s;pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;pointer-events:auto}
+.toast.rate-limit{background:#3d0808;border:1px solid #aa2a10;color:#ff8866}
+.toast.api-active{background:#0d2018;border:1px solid #1a5030;color:#4aad70}
+.toast.slm-active{background:#1a1a08;border:1px solid #5a5010;color:#ccaa40}
+.toast-dot{width:7px;height:7px;border-radius:50%}
+.toast.rate-limit .toast-dot{background:#ff4422;animation:pulse 1s ease-in-out infinite}
+.toast.api-active .toast-dot{background:#3aad50}
+.toast.slm-active .toast-dot{background:#ccaa40}
+
+/* ── Mode badge ─────────────────────────────────────── */
+.mode-badge{
+  font-size:9px;font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;padding:3px 9px;border-radius:10px;
+  margin-left:10px;
+}
+.mode-badge.advisor{background:#1a1a08;color:#ccaa40;border:1px solid #5a5010}
+.mode-badge.investigation{background:#0d2018;color:#3aad50;border:1px solid #1a5030}
+.mode-badge.scanning{background:#2d0808;color:#ff6644;border:1px solid #6a2020;animation:pulse 1s ease-in-out infinite}
+
+/* ── Titlebar ───────────────────────────────────────── */
 .titlebar{
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 22px;background:#1e0606;
   border-bottom:1px solid #3d1010;
-  flex-shrink:0;
-  -webkit-app-region:drag;
+  flex-shrink:0;-webkit-app-region:drag;
 }
 .dots{display:flex;gap:6px;-webkit-app-region:no-drag}
 .dot{width:13px;height:13px;border-radius:50%;cursor:pointer}
 .dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
-.brand{display:flex;flex-direction:column;margin-left:14px}
+.brand{display:flex;align-items:center;margin-left:14px}
 .brand-name{font-size:17px;font-weight:800;color:#ff6644;letter-spacing:1px}
-.brand-sub{font-size:10px;color:#7a3030;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.brand-sub{font-size:10px;color:#7a3030;letter-spacing:2px;text-transform:uppercase;margin-left:10px}
+.right-controls{display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag}
 .active-pill{
-  font-size:12px;font-weight:700;color:#ff6644;
+  font-size:11px;font-weight:700;color:#ff6644;
   background:#2d0808;border:1px solid #6a2020;
-  padding:5px 16px;border-radius:20px;
+  padding:5px 14px;border-radius:20px;
   display:flex;align-items:center;gap:6px;
-  -webkit-app-region:no-drag;
 }
 .a-dot{width:7px;height:7px;border-radius:50%;background:#ff4422}
 .a-dot.pulse{animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 
+/* ── Body ───────────────────────────────────────────── */
 .body{display:flex;flex:1;overflow:hidden;min-height:0}
 
+/* ── Sidebar ────────────────────────────────────────── */
 .sidebar{
   width:235px;background:#180606;
   border-right:1px solid #2d0e0e;
   display:flex;flex-direction:column;
-  padding:16px 0;flex-shrink:0;
-  overflow-y:auto;
+  padding:16px 0;flex-shrink:0;overflow-y:auto;
 }
-.sl{
-  font-size:9px;font-weight:800;letter-spacing:2.5px;
-  color:#6a2020;text-transform:uppercase;padding:0 16px 8px;
-}
-.case-item{
-  padding:10px 16px;cursor:pointer;
-  border-left:3px solid transparent;transition:all .15s;
-}
+.sl{font-size:9px;font-weight:800;letter-spacing:2.5px;color:#6a2020;text-transform:uppercase;padding:0 16px 8px}
+.case-item{padding:10px 16px;cursor:pointer;border-left:3px solid transparent;transition:all .15s}
 .case-item:hover{background:rgba(200,50,20,.07)}
 .case-item.active{border-left-color:#cc3311;background:rgba(200,50,20,.12)}
 .cn{font-size:13px;font-weight:600;color:#ff9977}
 .case-item.active .cn{color:#ff7755}
 .cm{font-size:11px;color:#8a4030;margin-top:3px}
-.case-item.active .cm{color:#cc6644}
 .sdiv{height:1px;background:#250808;margin:12px 0}
 .srow{display:flex;justify-content:space-between;padding:5px 16px;font-size:13px;color:#cc7755}
 .srow span:last-child{font-weight:700;color:#ff8866}
 .mrow{display:flex;align-items:center;gap:8px;padding:7px 16px}
 .mdot{width:8px;height:8px;border-radius:50%;background:#cc3311}
-.mname{font-size:13px;font-weight:600;color:#ff7755}
+.mname{font-size:12px;font-weight:600;color:#ff7755}
 .tw{padding:12px 16px 0;margin-top:auto;border-top:1px solid #250808}
 .tl{font-size:9px;font-weight:800;letter-spacing:2px;color:#6a2020;text-transform:uppercase;margin-bottom:8px}
 .pill{display:inline-block;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;margin:2px 2px 2px 0}
 .pill.on{background:#2d0808;color:#ff9977;border:1px solid #6a2020}
 .pill.off{background:#180606;color:#4a2020;border:1px solid #250808}
 
-.chat{
-  flex:1;display:flex;flex-direction:column;
-  background:#140404;position:relative;
-  overflow:hidden;min-height:0;
-}
-.joe-bg{
-  position:absolute;right:0;top:0;bottom:0;width:65%;
-  pointer-events:none;z-index:0;
-}
-.joe-bg img{
-  width:100%;height:100%;
-  object-fit:contain;object-position:right center;
-  opacity:0.25;
-  filter:sepia(1) saturate(1.5) hue-rotate(330deg) contrast(1.2) brightness(0.8);
-}
-.joe-fade{
-  position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:linear-gradient(
-    to right,
-    #140404 20%,
-    rgba(20,4,4,0.6) 45%,
-    rgba(20,4,4,0.15) 65%,
-    #140404 100%
-  );
-}
+/* ── Chat ───────────────────────────────────────────── */
+.chat{flex:1;display:flex;flex-direction:column;background:#140404;position:relative;overflow:hidden;min-height:0}
+.joe-bg{position:absolute;right:0;top:0;bottom:0;width:65%;pointer-events:none;z-index:0}
+.joe-bg img{width:100%;height:100%;object-fit:contain;object-position:right center;opacity:0.25;filter:sepia(1) saturate(1.5) hue-rotate(330deg) contrast(1.2) brightness(0.8)}
+.joe-fade{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(to right,#140404 20%,rgba(20,4,4,0.6) 45%,rgba(20,4,4,0.15) 65%,#140404 100%)}
 
-.msgs{
-  flex:1;padding:22px 24px;
-  display:flex;flex-direction:column;
-  gap:18px;overflow-y:auto;
-  position:relative;z-index:1;
-  min-height:0;
-}
+/* ── Messages ───────────────────────────────────────── */
+.msgs{flex:1;padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;position:relative;z-index:1;min-height:0}
 .msgs::-webkit-scrollbar{width:3px}
-.msgs::-webkit-scrollbar-track{background:transparent}
 .msgs::-webkit-scrollbar-thumb{background:#3d1010;border-radius:2px}
 
 .msg{display:flex;flex-direction:column;gap:5px}
-.mmeta{font-size:11px;font-weight:600;padding:0 4px;color:#8a4030}
+.mmeta{font-size:11px;font-weight:600;padding:0 4px;color:#8a4030;display:flex;align-items:center;gap:6px}
 .msg-u{align-items:flex-end}
 .msg-u .mmeta{color:#cc5533}
 .msg-j{align-items:flex-start}
-.msg-j .mmeta{color:#8a4030}
 
 .bubble{padding:14px 18px;border-radius:14px;font-size:14.5px;line-height:1.85}
-.msg-u .bubble{
-  background:#8b1a08;color:#ffe8e0;
-  border-bottom-right-radius:3px;max-width:65%;
-  border:1px solid #aa2a10;
-}
-.msg-j .bubble{
-  background:#1e0606;color:#ffddcc;
-  border:1px solid #4d1515;
-  border-bottom-left-radius:3px;max-width:90%;
-}
+.msg-u .bubble{background:#8b1a08;color:#ffe8e0;border-bottom-right-radius:3px;max-width:65%;border:1px solid #aa2a10}
+.msg-j .bubble{background:#1e0606;color:#ffddcc;border:1px solid #4d1515;border-bottom-left-radius:3px;max-width:90%}
 
 .scan{font-family:'SF Mono',Monaco,monospace;font-size:13px;color:#aa6050;line-height:2.1}
 .hit-row{display:flex;align-items:center;gap:10px;line-height:2.4;padding-left:12px}
 .hit-check{color:#3aad50;font-weight:700;font-size:15px}
 .hit-warn{color:#ff5533;font-weight:700;font-size:15px}
 .hit-name{font-size:14px;font-weight:700;color:#ffddcc}
-.hit-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.hit-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;transition:opacity .15s}
+a.hit-tag{cursor:pointer;text-decoration:none}
+a.hit-tag:hover{opacity:0.8}
 .hit-tag.found{background:#0d2018;color:#3aad50;border:1px solid #1a4030}
 .hit-tag.breach{background:#2d0808;color:#ff5533;border:1px solid #5a1818}
 
-.joe-quote{
-  font-size:14px;color:#ffaa80;font-style:italic;
-  padding:10px 14px 10px 16px;
-  border-left:3px solid #aa4422;
-  background:rgba(200,80,20,.1);
-  border-radius:0 8px 8px 0;margin:6px 0;line-height:1.9;
-}
+.joe-quote{font-size:14px;color:#ffaa80;font-style:italic;padding:10px 14px 10px 16px;border-left:3px solid #aa4422;background:rgba(200,80,20,.1);border-radius:0 8px 8px 0;margin:6px 0;line-height:1.9}
 
 .findings-head{font-size:10px;font-weight:800;letter-spacing:3px;color:#aa5040;text-transform:uppercase;margin:12px 0 8px}
 .f-row{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:2.2}
@@ -162,85 +141,52 @@ body{
 .rfill{height:100%;background:linear-gradient(90deg,#aa2a10,#ff4422);border-radius:2px}
 .rnum{font-size:13px;font-weight:800;color:#ff5533}
 
-.monologue{
-  font-size:14.5px;color:#ffcca8;font-style:italic;
-  line-height:2;padding:16px 18px;
-  background:rgba(140,20,10,.12);
-  border:1px solid #5d1a10;
-  border-left:3px solid #ff4422;
-  border-radius:0 10px 10px 0;margin-top:10px;
-  font-weight:400;
-}
+.monologue{font-size:14px;color:#ffcca8;font-style:italic;line-height:2;padding:16px 18px;background:rgba(140,20,10,.12);border:1px solid #5d1a10;border-left:3px solid #ff4422;border-radius:0 10px 10px 0;margin-top:10px;font-weight:400}
 .monologue strong{color:#ff9977;font-style:normal;font-weight:700}
-.monologue em{color:#ffb38a;font-style:italic;}
-.monologue h1, .monologue h2, .monologue h3 { color:#ff8866; margin-bottom:8px; margin-top:12px; font-style:normal; font-weight:800; }
-.monologue h1 { font-size:18px; }
-.monologue h2 { font-size:16px; }
-.monologue h3 { font-size:15px; }
-.monologue p { margin-bottom:10px; }
-.monologue p:last-child { margin-bottom:0; }
-.monologue ul, .monologue ol { margin-left:22px; margin-bottom:10px; }
-.monologue li { margin-bottom:4px; }
-.monologue code { background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:4px; font-family:monospace; font-size:13px; }
-.monologue pre { background:#0a0202; padding:12px; border-radius:6px; overflow-x:auto; border:1px solid #3d1010; margin-bottom:10px; }
-.monologue pre code { background:transparent; padding:0; border-radius:0; }
+
+/* Rate limit message styling */
+.rate-limit-msg{
+  font-size:14px;color:#ff9966;font-style:italic;
+  line-height:2;padding:14px 16px;
+  background:rgba(140,40,10,.15);
+  border:1px solid #6a2a10;
+  border-left:3px solid #ff6622;
+  border-radius:0 10px 10px 0;
+  margin-top:8px;
+}
 
 .typing{display:flex;gap:5px;padding:8px 4px;align-items:center}
-.typing span{
-  width:7px;height:7px;border-radius:50%;
-  background:#cc5533;animation:bounce .8s ease-in-out infinite;
-}
+.typing span{width:7px;height:7px;border-radius:50%;background:#cc5533;animation:bounce .8s ease-in-out infinite}
 .typing span:nth-child(2){animation-delay:.15s}
 .typing span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
 
-.input-wrap{
-  padding:15px 22px;background:#1e0606;
-  border-top:1px solid #3d1010;
-  display:flex;align-items:center;gap:12px;
-  z-index:2;flex-shrink:0;
-}
-.pbadge{
-  font-size:14px;font-weight:800;color:#ffe8e0;
-  background:#8b1a08;padding:8px 16px;border-radius:8px;
-  white-space:nowrap;border:1px solid #aa2a10;
-}
-#msg-input{
-  flex:1;font-size:14px;color:#ffddcc;
-  background:#0d0202;border:1px solid #4d1515;
-  border-radius:8px;padding:11px 16px;
-  outline:none;font-family:inherit;
-  transition:border-color .15s;
-}
+/* ── Input ───────────────────────────────────────────── */
+.input-wrap{padding:15px 22px;background:#1e0606;border-top:1px solid #3d1010;display:flex;align-items:center;gap:12px;z-index:2;flex-shrink:0}
+.pbadge{font-size:14px;font-weight:800;color:#ffe8e0;background:#8b1a08;padding:8px 16px;border-radius:8px;white-space:nowrap;border:1px solid #aa2a10}
+#msg-input{flex:1;font-size:14px;color:#ffddcc;background:#0d0202;border:1px solid #4d1515;border-radius:8px;padding:11px 16px;outline:none;font-family:inherit;transition:border-color .15s}
 #msg-input:focus{border-color:#cc3311}
 #msg-input::placeholder{color:#6a3030;font-size:13px}
-.sbtn{
-  width:40px;height:40px;background:#8b1a08;
-  border-radius:8px;display:flex;
-  align-items:center;justify-content:center;
-  cursor:pointer;border:none;flex-shrink:0;
-  transition:background .15s;
-}
+.sbtn{width:40px;height:40px;background:#8b1a08;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0;transition:background .15s}
 .sbtn:hover{background:#aa2a10}
+.sbtn:disabled{opacity:0.4;cursor:not-allowed;background:#4a0808}
 .sbtn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
-.sbar{
-  display:flex;align-items:center;
-  background:#180606;border-top:1px solid #250808;
-  flex-shrink:0;flex-wrap:nowrap;overflow:hidden;
-}
-.sb{
-  font-size:11px;font-weight:600;color:#8a4030;
-  padding:8px 16px;border-right:1px solid #250808;
-  display:flex;align-items:center;gap:6px;white-space:nowrap;
-}
+/* ── Status bar ─────────────────────────────────────── */
+.sbar{display:flex;align-items:center;background:#180606;border-top:1px solid #250808;flex-shrink:0;flex-wrap:nowrap;overflow:hidden}
+.sb{font-size:11px;font-weight:600;color:#8a4030;padding:8px 16px;border-right:1px solid #250808;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .sb .v{color:#ff7755;font-weight:700}
 .sb:last-child{margin-left:auto;border-right:none}
 .live-dot{width:6px;height:6px;border-radius:50%;background:#cc3311;animation:pulse 1.5s ease-in-out infinite}
-.stream-text { white-space: pre-wrap; font-style: italic; color: #ffcca8; }
 </style>
 </head>
 <body>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toast-msg"></span>
+</div>
 
 <div class="titlebar">
   <div style="display:flex;align-items:center">
@@ -253,10 +199,13 @@ body{
       <div class="brand-name">JOE GOLDBERG</div>
       <div class="brand-sub">OSINT Investigator</div>
     </div>
+    <span class="mode-badge advisor" id="mode-badge">Advisor</span>
   </div>
-  <div class="active-pill">
-    <div class="a-dot" id="status-dot"></div>
-    <span id="status-text">API Active</span>
+  <div class="right-controls">
+    <div class="active-pill">
+      <div class="a-dot" id="status-dot"></div>
+      <span id="status-text">Ready</span>
+    </div>
   </div>
 </div>
 
@@ -271,24 +220,18 @@ body{
     <div class="srow"><span>Pivots</span><span id="s-pivots">0</span></div>
     <div class="srow"><span>Risk</span><span id="s-risk">—</span></div>
     <div class="sdiv"></div>
-    <div class="sl">Model</div>
-    <div class="mrow">
-      <div class="mdot"></div>
-      <span class="mname">gemini-2.5-flash</span>
-    </div>
+    <div class="sl">Engine</div>
+    <div class="mrow"><div class="mdot"></div><span class="mname" id="model-display">gemma2:2b</span></div>
+    <div class="sdiv"></div>
     <div class="tw">
       <div class="tl">Tools</div>
       <span class="pill on">sherlock</span>
       <span class="pill on">maigret</span>
-      <span class="pill on">whois</span>
-      <span class="pill on">nmap</span>
-      <span class="pill on">crt.sh</span>
       <span class="pill on">holehe</span>
-      <span class="pill on">breachdirectory</span>
-      <span class="pill on">psbdmp</span>
-      <span class="pill on">github</span>
+      <span class="pill on">whois</span>
+      <span class="pill on">crt.sh</span>
       <span class="pill on">wayback</span>
-      <span class="pill on">ip-api</span>
+      <span class="pill on">github</span>
     </div>
   </div>
 
@@ -297,13 +240,25 @@ body{
       <img src="joe.jpeg" alt="" onerror="this.style.display='none'">
     </div>
     <div class="joe-fade"></div>
-    <div class="msgs" id="msgs"></div>
+    <div class="msgs" id="msgs">
+      <!-- Welcome message -->
+      <div class="msg msg-j" id="welcome-msg">
+        <div class="mmeta">Joe &bull; now</div>
+        <div class="bubble">
+          <div class="monologue">
+            "I'm here. Ask me anything — about your target, your approach, where to start.
+            Or just give me a name and I'll do what I do best.<br><br>
+            When you're ready, type <strong>stalk &lt;target&gt;</strong>."
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="input-wrap">
       <div class="pbadge">joe &rsaquo;</div>
       <input id="msg-input"
-             placeholder="stalk target@email.com — or ask Joe anything..."
+             placeholder="Ask Joe anything, or: stalk target@email.com"
              autocomplete="off" spellcheck="false">
-      <button class="sbtn" onclick="sendMessage()">
+      <button class="sbtn" onclick="sendMessage()" id="send-btn">
         <svg viewBox="0 0 24 24">
           <line x1="22" y1="2" x2="11" y2="13"/>
           <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/>
@@ -314,8 +269,8 @@ body{
 </div>
 
 <div class="sbar">
-  <div class="sb"><div class="live-dot"></div><span class="v">API Active</span></div>
-  <div class="sb">Model <span class="v">gemini-2.5-flash</span></div>
+  <div class="sb"><div class="live-dot" id="engine-dot"></div><span class="v" id="engine-status">SLM Active</span></div>
+  <div class="sb">Model <span class="v" id="sb-model">gemma2:2b</span></div>
   <div class="sb">Case <span class="v" id="sb-case">none</span></div>
   <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
   <div class="sb">Entities <span class="v" id="sb-entities">0</span></div>
@@ -325,51 +280,40 @@ body{
 const state = {
   entities: 0, breaches: 0, pivots: 0,
   startTime: Date.now(),
+  scanning: false,
+  hasCase: false,
+  rateLimited: false,
+  isUserScrolledUp: false,
 };
-let isWorking = false;
-let rateLimitTimer = null;
 
-function setWorkingState(working) {
-  isWorking = working;
+function setScanningState(isScanning) {
+  state.scanning = isScanning;
+  const btn = document.getElementById('send-btn');
   const input = document.getElementById('msg-input');
-  const btn = document.querySelector('.sbtn');
-  input.disabled = working;
-  if (working) {
-    btn.innerHTML = `<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" fill="#fff" stroke="none"/></svg>`;
-    btn.style.cursor = 'not-allowed';
-    btn.style.background = '#4d1515';
+  
+  if (isScanning) {
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="#fff" stroke="none"/></svg>`;
+    btn.style.background = '#aa2a10';
+    btn.onclick = () => stopInvestigation();
+    input.placeholder = "Investigation in progress... Click Stop to halt.";
+    input.disabled = true;
   } else {
     btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/></svg>`;
-    btn.style.cursor = 'pointer';
     btn.style.background = '';
-    setTimeout(() => input.focus(), 100);
+    btn.onclick = () => sendMessage();
+    input.placeholder = "Ask Joe anything, or: stalk target@email.com";
+    input.disabled = false;
+    input.focus();
   }
 }
 
-function blockForRateLimit(delaySeconds) {
-  setWorkingState(true);
-  const input = document.getElementById('msg-input');
-  let remaining = delaySeconds;
-  
-  if (rateLimitTimer) clearInterval(rateLimitTimer);
-  
-  rateLimitTimer = setInterval(() => {
-    if (remaining <= 0) {
-      clearInterval(rateLimitTimer);
-      rateLimitTimer = null;
-      setWorkingState(false);
-      setStatus('Ready', false);
-      document.getElementById('status-dot').style.background = '';
-      input.placeholder = "stalk target@email.com — or ask Joe anything...";
-    } else {
-      input.placeholder = `API Rate Limited. Retrying in ${remaining}s...`;
-      setStatus(`Rate Limited (${remaining}s)`, true);
-      document.getElementById('status-dot').style.background = '#ffbc2e';
-      remaining--;
-    }
-  }, 1000);
+function stopInvestigation() {
+  if (!state.scanning) return;
+  appendScanLine("Aborting investigation...");
+  window.pywebview.api.stop();
 }
 
+// ── Uptime ────────────────────────────────────────────────────
 setInterval(() => {
   const s = Math.floor((Date.now() - state.startTime) / 1000);
   const m = Math.floor(s / 60).toString().padStart(2,'0');
@@ -377,34 +321,66 @@ setInterval(() => {
   document.getElementById('sb-uptime').textContent = `${m}:${sec}`;
 }, 1000);
 
+// ── Toast system ──────────────────────────────────────────────
+let toastTimer = null;
+function showToast(message, type, duration = 4000) {
+  const toast = document.getElementById('toast');
+  const msg = document.getElementById('toast-msg');
+  toast.className = `toast ${type} show`;
+  msg.textContent = message;
+  if (toastTimer) clearTimeout(toastTimer);
+  if (duration > 0) {
+    toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+  }
+}
+
+function hideToast() {
+  document.getElementById('toast').classList.remove('show');
+}
+
+// ── Mode badge ────────────────────────────────────────────────
+function setMode(mode) {
+  const badge = document.getElementById('mode-badge');
+  badge.className = `mode-badge ${mode}`;
+  const labels = {
+    advisor: 'Advisor',
+    investigation: 'Investigation',
+    scanning: 'Scanning...'
+  };
+  badge.textContent = labels[mode] || mode;
+}
+
+// ── Send message ──────────────────────────────────────────────
 function sendMessage() {
-  if (isWorking || rateLimitTimer) return;
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || state.scanning) return;
   input.value = '';
-  addUserBubble(text);
-  
-  setWorkingState(true);
 
+  // Remove welcome message on first interaction
+  const welcome = document.getElementById('welcome-msg');
+  if (welcome) welcome.remove();
+
+  addUserBubble(text);
   const parts = text.split(' ');
   const cmd = parts[0].toLowerCase();
+
   if (cmd === 'stalk' || cmd === 'pivot') {
     if (cmd === 'pivot') state.pivots++;
-    window.pywebview.api.stalk(parts.slice(1).join(' '));
-    setStatus('Investigating', true);
+    setScanningState(true);
+    setMode('scanning');
+    setStatus('Scanning', true);
+    showToast('Investigation started — Joe is watching', 'api-active', 3000);
+    appendScanLine(`Analyzing target context...`);
+    window.pywebview.api.smart_stalk(text);
   } else if (cmd === 'resume') {
     window.pywebview.api.resume(parts.slice(1).join(' '));
-    setWorkingState(false);
   } else if (cmd === 'cases') {
     window.pywebview.api.list_cases();
-    setWorkingState(false);
   } else if (cmd === 'export') {
     window.pywebview.api.export_report();
-    setWorkingState(false);
   } else if (cmd === 'notes') {
     window.pywebview.api.add_note(parts.slice(1).join(' '));
-    setWorkingState(false);
   } else {
     showTyping();
     window.pywebview.api.ask(text);
@@ -415,75 +391,85 @@ document.getElementById('msg-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendMessage();
 });
 
+// ── Python → JS events ────────────────────────────────────────
 window.joe = {
   receive(event, data) {
     switch (event) {
-      case 'scan_status': appendScanLine(data.message); break;
+      case 'scan_status':
+        appendScanLine(data.message);
+        break;
+
       case 'entity_found':
         appendHitRow(data);
         state.entities++;
         if (data.type === 'breach') state.breaches++;
         updateStats();
         break;
+
       case 'investigation_done':
-        if (data.monologue) {
-          let daily = data.monologue.match(/\[Daily Quota\]/);
-          let m = data.monologue.match(/\[Retry in (\d+(?:\.\d+)?)s\]/);
-          if (daily) {
-            data.monologue = data.monologue.replace(daily[0], '').trim();
-            setStatus('Daily Limit', true);
-            document.getElementById('status-dot').style.background = '#ff4422';
-            setWorkingState(true);
-            document.getElementById('msg-input').placeholder = "Daily quota reached. See you tomorrow.";
-          } else if (m) {
-            blockForRateLimit(Math.ceil(parseFloat(m[1])));
-            data.monologue = data.monologue.replace(m[0], '').trim();
-          } else if (data.monologue.includes('- API ratelimiting me')) {
-            setStatus('Rate Limited', true);
-            document.getElementById('status-dot').style.background = '#ffbc2e';
-            setWorkingState(false);
-          } else {
-            setStatus('Ready', false);
-            document.getElementById('status-dot').style.background = '';
-            setWorkingState(false);
-          }
-        }
+        setScanningState(false);
+        state.hasCase = true;
+        setMode('investigation');
         finishInvestigation(data);
+        setStatus('Ready', false);
+        showToast('Investigation complete — ask Joe anything about the case', 'api-active', 5000);
         break;
-      case 'joe_stream': handleJoeStream(data.chunk); break;
-      case 'joe_answer': 
-        if (data.text) {
-          let daily = data.text.match(/\[Daily Quota\]/);
-          let m = data.text.match(/\[Retry in (\d+(?:\.\d+)?)s\]/);
-          if (daily) {
-            data.text = data.text.replace(daily[0], '').trim();
-            setStatus('Daily Limit', true);
-            document.getElementById('status-dot').style.background = '#ff4422';
-            setWorkingState(true);
-            document.getElementById('msg-input').placeholder = "Daily quota reached. See you tomorrow.";
-          } else if (m) {
-            blockForRateLimit(Math.ceil(parseFloat(m[1])));
-            data.text = data.text.replace(m[0], '').trim();
-          } else if (data.text.includes('- API ratelimiting me')) {
-            setStatus('Rate Limited', true);
-            document.getElementById('status-dot').style.background = '#ffbc2e';
-            setWorkingState(false);
-          } else {
-            setStatus('Ready', false);
-            document.getElementById('status-dot').style.background = '';
-            setWorkingState(false);
-          }
+
+      case 'joe_answer':
+        removeTyping();
+        if (data.rate_limited) {
+          showToast('Rate limited — Joe is using local model', 'rate-limit', 6000);
+          addJoeMessage(data.text, 'rate-limit-msg');
+        } else {
+          addJoeMessage(data.text, 'monologue');
         }
-        finalizeJoeStream(data.text); 
+        // Update mode badge based on context
+        if (data.mode === 'investigation') setMode('investigation');
+        else if (data.mode === 'advisor') setMode('advisor');
         break;
-      case 'cases_loaded': renderCaseList(data.cases); break;
-      case 'resumed': resumeCase(data); break;
-      case 'report_ready': addJoeMonologue(`Report saved to: ${data.path}`); break;
-      case 'error': addJoeMonologue(data.message); setWorkingState(false); break;
+
+      case 'rate_limited':
+        showToast('Daily API limit reached — switching to local SLM', 'rate-limit', 0);
+        document.getElementById('engine-status').textContent = 'SLM Active';
+        document.getElementById('engine-dot').style.background = '#ccaa40';
+        document.getElementById('sb-model').textContent = 'gemma2:2b (local)';
+        document.getElementById('model-display').textContent = 'gemma2:2b (local)';
+        break;
+
+      case 'cases_loaded':
+        renderCaseList(data.cases);
+        break;
+
+      case 'resumed':
+        resumeCase(data);
+        break;
+
+      case 'report_ready':
+        addJoeMessage(`Report saved to: ${data.path}`, 'monologue');
+        showToast(`Report exported`, 'api-active', 3000);
+        break;
+
+      case 'error':
+        addJoeMessage(data.message, 'monologue');
+        setScanningState(false);
+        setMode(state.hasCase ? 'investigation' : 'advisor');
+        setStatus('Ready', false);
+        break;
+
+      case 'model_info':
+        document.getElementById('model-display').textContent = data.model;
+        document.getElementById('sb-model').textContent = data.model;
+        if (data.using_gemini) {
+          document.getElementById('engine-status').textContent = 'Gemini Active';
+          document.getElementById('engine-dot').style.background = '#3aad50';
+          showToast('Gemini active for monologue', 'api-active', 3000);
+        }
+        break;
     }
   }
 };
 
+// ── DOM helpers ───────────────────────────────────────────────
 let currentJoeBubble = null;
 
 function addUserBubble(text) {
@@ -524,10 +510,20 @@ function appendHitRow(data) {
   const isBreach = data.type === 'breach';
   const row = document.createElement('div');
   row.className = 'hit-row';
+  
+  let platformHtml = '';
+  if (data.platform) {
+    if (data.url) {
+      platformHtml = `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${data.url}')" class="hit-tag ${isBreach ? 'breach' : 'found'}" title="Open Link">${esc(data.platform)}</a>`;
+    } else {
+      platformHtml = `<span class="hit-tag ${isBreach ? 'breach' : 'found'}">${esc(data.platform)}</span>`;
+    }
+  }
+
   row.innerHTML = `
     <span class="${isBreach ? 'hit-warn' : 'hit-check'}">${isBreach ? '⚠' : '✓'}</span>
     <span class="hit-name">${esc(data.value)}</span>
-    ${data.platform ? `<span class="hit-tag ${isBreach ? 'breach' : 'found'}">${esc(data.platform)}</span>` : ''}
+    ${platformHtml}
   `;
   b.appendChild(row);
   if (data.quote) {
@@ -544,72 +540,79 @@ function finishInvestigation(data) {
   const t = data.target;
   state.entities = t.entities.length;
   state.breaches = t.breaches.length;
+
   let html = `<div class="fdiv"></div><div class="findings-head">Findings</div>`;
-  t.entities.slice(0,8).forEach(e => {
-    html += `<div class="f-row">
-      <span class="f-key">${esc(e.entity_type)}</span>
-      <span class="f-val">${esc(e.value)}
-        ${e.platform ? `<span class="ftag ftag-g">${esc(e.platform)}</span>` : ''}
+
+  // Group usernames
+  const usernames = t.entities.filter(e => e.entity_type === 'username');
+  const emails = t.entities.filter(e => e.entity_type === 'email');
+  const others = t.entities.filter(e => !['username','email'].includes(e.entity_type));
+
+  emails.forEach(e => {
+    let tagHtml = '';
+    if (e.platform) {
+      if (e.metadata && e.metadata.url) {
+        tagHtml = `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${e.metadata.url}')" class="ftag ftag-g" style="text-decoration:none;cursor:pointer" title="Open Link">${esc(e.platform)}</a>`;
+      } else {
+        tagHtml = `<span class="ftag ftag-g">${esc(e.platform)}</span>`;
+      }
+    }
+    html += `<div class="f-row"><span class="f-key">email</span>
+      <span class="f-val">${esc(e.value)} ${tagHtml}
       </span></div>`;
   });
+
+  if (usernames.length > 0) {
+    const platforms = usernames.map(e => e.platform).filter(Boolean);
+    html += `<div class="f-row"><span class="f-key">username</span>
+      <span class="f-val">${esc(usernames[0].value)}
+        <span class="ftag ftag-g">${usernames.length} platforms</span>
+      </span></div>`;
+    if (platforms.length > 0) {
+      html += `<div class="f-row"><span class="f-key"></span>
+        <span class="f-val" style="font-size:11px;color:#aa7060">${esc(platforms.slice(0,8).join(', '))}${platforms.length > 8 ? ` +${platforms.length-8} more` : ''}</span></div>`;
+    }
+  }
+
+  others.slice(0,4).forEach(e => {
+    html += `<div class="f-row"><span class="f-key">${esc(e.entity_type)}</span>
+      <span class="f-val">${esc(e.value)}</span></div>`;
+  });
+
   t.breaches.forEach(b2 => {
-    html += `<div class="f-row">
-      <span class="f-key">breach</span>
-      <span class="f-val">${esc(b2.name)}
-        <span class="ftag ftag-r">${esc(b2.date)}</span>
-      </span></div>`;
+    html += `<div class="f-row"><span class="f-key">breach</span>
+      <span class="f-val">${esc(b2.name)} <span class="ftag ftag-r">${esc(b2.date)}</span></span></div>`;
   });
+
   const fillW = Math.round(t.risk_score * 100);
-  html += `<div class="f-row">
-    <span class="f-key">risk</span>
+  html += `<div class="f-row"><span class="f-key">risk</span>
     <div class="risk-wrap">
       <div class="rbar"><div class="rfill" style="width:${fillW}%"></div></div>
       <span class="rnum">${t.risk_score.toFixed(2)}</span>
     </div></div>
   <div class="fdiv"></div>
   <div class="monologue">${formatMonologue(data.monologue)}</div>`;
+
   b.insertAdjacentHTML('beforeend', html);
   updateStats();
   document.getElementById('sb-case').textContent = t.primary;
   scrollBottom();
+
+  // Show model used for monologue
+  if (data.used_gemini) {
+    document.getElementById('engine-status').textContent = 'Gemini Used';
+    document.getElementById('engine-dot').style.background = '#3aad50';
+  }
 }
 
-function addJoeMonologue(text) {
+function addJoeMessage(text, cssClass = 'monologue') {
   currentJoeBubble = null;
   const msgs = document.getElementById('msgs');
   const div = document.createElement('div');
   div.className = 'msg msg-j';
   div.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
-    <div class="bubble"><div class="monologue">${formatMonologue(text)}</div></div>`;
+    <div class="bubble"><div class="${cssClass}">${formatMonologue(text)}</div></div>`;
   msgs.appendChild(div);
-  scrollBottom();
-}
-
-let activeStreamBubble = null;
-function handleJoeStream(chunk) {
-  removeTyping();
-  if (!activeStreamBubble) {
-    const msgs = document.getElementById('msgs');
-    const wrap = document.createElement('div');
-    wrap.className = 'msg msg-j';
-    wrap.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
-                      <div class="bubble"><div class="stream-text"></div></div>`;
-    msgs.appendChild(wrap);
-    activeStreamBubble = wrap.querySelector('.stream-text');
-  }
-  activeStreamBubble.textContent += chunk;
-  scrollBottom();
-}
-
-function finalizeJoeStream(fullText) {
-  removeTyping();
-  if (!fullText) fullText = "[Silence...]";
-  if (activeStreamBubble) {
-    activeStreamBubble.parentElement.innerHTML = `<div class="monologue">${formatMonologue(fullText)}</div>`;
-    activeStreamBubble = null;
-  } else {
-    addJoeMonologue(fullText);
-  }
   scrollBottom();
 }
 
@@ -620,9 +623,7 @@ function showTyping() {
   div.className = 'msg msg-j';
   div.id = 'typing-indicator';
   div.innerHTML = `<div class="mmeta">Joe</div>
-    <div class="bubble">
-      <div class="typing"><span></span><span></span><span></span></div>
-    </div>`;
+    <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
   msgs.appendChild(div);
   scrollBottom();
 }
@@ -641,23 +642,24 @@ function renderCaseList(cases) {
   list.innerHTML = cases.map(c => `
     <div class="case-item" onclick="loadCase('${esc(c.primary)}')">
       <div class="cn">${esc(c.primary)}</div>
-      <div class="cm">${c.target_type} &middot; ${c.breaches} breaches</div>
+      <div class="cm">${c.target_type} &middot; ${c.entities} entities</div>
     </div>`).join('');
 }
 
 function resumeCase(data) {
   state.entities = data.entities ? data.entities.length : 0;
   state.breaches = data.breaches ? data.breaches.length : 0;
+  state.hasCase = true;
+  setMode('investigation');
   updateStats();
   document.getElementById('sb-case').textContent = data.primary;
-  addJoeMonologue(`Resumed: ${data.primary}. I remember everything.`);
+  addJoeMessage(`Resumed: ${data.primary}. I remember everything.`, 'monologue');
 }
 
 function loadCase(target) {
   window.pywebview.api.resume(target);
   document.querySelectorAll('.case-item').forEach(el => {
-    el.classList.toggle('active',
-      el.querySelector('.cn')?.textContent === target);
+    el.classList.toggle('active', el.querySelector('.cn')?.textContent === target);
   });
 }
 
@@ -674,14 +676,18 @@ function updateStats() {
 }
 
 function formatMonologue(text) {
-  if (typeof marked !== 'undefined') {
-    return marked.parse(text);
-  }
-  return esc(text)
-    .replace(/\n\n/g, '<br><br>')
-    .replace(/\n/g, '<br>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  let escaped = esc(text);
+  escaped = escaped.replace(/\n\n/g, '<br><br>')
+                   .replace(/\n/g, '<br>')
+                   .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                   .replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+                   
+  escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, label, url) {
+    let cleanUrl = url.replace(/&amp;/g, '&');
+    let safeUrl = cleanUrl.replace(/'/g, "\\'");
+    return `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${safeUrl}')" style="color:#ff6644;text-decoration:underline" title="Open Link">${label}</a>`;
+  });
+  return escaped;
 }
 
 function esc(s) {
@@ -695,12 +701,18 @@ function now() {
 }
 
 function scrollBottom() {
+  if (state.isUserScrolledUp) return;
   const msgs = document.getElementById('msgs');
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+document.getElementById('msgs').addEventListener('scroll', function() {
+  state.isUserScrolledUp = (this.scrollHeight - this.scrollTop - this.clientHeight) > 50;
+});
+
 window.addEventListener('pywebviewready', () => {
   window.pywebview.api.list_cases();
+  window.pywebview.api.get_model_info();
 });
 </script>
 </body>
