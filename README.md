@@ -12,7 +12,6 @@
   ![Status](https://img.shields.io/badge/Status-Active%20Development-2d7a3a?style=flat-square)
 
   > *"I notice everything."*
-
 </div>
 
 ---
@@ -71,7 +70,7 @@ Everything is saved as a case file. You can resume any investigation later, add 
 
 - Python 3.10+
 - Git
-- Gemini API key (free — for instant narration)
+- Ollama (installed automatically)
 - curl (installed by default on Linux/macOS)
 
 ---
@@ -91,81 +90,13 @@ After installation `joe` works as a system command from any directory — no nee
 
 ---
 
-## Narration Setup (Gemini — free)
+## Narration Configuration
 
-Joe uses **Gemini 2.5 Flash** for narration. It's free, supports a massive context window, and is incredibly fast.
+Joe uses **gemma2:2b** running completely locally by default via Ollama for all narration, intent extraction, and context awareness. This ensures your investigation data never leaves your machine.
 
-**Get your key:**
-1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-2. Create an API key
-3. Paste it into `config.yaml` in the project root:
+For faster, richer closing monologues, you can optionally configure a Google Gemini API key.
 
-```yaml
-gemini_api_key: "AIzaSy..."
-```
-
-*(Alternatively, you can set it as an environment variable `GEMINI_API_KEY`, but `config.yaml` is recommended for reliability.)*
-
----
-
-### bash (default on most Linux distros)
-```bash
-echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.bashrc
-source ~/.bashrc
-echo $GEMINI_API_KEY   # verify
-```
-
-### zsh (default on macOS, popular on Linux)
-```zsh
-echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.zshrc
-source ~/.zshrc
-echo $GEMINI_API_KEY   # verify
-```
-
-> **Note (zsh users):** If your `.zshrc` sources `.bashrc`, you may see `shopt` errors because `shopt` is bash-only.  
-> Check with `grep bashrc ~/.zshrc` and remove the offending line if found:
-> ```zsh
-> sed -i '/bashrc/d' ~/.zshrc
-> ```
-
-### fish
-```fish
-set -Ux GEMINI_API_KEY "your_key_here"
-echo $GEMINI_API_KEY   # verify
-```
-
-### ksh / dash
-```sh
-echo 'export GEMINI_API_KEY="your_key_here"' >> ~/.profile
-. ~/.profile
-echo $GEMINI_API_KEY   # verify
-```
-
----
-
-### System wrapper (applies to all shells)
-
-The `joe` system command at `/usr/local/bin/joe` is a bash script. If you want the key baked in at the wrapper level (so it works regardless of which shell calls it), edit it with:
-
-```bash
-sudo nano /usr/local/bin/joe
-```
-
-The file should look like this — add the `export` line:
-
-```bash
-#!/bin/bash
-export GEMINI_API_KEY="your_key_here"
-source /path/to/your/venv/bin/activate   # added by installer
-cd /path/to/JOE-GOLDBERG
-exec python /path/to/JOE-GOLDBERG/joe.py "$@"
-```
-
-This guarantees narration works even when Joe is launched from a desktop icon, a cron job, or any shell that hasn't loaded your personal config.
-
----
-
-Joe falls back to local Ollama automatically if Gemini is unavailable. **Never hardcode the key inside source code** — environment variable only.
+See the [Gemini Setup Guide](setup.md) for instructions on how to configure your shell and environment for optional Gemini narration.
 
 ---
 
@@ -222,11 +153,7 @@ Cybersecurity student · Offensive security builder · CyArt intern
 
 ---
 
-## Related Projects
 
-- [Hellhound](https://github.com/l4zz3rj0d/Hellhound-Pentest) — modular penetration testing framework
-
----
 
 <div align="center">
   <sub>Built with obsession. Like Joe would.</sub>
