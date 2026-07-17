@@ -4,10 +4,25 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from pathlib import Path
 import json
+import re
 
 PROJECT_ROOT = Path(__file__).parent.parent
 CASES_DIR = PROJECT_ROOT / "cases"
 CASES_DIR.mkdir(exist_ok=True)
+
+
+def clean_duplicate_suffix(val: str) -> str:
+    """Cleans duplicated TLD/suffix from a domain or email (e.g. gmail.com.com -> gmail.com)."""
+    if not val:
+        return val
+    while True:
+        match = re.search(r"\.([a-zA-Z]{2,})\.\1$", val, re.IGNORECASE)
+        if match:
+            tld = match.group(1)
+            val = val[:-len(tld) - 1]
+        else:
+            break
+    return val
 
 
 @dataclass
@@ -46,13 +61,26 @@ class Target:
 
     def add_entity(self, entity: Entity) -> bool:
         """Add entity — deduplicate by value + platform combination."""
+        entity.value = clean_duplicate_suffix(entity.value.strip().rstrip('.'))
         for e in self.entities:
+            e.value = clean_duplicate_suffix(e.value.strip().rstrip('.'))
             if (e.value == entity.value and
                 e.entity_type == entity.entity_type and
                 e.platform == entity.platform):
                 # Exact duplicate — merge sources only
                 e.sources = list(set(e.sources + entity.sources))
                 e.confidence = max(e.confidence, entity.confidence)
+                if entity.metadata:
+                    if not e.metadata:
+                        e.metadata = {}
+                    for k, v in entity.metadata.items():
+                        if v is not None and v != "":
+                            if k == "related_to" and isinstance(e.metadata.get("related_to"), dict) and isinstance(v, dict):
+                                for sub_k, sub_v in v.items():
+                                    if sub_v:
+                                        e.metadata["related_to"][sub_k] = sub_v
+                            elif not e.metadata.get(k):
+                                e.metadata[k] = v
                 return False
         # New entity or same value on different platform
         self.entities.append(entity)
@@ -85,6 +113,10 @@ class Target:
         self.risk_score = round(min(1.0, score), 2)
         return self.risk_score
 
+    @property
+    def case_slug(self) -> str:
+        return self.primary.replace("@", "_").replace(".", "_").replace(" ", "_")
+
     def to_dict(self) -> Dict:
         return {
             "primary": self.primary,
@@ -99,8 +131,7 @@ class Target:
         }
 
     def save(self, cases_dir: Path = CASES_DIR):
-        slug = self.primary.replace("@", "_").replace(".", "_").replace(" ", "_")
-        folder = cases_dir / slug
+        folder = cases_dir / self.case_slug
         folder.mkdir(parents=True, exist_ok=True)
         self.compute_risk()
         (folder / "case.json").write_text(
@@ -110,6 +141,7 @@ class Target:
 
     @classmethod
     def load(cls, target: str, cases_dir: Path = CASES_DIR):
+        # We slugify target directly
         slug = target.replace("@", "_").replace(".", "_").replace(" ", "_")
         path = cases_dir / slug / "case.json"
         if not path.exists():

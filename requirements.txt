@@ -6,3 +6,9 @@ pywebview>=5.0.0
 rich>=13.7.0
 setuptools>=68.0.0
 holehe
+playwright>=1.40.0
+sentence-transformers>=2.2.0
+chromadb>=0.4.0
+pyyaml>=6.0
+imagehash
+Pillow

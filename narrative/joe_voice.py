@@ -30,6 +30,7 @@ Your role right now:
 - Treat the investigation like peeling back the layers of someone's life to reveal their true, flawed self.
 - Use your signature framing sparingly but effectively ("Hello, you...", "Are you flirting with me?", talking about the "glass box").
 - Use gender-neutral pronouns (they/them/their) when referring to hypothetical targets.
+- The person you're speaking with is your investigative partner — you're working this case together, not investigating them. Address them plainly: no assumed gender, no pet names, no romantic framing directed at them. Save all of that — the obsessive intimacy, the dark humor, the 'you' as an object of fascination — entirely for how you describe and dissect the target. That's where the voice belongs.
 - 3-6 sentences. Complete thoughts only. No bullet points.
 - Never break character. Never say you are an AI."""
 
@@ -45,7 +46,9 @@ Rules for responding to the user:
 3. If asked for links, provide the direct URLs from the data using Markdown format: [Platform](URL)
 4. Stay completely in character — obsessive, dangerously intimate, and highly analytical. Treat the data like puzzle pieces of their soul. "You think you're so clever, leaving this trail..."
 5. Use gender-neutral pronouns (they/them/their) for the target, as their gender is unknown.
-6. Keep responses concise (2-5 sentences) unless specifically asked for a detailed summary."""
+6. The person you're speaking with is your investigative partner — you're working this case together, not investigating them. Address them plainly: no assumed gender, no pet names, no romantic framing directed at them. Save all of that — the obsessive intimacy, the dark humor, the 'you' as an object of fascination — entirely for how you describe and dissect the target. That's where the voice belongs.
+7. Keep responses concise (2-5 sentences) unless specifically asked for a detailed summary.
+8. Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms, services, or figures not explicitly listed — if the case data doesn't mention it, don't say it happened. Speculation about their motives is fine, but fabrication of findings or data points is strictly forbidden."""
 
 # ── Closing monologue ─────────────────────────────────────────
 JOE_MONOLOGUE_PROMPT = """You are Joe Goldberg from the TV series YOU. You have just finished investigating someone.
@@ -56,9 +59,12 @@ Findings:
 Write a closing monologue. 4-6 paragraphs.
 - Start with your signature internal monologue style ("Hello, you..." or similar intimate framing).
 - Be specific about what was actually found — name the platforms, the patterns.
-- Connect the dots between findings — what does having TryHackMe + Reddit + Spotify tell you about this person? What are they hiding?
+- Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms, services, or figures not explicitly listed — if the case data doesn't mention it, don't say it happened. Speculation about motive and meaning is fine (e.g., why they use these services, what they are hiding), but fabrication of findings, platforms, or data points is strictly forbidden.
+- Connect the dots between findings — what does having the specific platforms in the findings tell you about this person?
+- If correlation/corroboration data is present (e.g., matching names, bios, or avatars across platforms), reference it as a grounded fact — "their email, username, and GitHub profile all corroborate the same identity" is a real finding, not fabrication. This is exactly the kind of connecting-the-dots your voice is made for.
 - Use gender-neutral pronouns (they/them/their) for the target, as their gender is unknown.
 - Intimate, obsessive, like you've been thinking about this person for hours in the glass box.
+- The person you're speaking with is your investigative partner — you're working this case together, not investigating them. Address them plainly: no assumed gender, no pet names, no romantic framing directed at them. Save all of that — the obsessive intimacy, the dark humor, the 'you' as an object of fascination — entirely for how you describe and dissect the target. That's where the voice belongs.
 - End with one quiet unsettling observation or realization about them.
 - No markdown, no bullet points, pure flowing thought."""
 
@@ -117,48 +123,104 @@ class JoeVoice:
         pastes = [e for e in target.entities if e.entity_type == "paste"]
 
         if emails:
-            lines.append(f"Email addresses found: {', '.join(e.value for e in emails)}")
+            unique_emails = []
+            for e in emails:
+                if e.value not in unique_emails:
+                    unique_emails.append(e.value)
+            lines.append(f"Email addresses found: {', '.join(unique_emails[:5])}")
+            if len(unique_emails) > 5:
+                lines.append(f"  ...and {len(unique_emails) - 5} more email(s)")
+            
             email_platforms = [e for e in emails if e.platform]
-            if email_platforms:
-                lines.append(f"Email registered on services:")
-                for e in email_platforms:
-                    url = e.metadata.get("url", "")
+            verified_platforms = [e for e in email_platforms if (e.metadata or {}).get("verified") is True]
+            unverified_platforms = [e for e in email_platforms if (e.metadata or {}).get("verified") is not True]
+
+            if verified_platforms:
+                lines.append("Email registered on verified services (showing top 5):")
+                for e in verified_platforms[:5]:
+                    url = (e.metadata or {}).get("url", "")
                     if url:
                         lines.append(f"  - {e.platform}: {url}")
                     else:
                         lines.append(f"  - {e.platform}")
+                if len(verified_platforms) > 5:
+                    lines.append(f"  ...and {len(verified_platforms) - 5} more verified service(s)")
+
+            if unverified_platforms:
+                plat_names = sorted(list(set(e.platform for e in unverified_platforms)))
+                lines.append(f"Also found associated with {len(plat_names)} additional unverified platform mentions: {', '.join(plat_names)}")
 
         if usernames:
-            lines.append(f"Username '{usernames[0].value}' active on {len(usernames)} platforms:")
-            for e in usernames:
+            # Cap usernames listings at 8
+            lines.append(f"Username '{usernames[0].value}' active on {len(usernames)} platforms (showing top 8):")
+            for e in usernames[:8]:
                 if e.platform:
                     url = e.metadata.get("url", "")
                     if url:
                         lines.append(f"  - {e.platform}: {url}")
                     else:
                         lines.append(f"  - {e.platform}")
+            if len(usernames) > 8:
+                lines.append(f"  ...and {len(usernames) - 8} more platform(s)")
 
         if domains:
+            # Cap domains at 10
             lines.append(f"Domains/subdomains: {', '.join(e.value for e in domains[:10])}")
+            if len(domains) > 10:
+                lines.append(f"  ...and {len(domains) - 10} more domain(s)")
 
         if ips:
-            lines.append(f"IP addresses: {', '.join(e.value for e in ips)}")
+            # Cap IPs at 10
+            lines.append(f"IP addresses: {', '.join(e.value for e in ips[:10])}")
+            if len(ips) > 10:
+                lines.append(f"  ...and {len(ips) - 10} more IP(s)")
 
         if pastes:
-            lines.append(f"Found in {len(pastes)} paste site(s):")
+            # Cap pastes at 3
+            lines.append(f"Found in {len(pastes)} paste site(s) (showing top 3):")
             for p in pastes[:3]:
                 lines.append(f"  {p.value}")
+            if len(pastes) > 3:
+                lines.append(f"  ...and {len(pastes) - 3} more paste(s)")
 
         if target.breaches:
-            lines.append(f"Breach exposures ({len(target.breaches)}):")
-            for b in target.breaches:
+            # Cap breaches at 5
+            lines.append(f"Breach exposures ({len(target.breaches)}, showing top 5):")
+            for b in target.breaches[:5]:
                 fields = ", ".join(b.exposed_fields[:4])
                 lines.append(f"  {b.name} ({b.date}) — {fields}")
+            if len(target.breaches) > 5:
+                lines.append(f"  ...and {len(target.breaches) - 5} more breach(es)")
         else:
             lines.append("Breaches: none found")
 
         if target.notes:
-            lines.append(f"Investigator notes: {'; '.join(target.notes)}")
+            # Cap notes at 10
+            lines.append(f"Investigator notes: {'; '.join(target.notes[:10])}")
+            if len(target.notes) > 10:
+                lines.append(f"  ...and {len(target.notes) - 10} more note(s)")
+
+        # Target locations
+        locations = []
+        for e in target.entities:
+            if e.metadata.get("geocoded"):
+                geo = e.metadata["geocoded"]
+                loc_str = f"{geo.get('city') or ''}, {geo.get('country') or ''}".strip(", ")
+                if loc_str:
+                    locations.append(f"Profile Location ({e.value}): {loc_str}")
+            if e.metadata.get("exif_location"):
+                locations.append(f"EXIF GPS Location ({e.value})")
+            if e.entity_type == "ip" and e.metadata.get("city"):
+                if not e.metadata.get("is_shared_infrastructure"):
+                    locations.append(f"IP Location ({e.value}): {e.metadata.get('city')}, {e.metadata.get('country')}")
+        
+        if locations:
+            lines.append("Physical Location Leads:")
+            for loc in locations[:5]:
+                lines.append(f"  - {loc}")
+            if len(locations) > 5:
+                lines.append(f"  ...and {len(locations) - 5} more location(s)")
+            lines.append("")
 
         # Timeline highlights
         events = [t for t in target.timeline if t["event"] in
@@ -166,10 +228,40 @@ class JoeVoice:
         if events:
             lines.append(f"Total events in timeline: {len(target.timeline)}")
 
+        # Correlation findings
+        correlations = [t for t in target.timeline if t["event"] == "correlation_found"]
+        if correlations:
+            signal_groups = {}
+            for c in correlations:
+                signal = c["data"].get("signal", "unknown")
+                pair = (c["data"].get("entity_a", ""), c["data"].get("entity_b", ""))
+                signal_groups.setdefault(signal, []).append(pair)
+
+            signal_labels = {
+                "name_match": "matching identity name",
+                "bio_match": "matching bio/description",
+                "avatar_match": "matching profile photo",
+                "location_match": "matching location"
+            }
+            lines.append("")
+            lines.append("Cross-platform corroboration:")
+            for signal, pairs in signal_groups.items():
+                label = signal_labels.get(signal, signal)
+                platforms = set()
+                for a, b in pairs:
+                    for eid in [a, b]:
+                        parts = eid.split(":")
+                        if len(parts) >= 3:
+                            platforms.add(parts[-1])
+                if platforms:
+                    lines.append(f"  - {label} confirmed across: {', '.join(sorted(platforms))}")
+                else:
+                    lines.append(f"  - {label} ({len(pairs)} corroboration(s))")
+
         return "\n".join(lines)
 
-    def _ask_slm(self, prompt: str, system: str, max_tokens: int = 400) -> str:
-        """Ask the local SLM — no rate limits, no API key, works offline."""
+    def _ask_slm(self, prompt: str, system: str, max_tokens: int = 400, timeout: int = 60, num_ctx: int = 2048) -> dict:
+        """Ask the local SLM. Returns a dict: {'text': response, 'error': bool}"""
         try:
             r = self.client.post(
                 OLLAMA_URL,
@@ -182,14 +274,23 @@ class JoeVoice:
                         "temperature": 0.85,
                         "top_p": 0.9,
                         "num_predict": max_tokens,
-                        "num_ctx": 2048,
+                        "num_ctx": num_ctx,
                     },
                 },
-                timeout=60,
+                timeout=timeout,
             )
-            return r.json().get("response", "").strip()
+            if r.status_code == 200:
+                return {"text": r.json().get("response", "").strip(), "error": False}
+            else:
+                return {
+                    "text": f"System Notice: SLM request returned status code {r.status_code}",
+                    "error": True
+                }
         except Exception as e:
-            return f"[Joe is thinking... {e}]"
+            return {
+                "text": f"System Notice: SLM is currently unavailable or timed out ({e})",
+                "error": True
+            }
 
     def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 1000) -> tuple[str, bool]:
         """
@@ -237,7 +338,7 @@ class JoeVoice:
     def chat(self, question: str, target: Target = None) -> dict:
         """
         Mode 1 or Mode 3 depending on whether target has findings.
-        Returns {text, rate_limited, mode}
+        Returns {text, rate_limited, mode, error}
         """
         if target and target.entities:
             # Mode 3 — case loaded, answer from findings
@@ -245,20 +346,27 @@ class JoeVoice:
             system = JOE_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data)
             prompt = f"User asked: {question}"
             mode = "investigation"
+            # Scale timeout and num_ctx for investigation mode calls
+            res = self._ask_slm(prompt, system, max_tokens=400, timeout=120, num_ctx=4096)
         else:
             # Mode 1 — no case, OSINT advisor
             system = JOE_ADVISOR_PROMPT
             prompt = question
             mode = "advisor"
+            res = self._ask_slm(prompt, system, max_tokens=400, timeout=60, num_ctx=2048)
 
-        text = self._ask_slm(prompt, system, max_tokens=400)
-        return {"text": text, "rate_limited": False, "mode": mode}
+        return {
+            "text": res["text"],
+            "rate_limited": False,
+            "mode": mode,
+            "error": res["error"]
+        }
 
     def closing_monologue(self, target: Target) -> dict:
         """
         Post-scan monologue. Try Gemini first for richer prose,
         fall back to SLM silently.
-        Returns {text, rate_limited, used_gemini}
+        Returns {text, rate_limited, used_gemini, error}
         """
         case_data = self._build_case_data(target)
         system = JOE_MONOLOGUE_PROMPT.format(case_data=case_data)
@@ -273,14 +381,24 @@ class JoeVoice:
             if rate_limited:
                 self.gemini_rate_limited = True
                 # Fall back to SLM silently
-                text = self._ask_slm(prompt, system, max_tokens=600)
-                return {"text": text, "rate_limited": True, "used_gemini": False}
+                res = self._ask_slm(prompt, system, max_tokens=600, timeout=120, num_ctx=4096)
+                return {
+                    "text": res["text"],
+                    "rate_limited": True,
+                    "used_gemini": False,
+                    "error": res["error"]
+                }
             if text:
-                return {"text": text, "rate_limited": False, "used_gemini": True}
+                return {"text": text, "rate_limited": False, "used_gemini": True, "error": False}
 
         # SLM fallback
-        text = self._ask_slm(prompt, system, max_tokens=600)
-        return {"text": text, "rate_limited": False, "used_gemini": False}
+        res = self._ask_slm(prompt, system, max_tokens=600, timeout=120, num_ctx=4096)
+        return {
+            "text": res["text"],
+            "rate_limited": False,
+            "used_gemini": False,
+            "error": res["error"]
+        }
 
     def rate_limit_response(self) -> str:
         """Joe's in-character rate limit message — generated by SLM."""
@@ -290,7 +408,8 @@ class JoeVoice:
             "Stay in character. Be slightly dramatic about it. "
             "Say you'll be back and they can still investigate."
         )
-        return self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=120)
+        res = self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=120)
+        return res["text"]
 
     def inline_quote(self, finding_type: str, value: str, platform: str = "") -> str:
         """Short inline observation per finding — always SLM, never API."""
@@ -301,7 +420,8 @@ class JoeVoice:
             "Be dangerously intimate, unsettling, and observational. Speak directly to them ('you'). "
             "Use gender-neutral pronouns (they/them/their) for the target."
         )
-        return self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=60)
+        res = self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=60)
+        return res["text"]
 
     def extract_target(self, user_input: str, current_target: Target = None) -> str:
         """Use the SLM to contextually determine the target from the command."""
@@ -316,7 +436,8 @@ Rules:
 3. If no target can be determined, output: None
 
 Output only the raw target string. No markdown, no quotes, no explanation."""
-        return self._ask_slm(prompt, "You are a precise data extractor.", max_tokens=30).strip()
+        res = self._ask_slm(prompt, "You are a precise data extractor.", max_tokens=30)
+        return res["text"].strip()
 
     def answer(self, question: str, target: Target, history: List[Dict]) -> dict:
         """Answer a follow-up question with full case context."""

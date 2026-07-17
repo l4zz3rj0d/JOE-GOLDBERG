@@ -22,6 +22,10 @@ tools/
 cases/
 /*.txt
 
+# Memory store — local embeddings, not for version control
+memory/chroma_db/
+cases/*/evidence/
+
 # Logs
 logs/
 *.log
@@ -66,3 +70,8 @@ config.yaml
 *_secret*
 *_key*
 api_keys*
+
+# Backup files & temporary local data
+*.zip
+data/
+memory/

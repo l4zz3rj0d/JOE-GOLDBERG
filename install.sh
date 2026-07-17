@@ -5,9 +5,39 @@ echo ""
 echo "  installing joe goldberg..."
 echo ""
 
+# ── Python Environment ────────────────────────────────────────
+INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -n "$VIRTUAL_ENV" ]; then
+    echo "  using active virtual environment: $VIRTUAL_ENV"
+    VENV_ACTIVATE="$VIRTUAL_ENV/bin/activate"
+else
+    # Try to find the user's most recently created/used virtual environment anywhere in their home folder
+    EXISTING_VENV="$(find "$HOME" -maxdepth 5 -name activate -path "*/bin/activate" ! -path "*/.*" -type f 2>/dev/null | xargs -r ls -t 2>/dev/null | head -1)"
+    
+    if [ -n "$EXISTING_VENV" ]; then
+        echo "  found existing local virtual environment: $EXISTING_VENV"
+        source "$EXISTING_VENV"
+        VENV_ACTIVATE="$EXISTING_VENV"
+    else
+        VENV_DIR="$INSTALL_DIR/joe-env"
+        echo "  setting up new virtual environment in $VENV_DIR..."
+        python3 -m venv "$VENV_DIR"
+        source "$VENV_DIR/bin/activate"
+        VENV_ACTIVATE="$VENV_DIR/bin/activate"
+    fi
+fi
+
+VENV_BIN="$(dirname "$VENV_ACTIVATE")"
+
 # ── Python deps ───────────────────────────────────────────────
-pip install -e . --quiet
-pip install sherlock-project maigret holehe --quiet
+"$VENV_BIN/python3" -m pip install -e .
+"$VENV_BIN/python3" -m pip install sherlock-project maigret holehe
+
+# ── Playwright (headless browser for verification) ────────────
+echo "  installing playwright chromium..."
+"$VENV_BIN/python3" -m pip install playwright
+"$VENV_BIN/python3" -m playwright install chromium 2>/dev/null || true
 
 # ── Ollama ────────────────────────────────────────────────────
 if ! command -v ollama &> /dev/null; then
@@ -29,14 +59,11 @@ if ! ollama list 2>/dev/null | grep -q "gemma2:2b"; then
 fi
 
 # ── System command ────────────────────────────────────────────
-INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_ACTIVATE="$(find "$INSTALL_DIR" -name activate -path "*/bin/activate" 2>/dev/null | head -1)"
-
 echo "  registering joe as system command..."
 
 sudo bash -c "cat > /usr/local/bin/joe << 'WRAPPER'
 #!/bin/bash
-$([ -n "$VENV_ACTIVATE" ] && echo "source $VENV_ACTIVATE")
+source $VENV_ACTIVATE
 cd $INSTALL_DIR
 python $INSTALL_DIR/joe.py \"\$@\"
 WRAPPER"
@@ -63,7 +90,7 @@ Type=Application
 Name=Joe Goldberg
 GenericName=OSINT Investigator
 Comment=Autonomous OSINT Investigator — zero APIs, fully local
-Exec=bash -c "source $VENV_ACTIVATE && cd $INSTALL_DIR && python $INSTALL_DIR/joe.py"
+Exec=$VENV_BIN/python3 $INSTALL_DIR/joe.py
 Icon=$ICON_PATH
 Terminal=false
 Categories=Security;Network;

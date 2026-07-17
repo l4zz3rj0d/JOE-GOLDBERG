@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/joe.png" alt="Joe Goldberg" width="600"/>
+  <img src="assets/joe.jpeg" alt="Joe Goldberg" width="600"/>
 
   # Joe Goldberg
 
@@ -58,9 +58,10 @@ Everything is saved as a case file. You can resume any investigation later, add 
 - Joe narrates inline as findings arrive — one quiet observation per discovery
 - Full closing monologue after every investigation
 - Persistent case files — resume any investigation at any time
-- Free-form chat — ask Joe anything about the current investigation
+- Free-form chat — ask Joe anything about the current investigation, with input queuing during active sweeps
 - HTML report export with timeline, entity table, and risk score
-- Desktop app with red cinematic UI + Joe's image in the background
+- Desktop app with red cinematic UI, conversation transcript copy tools, and an interactive 3D relationship graph
+- Interactive IP geolocation flat map and 3D globe visualization (identifies and marks shared CDN/hosting infrastructure)
 - Terminal CLI with the same full experience
 - Callable as a system command from anywhere — just type `joe`
 

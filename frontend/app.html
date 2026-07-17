@@ -1,719 +1,4079 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Joe Goldberg</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  background:#140404;height:100vh;
-  display:flex;flex-direction:column;
-  color:#ffddcc;font-size:15px;
-}
+  <meta charset="UTF-8">
+  <title>Joe Goldberg</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-/* ── Toast notification ─────────────────────────────── */
-.toast{
-  position:fixed;top:16px;left:50%;transform:translateX(-50%);
-  z-index:999;display:flex;align-items:center;gap:10px;
-  padding:10px 20px;border-radius:8px;
-  font-size:12px;font-weight:600;letter-spacing:0.5px;
-  opacity:0;transition:opacity .3s;pointer-events:none;
-  white-space:nowrap;
-}
-.toast.show{opacity:1;pointer-events:auto}
-.toast.rate-limit{background:#3d0808;border:1px solid #aa2a10;color:#ff8866}
-.toast.api-active{background:#0d2018;border:1px solid #1a5030;color:#4aad70}
-.toast.slm-active{background:#1a1a08;border:1px solid #5a5010;color:#ccaa40}
-.toast-dot{width:7px;height:7px;border-radius:50%}
-.toast.rate-limit .toast-dot{background:#ff4422;animation:pulse 1s ease-in-out infinite}
-.toast.api-active .toast-dot{background:#3aad50}
-.toast.slm-active .toast-dot{background:#ccaa40}
+    html,
+    body {
+      height: 100%;
+      overflow: hidden
+    }
 
-/* ── Mode badge ─────────────────────────────────────── */
-.mode-badge{
-  font-size:9px;font-weight:800;letter-spacing:1.5px;
-  text-transform:uppercase;padding:3px 9px;border-radius:10px;
-  margin-left:10px;
-}
-.mode-badge.advisor{background:#1a1a08;color:#ccaa40;border:1px solid #5a5010}
-.mode-badge.investigation{background:#0d2018;color:#3aad50;border:1px solid #1a5030}
-.mode-badge.scanning{background:#2d0808;color:#ff6644;border:1px solid #6a2020;animation:pulse 1s ease-in-out infinite}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #140404;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #ffddcc;
+      font-size: 15px;
+    }
 
-/* ── Titlebar ───────────────────────────────────────── */
-.titlebar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 22px;background:#1e0606;
-  border-bottom:1px solid #3d1010;
-  flex-shrink:0;-webkit-app-region:drag;
-}
-.dots{display:flex;gap:6px;-webkit-app-region:no-drag}
-.dot{width:13px;height:13px;border-radius:50%;cursor:pointer}
-.dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
-.brand{display:flex;align-items:center;margin-left:14px}
-.brand-name{font-size:17px;font-weight:800;color:#ff6644;letter-spacing:1px}
-.brand-sub{font-size:10px;color:#7a3030;letter-spacing:2px;text-transform:uppercase;margin-left:10px}
-.right-controls{display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag}
-.active-pill{
-  font-size:11px;font-weight:700;color:#ff6644;
-  background:#2d0808;border:1px solid #6a2020;
-  padding:5px 14px;border-radius:20px;
-  display:flex;align-items:center;gap:6px;
-}
-.a-dot{width:7px;height:7px;border-radius:50%;background:#ff4422}
-.a-dot.pulse{animation:pulse 1.5s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+    /* ── Toast notification ─────────────────────────────── */
+    .toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
 
-/* ── Body ───────────────────────────────────────────── */
-.body{display:flex;flex:1;overflow:hidden;min-height:0}
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto
+    }
 
-/* ── Sidebar ────────────────────────────────────────── */
-.sidebar{
-  width:235px;background:#180606;
-  border-right:1px solid #2d0e0e;
-  display:flex;flex-direction:column;
-  padding:16px 0;flex-shrink:0;overflow-y:auto;
-}
-.sl{font-size:9px;font-weight:800;letter-spacing:2.5px;color:#6a2020;text-transform:uppercase;padding:0 16px 8px}
-.case-item{padding:10px 16px;cursor:pointer;border-left:3px solid transparent;transition:all .15s}
-.case-item:hover{background:rgba(200,50,20,.07)}
-.case-item.active{border-left-color:#cc3311;background:rgba(200,50,20,.12)}
-.cn{font-size:13px;font-weight:600;color:#ff9977}
-.case-item.active .cn{color:#ff7755}
-.cm{font-size:11px;color:#8a4030;margin-top:3px}
-.sdiv{height:1px;background:#250808;margin:12px 0}
-.srow{display:flex;justify-content:space-between;padding:5px 16px;font-size:13px;color:#cc7755}
-.srow span:last-child{font-weight:700;color:#ff8866}
-.mrow{display:flex;align-items:center;gap:8px;padding:7px 16px}
-.mdot{width:8px;height:8px;border-radius:50%;background:#cc3311}
-.mname{font-size:12px;font-weight:600;color:#ff7755}
-.tw{padding:12px 16px 0;margin-top:auto;border-top:1px solid #250808}
-.tl{font-size:9px;font-weight:800;letter-spacing:2px;color:#6a2020;text-transform:uppercase;margin-bottom:8px}
-.pill{display:inline-block;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;margin:2px 2px 2px 0}
-.pill.on{background:#2d0808;color:#ff9977;border:1px solid #6a2020}
-.pill.off{background:#180606;color:#4a2020;border:1px solid #250808}
+    .toast.rate-limit {
+      background: #3d0808;
+      border: 1px solid #aa2a10;
+      color: #ff8866
+    }
 
-/* ── Chat ───────────────────────────────────────────── */
-.chat{flex:1;display:flex;flex-direction:column;background:#140404;position:relative;overflow:hidden;min-height:0}
-.joe-bg{position:absolute;right:0;top:0;bottom:0;width:65%;pointer-events:none;z-index:0}
-.joe-bg img{width:100%;height:100%;object-fit:contain;object-position:right center;opacity:0.25;filter:sepia(1) saturate(1.5) hue-rotate(330deg) contrast(1.2) brightness(0.8)}
-.joe-fade{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(to right,#140404 20%,rgba(20,4,4,0.6) 45%,rgba(20,4,4,0.15) 65%,#140404 100%)}
+    .toast.api-active {
+      background: #0d2018;
+      border: 1px solid #1a5030;
+      color: #4aad70
+    }
 
-/* ── Messages ───────────────────────────────────────── */
-.msgs{flex:1;padding:22px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;position:relative;z-index:1;min-height:0}
-.msgs::-webkit-scrollbar{width:3px}
-.msgs::-webkit-scrollbar-thumb{background:#3d1010;border-radius:2px}
+    .toast.slm-active {
+      background: #1a1a08;
+      border: 1px solid #5a5010;
+      color: #ccaa40
+    }
 
-.msg{display:flex;flex-direction:column;gap:5px}
-.mmeta{font-size:11px;font-weight:600;padding:0 4px;color:#8a4030;display:flex;align-items:center;gap:6px}
-.msg-u{align-items:flex-end}
-.msg-u .mmeta{color:#cc5533}
-.msg-j{align-items:flex-start}
+    .toast-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%
+    }
 
-.bubble{padding:14px 18px;border-radius:14px;font-size:14.5px;line-height:1.85}
-.msg-u .bubble{background:#8b1a08;color:#ffe8e0;border-bottom-right-radius:3px;max-width:65%;border:1px solid #aa2a10}
-.msg-j .bubble{background:#1e0606;color:#ffddcc;border:1px solid #4d1515;border-bottom-left-radius:3px;max-width:90%}
+    .toast.rate-limit .toast-dot {
+      background: #ff4422;
+      animation: pulse 1s ease-in-out infinite
+    }
 
-.scan{font-family:'SF Mono',Monaco,monospace;font-size:13px;color:#aa6050;line-height:2.1}
-.hit-row{display:flex;align-items:center;gap:10px;line-height:2.4;padding-left:12px}
-.hit-check{color:#3aad50;font-weight:700;font-size:15px}
-.hit-warn{color:#ff5533;font-weight:700;font-size:15px}
-.hit-name{font-size:14px;font-weight:700;color:#ffddcc}
-.hit-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;transition:opacity .15s}
-a.hit-tag{cursor:pointer;text-decoration:none}
-a.hit-tag:hover{opacity:0.8}
-.hit-tag.found{background:#0d2018;color:#3aad50;border:1px solid #1a4030}
-.hit-tag.breach{background:#2d0808;color:#ff5533;border:1px solid #5a1818}
+    .toast.api-active .toast-dot {
+      background: #3aad50
+    }
 
-.joe-quote{font-size:14px;color:#ffaa80;font-style:italic;padding:10px 14px 10px 16px;border-left:3px solid #aa4422;background:rgba(200,80,20,.1);border-radius:0 8px 8px 0;margin:6px 0;line-height:1.9}
+    .toast.slm-active .toast-dot {
+      background: #ccaa40
+    }
 
-.findings-head{font-size:10px;font-weight:800;letter-spacing:3px;color:#aa5040;text-transform:uppercase;margin:12px 0 8px}
-.f-row{display:flex;align-items:center;gap:10px;font-size:13.5px;line-height:2.2}
-.f-key{font-size:11px;font-weight:800;color:#aa5040;min-width:100px;text-transform:uppercase;letter-spacing:.5px}
-.f-val{color:#ffddcc;font-weight:500}
-.fdiv{border:none;border-top:1px solid #3d1010;margin:10px 0}
-.ftag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px}
-.ftag-r{background:#2d0808;color:#ff5533;border:1px solid #5a1818}
-.ftag-g{background:#0d2018;color:#3aad50;border:1px solid #1a4030}
-.risk-wrap{display:flex;align-items:center;gap:10px}
-.rbar{height:5px;width:120px;background:#2d0e0e;border-radius:2px}
-.rfill{height:100%;background:linear-gradient(90deg,#aa2a10,#ff4422);border-radius:2px}
-.rnum{font-size:13px;font-weight:800;color:#ff5533}
+    /* ── Mode badge ─────────────────────────────────────── */
+    .mode-badge {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 10px;
+      margin-left: 10px;
+    }
 
-.monologue{font-size:14px;color:#ffcca8;font-style:italic;line-height:2;padding:16px 18px;background:rgba(140,20,10,.12);border:1px solid #5d1a10;border-left:3px solid #ff4422;border-radius:0 10px 10px 0;margin-top:10px;font-weight:400}
-.monologue strong{color:#ff9977;font-style:normal;font-weight:700}
+    .mode-badge.advisor {
+      background: #1a1a08;
+      color: #ccaa40;
+      border: 1px solid #5a5010
+    }
 
-/* Rate limit message styling */
-.rate-limit-msg{
-  font-size:14px;color:#ff9966;font-style:italic;
-  line-height:2;padding:14px 16px;
-  background:rgba(140,40,10,.15);
-  border:1px solid #6a2a10;
-  border-left:3px solid #ff6622;
-  border-radius:0 10px 10px 0;
-  margin-top:8px;
-}
+    .mode-badge.investigation {
+      background: #0d2018;
+      color: #3aad50;
+      border: 1px solid #1a5030
+    }
 
-.typing{display:flex;gap:5px;padding:8px 4px;align-items:center}
-.typing span{width:7px;height:7px;border-radius:50%;background:#cc5533;animation:bounce .8s ease-in-out infinite}
-.typing span:nth-child(2){animation-delay:.15s}
-.typing span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+    .mode-badge.scanning {
+      background: #2d0808;
+      color: #ff6644;
+      border: 1px solid #6a2020;
+      animation: pulse 1s ease-in-out infinite
+    }
 
-/* ── Input ───────────────────────────────────────────── */
-.input-wrap{padding:15px 22px;background:#1e0606;border-top:1px solid #3d1010;display:flex;align-items:center;gap:12px;z-index:2;flex-shrink:0}
-.pbadge{font-size:14px;font-weight:800;color:#ffe8e0;background:#8b1a08;padding:8px 16px;border-radius:8px;white-space:nowrap;border:1px solid #aa2a10}
-#msg-input{flex:1;font-size:14px;color:#ffddcc;background:#0d0202;border:1px solid #4d1515;border-radius:8px;padding:11px 16px;outline:none;font-family:inherit;transition:border-color .15s}
-#msg-input:focus{border-color:#cc3311}
-#msg-input::placeholder{color:#6a3030;font-size:13px}
-.sbtn{width:40px;height:40px;background:#8b1a08;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0;transition:background .15s}
-.sbtn:hover{background:#aa2a10}
-.sbtn:disabled{opacity:0.4;cursor:not-allowed;background:#4a0808}
-.sbtn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+    /* ── Titlebar ───────────────────────────────────────── */
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 22px;
+      background: #1e0606;
+      border-bottom: 1px solid #3d1010;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+    }
 
-/* ── Status bar ─────────────────────────────────────── */
-.sbar{display:flex;align-items:center;background:#180606;border-top:1px solid #250808;flex-shrink:0;flex-wrap:nowrap;overflow:hidden}
-.sb{font-size:11px;font-weight:600;color:#8a4030;padding:8px 16px;border-right:1px solid #250808;display:flex;align-items:center;gap:5px;white-space:nowrap}
-.sb .v{color:#ff7755;font-weight:700}
-.sb:last-child{margin-left:auto;border-right:none}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#cc3311;animation:pulse 1.5s ease-in-out infinite}
-</style>
+    .dots {
+      display: flex;
+      gap: 6px;
+      -webkit-app-region: no-drag
+    }
+
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      cursor: pointer
+    }
+
+    .dr {
+      background: #ff5f57
+    }
+
+    .dy {
+      background: #febc2e
+    }
+
+    .dg {
+      background: #28c840
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      margin-left: 14px
+    }
+
+    .brand-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #ff6644;
+      letter-spacing: 1px
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: #7a3030;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-left: 10px
+    }
+
+    .right-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      -webkit-app-region: no-drag
+    }
+
+    .active-pill {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ff6644;
+      background: #2d0808;
+      border: 1px solid #6a2020;
+      padding: 5px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .a-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ff4422
+    }
+
+    .a-dot.pulse {
+      animation: pulse 1.5s ease-in-out infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .2
+      }
+    }
+
+    /* ── Body ───────────────────────────────────────────── */
+    .body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0
+    }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar {
+      width: 235px;
+      background: #180606;
+      border-right: 1px solid #2d0e0e;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 0;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .sl {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      color: #6a2020;
+      text-transform: uppercase;
+      padding: 0 16px 8px
+    }
+
+    .case-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all .15s
+    }
+
+    .case-item:hover {
+      background: rgba(200, 50, 20, .07)
+    }
+
+    .case-item.active {
+      border-left-color: #cc3311;
+      background: rgba(200, 50, 20, .12)
+    }
+
+    .cn {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ff9977
+    }
+
+    .case-item.active .cn {
+      color: #ff7755
+    }
+
+    .cm {
+      font-size: 11px;
+      color: #8a4030;
+      margin-top: 3px
+    }
+
+    .sdiv {
+      height: 1px;
+      background: #250808;
+      margin: 12px 0
+    }
+
+    .srow {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 16px;
+      font-size: 13px;
+      color: #cc7755
+    }
+
+    .srow span:last-child {
+      font-weight: 700;
+      color: #ff8866
+    }
+
+    .mrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px
+    }
+
+    .mdot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cc3311
+    }
+
+    .mname {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ff7755
+    }
+
+    .tw {
+      padding: 12px 16px 0;
+      margin-top: auto;
+      border-top: 1px solid #250808
+    }
+
+    .tl {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #6a2020;
+      text-transform: uppercase;
+      margin-bottom: 8px
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin: 2px 2px 2px 0
+    }
+
+    .pill.on {
+      background: #2d0808;
+      color: #ff9977;
+      border: 1px solid #6a2020
+    }
+
+    .pill.off {
+      background: #180606;
+      color: #4a2020;
+      border: 1px solid #250808
+    }
+
+    /* ── Chat ───────────────────────────────────────────── */
+    .chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #140404;
+      position: relative;
+      overflow: hidden;
+      min-height: 0
+    }
+
+    .joe-bg {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 65%;
+      pointer-events: none;
+      z-index: 0
+    }
+
+    .joe-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: right center;
+      opacity: 0.25;
+      filter: sepia(1) saturate(1.5) hue-rotate(330deg) contrast(1.2) brightness(0.8)
+    }
+
+    .joe-fade {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(to right, #140404 20%, rgba(20, 4, 4, 0.6) 45%, rgba(20, 4, 4, 0.15) 65%, #140404 100%)
+    }
+
+    /* ── Tabs & Findings ──────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: #1e0606;
+      border-bottom: 1px solid #3d1010;
+      flex-shrink: 0;
+      z-index: 2;
+      position: relative;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: #8a4030;
+      border-bottom: 2px solid transparent;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab:hover {
+      color: #ffddcc;
+      background: rgba(200, 50, 20, .05);
+    }
+
+    .tab.active {
+      color: #ff6644;
+      border-bottom-color: #cc3311;
+      background: rgba(200, 50, 20, .1);
+    }
+
+    .tab-badge {
+      background: #2d0808;
+      border: 1px solid #6a2020;
+      color: #ff9977;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 800;
+    }
+
+    .panel {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel.active {
+      display: flex;
+    }
+
+    /* Findings Panel styles */
+    .findings-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #140404;
+    }
+
+    .findings-section {
+      background: #1a0606;
+      border: 1px solid #3d1010;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .findings-section-header {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ff6644;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .f-item {
+      display: flex;
+      flex-direction: column;
+      padding: 10px 0;
+      border-bottom: 1px solid #2d0e0e;
+    }
+
+    .f-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .f-item-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffddcc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .f-item-meta {
+      font-size: 12px;
+      color: #aa7060;
+      margin-top: 4px;
+    }
+
+    .f-item-quote {
+      font-size: 13px;
+      color: #ffaa80;
+      font-style: italic;
+      padding: 6px 10px;
+      border-left: 2px solid #aa4422;
+      background: rgba(200, 80, 20, .1);
+      border-radius: 0 4px 4px 0;
+      margin-top: 6px;
+    }
+
+    /* ── Messages ───────────────────────────────────────── */
+    .msgs {
+      flex: 1;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+      min-height: 0
+    }
+
+    .msgs::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .msgs::-webkit-scrollbar-thumb {
+      background: #3d1010;
+      border-radius: 2px
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .mmeta {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0 4px;
+      color: #8a4030;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .msg-u {
+      align-items: flex-end
+    }
+
+    .msg-u .mmeta {
+      color: #cc5533
+    }
+
+    .msg-j {
+      align-items: flex-start
+    }
+
+    .bubble {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 14.5px;
+      line-height: 1.85
+    }
+
+    .msg-u .bubble {
+      background: #8b1a08;
+      color: #ffe8e0;
+      border-bottom-right-radius: 3px;
+      max-width: 65%;
+      border: 1px solid #aa2a10
+    }
+
+    .msg-j .bubble {
+      background: #1e0606;
+      color: #ffddcc;
+      border: 1px solid #4d1515;
+      border-bottom-left-radius: 3px;
+      max-width: 90%
+    }
+
+    .msg-system {
+      align-items: center;
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    .system-error-notice {
+      background: #2a0b0b;
+      color: #ff9999;
+      border: 1px dashed #ff4444;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 13.5px;
+      text-align: center;
+      max-width: 85%;
+      width: 100%;
+      box-sizing: border-box;
+      line-height: 1.6;
+    }
+
+    .scan {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      color: #aa6050;
+      line-height: 2.1
+    }
+
+    .hit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 2.4;
+      padding-left: 12px
+    }
+
+    .hit-check {
+      color: #3aad50;
+      font-weight: 700;
+      font-size: 15px
+    }
+
+    .hit-warn {
+      color: #ff5533;
+      font-weight: 700;
+      font-size: 15px
+    }
+
+    .hit-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffddcc
+    }
+
+    .hit-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      transition: opacity .15s
+    }
+
+    a.hit-tag {
+      cursor: pointer;
+      text-decoration: none
+    }
+
+    a.hit-tag:hover {
+      opacity: 0.8
+    }
+
+    .hit-tag.found {
+      background: #0d2018;
+      color: #3aad50;
+      border: 1px solid #1a4030
+    }
+
+    .hit-tag.breach {
+      background: #2d0808;
+      color: #ff5533;
+      border: 1px solid #5a1818
+    }
+
+    .hit-tag.verified {
+      background: #0d2018;
+      color: #3aad50;
+      border: 1px solid #1a4030;
+      font-size: 9px
+    }
+
+    .hit-tag.unverified {
+      background: #2d0808;
+      color: #ff5533;
+      border: 1px solid #5a1818;
+      font-size: 9px
+    }
+
+    .hit-tag.inconclusive {
+      background: #1a1a08;
+      color: #ccaa40;
+      border: 1px solid #5a5010;
+      font-size: 9px
+    }
+
+    .joe-quote {
+      font-size: 14px;
+      color: #ffaa80;
+      font-style: italic;
+      padding: 10px 14px 10px 16px;
+      border-left: 3px solid #aa4422;
+      background: rgba(200, 80, 20, .1);
+      border-radius: 0 8px 8px 0;
+      margin: 6px 0;
+      line-height: 1.9
+    }
+
+    .findings-head {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #aa5040;
+      text-transform: uppercase;
+      margin: 12px 0 8px
+    }
+
+    .f-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      line-height: 2.2
+    }
+
+    .f-key {
+      font-size: 11px;
+      font-weight: 800;
+      color: #aa5040;
+      min-width: 100px;
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    .f-val {
+      color: #ffddcc;
+      font-weight: 500
+    }
+
+    .fdiv {
+      border: none;
+      border-top: 1px solid #3d1010;
+      margin: 10px 0
+    }
+
+    .ftag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 4px
+    }
+
+    .ftag-r {
+      background: #2d0808;
+      color: #ff5533;
+      border: 1px solid #5a1818
+    }
+
+    .ftag-g {
+      background: #0d2018;
+      color: #3aad50;
+      border: 1px solid #1a4030
+    }
+
+    .risk-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .rbar {
+      height: 5px;
+      width: 120px;
+      background: #2d0e0e;
+      border-radius: 2px
+    }
+
+    .rfill {
+      height: 100%;
+      background: linear-gradient(90deg, #aa2a10, #ff4422);
+      border-radius: 2px
+    }
+
+    .rnum {
+      font-size: 13px;
+      font-weight: 800;
+      color: #ff5533
+    }
+
+    .monologue {
+      font-size: 14px;
+      color: #ffcca8;
+      font-style: italic;
+      line-height: 2;
+      padding: 16px 18px;
+      background: rgba(140, 20, 10, .12);
+      border: 1px solid #5d1a10;
+      border-left: 3px solid #ff4422;
+      border-radius: 0 10px 10px 0;
+      margin-top: 10px;
+      font-weight: 400
+    }
+
+    .monologue strong {
+      color: #ff9977;
+      font-style: normal;
+      font-weight: 700
+    }
+
+    /* Rate limit message styling */
+    .rate-limit-msg {
+      font-size: 14px;
+      color: #ff9966;
+      font-style: italic;
+      line-height: 2;
+      padding: 14px 16px;
+      background: rgba(140, 40, 10, .15);
+      border: 1px solid #6a2a10;
+      border-left: 3px solid #ff6622;
+      border-radius: 0 10px 10px 0;
+      margin-top: 8px;
+    }
+
+    .typing {
+      display: flex;
+      gap: 5px;
+      padding: 8px 4px;
+      align-items: center
+    }
+
+    .typing span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #cc5533;
+      animation: bounce .8s ease-in-out infinite
+    }
+
+    .typing span:nth-child(2) {
+      animation-delay: .15s
+    }
+
+    .typing span:nth-child(3) {
+      animation-delay: .3s
+    }
+
+    @keyframes bounce {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0)
+      }
+
+      30% {
+        transform: translateY(-6px)
+      }
+    }
+
+    /* ── Input ───────────────────────────────────────────── */
+    .input-wrap {
+      padding: 15px 22px;
+      background: #1e0606;
+      border-top: 1px solid #3d1010;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 2;
+      flex-shrink: 0
+    }
+
+    .pbadge {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffe8e0;
+      background: #8b1a08;
+      padding: 8px 16px;
+      border-radius: 8px;
+      white-space: nowrap;
+      border: 1px solid #aa2a10
+    }
+
+    #msg-input {
+      flex: 1;
+      font-size: 14px;
+      color: #ffddcc;
+      background: #0d0202;
+      border: 1px solid #4d1515;
+      border-radius: 8px;
+      padding: 11px 16px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color .15s
+    }
+
+    #msg-input:focus {
+      border-color: #cc3311
+    }
+
+    #msg-input::placeholder {
+      color: #6a3030;
+      font-size: 13px
+    }
+
+    .sbtn {
+      width: 40px;
+      height: 40px;
+      background: #8b1a08;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      flex-shrink: 0;
+      transition: background .15s
+    }
+
+    .sbtn:hover {
+      background: #aa2a10
+    }
+
+    .sbtn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #4a0808
+    }
+
+    .sbtn svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    /* ── Status bar ─────────────────────────────────────── */
+    .sbar {
+      display: flex;
+      align-items: center;
+      background: #180606;
+      border-top: 1px solid #250808;
+      flex-shrink: 0;
+      flex-wrap: nowrap;
+      overflow: hidden
+    }
+
+    .sb {
+      font-size: 11px;
+      font-weight: 600;
+      color: #8a4030;
+      padding: 8px 16px;
+      border-right: 1px solid #250808;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap
+    }
+
+    .sb .v {
+      color: #ff7755;
+      font-weight: 700
+    }
+
+    .sb:last-child {
+      margin-left: auto;
+      border-right: none
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #cc3311;
+      animation: pulse 1.5s ease-in-out infinite
+    }
+
+    /* ── Graph Panel & Backlog Styling ────────────────────── */
+    
+    /* Horizontal tabs scrolling */
+    .tabs {
+      display: flex;
+      background: #1e0606;
+      border-bottom: 1px solid #3d1010;
+      flex-shrink: 0;
+      z-index: 2;
+      position: relative;
+      overflow-x: auto !important;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .tab {
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .backlog-indicator {
+      font-size: 8px;
+      font-weight: 800;
+      color: #883838;
+      background: #1c0707;
+      border: 1px solid #3d1212;
+      padding: 1px 4px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-left: 4px;
+    }
+    
+    .tab.active .backlog-indicator {
+      color: #ff9977;
+      border-color: #aa3311;
+    }
+
+    /* Backlog Placeholder styles */
+    .backlog-placeholder-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #140404;
+      padding: 40px;
+      text-align: center;
+      height: 100%;
+      min-height: 300px;
+    }
+    
+    .backlog-icon {
+      font-size: 48px;
+      color: #6a2020;
+      margin-bottom: 16px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .backlog-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffaa80;
+      margin-bottom: 8px;
+    }
+    
+    .backlog-desc {
+      font-size: 13px;
+      color: #8a4030;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    /* Graph Panel Layout styles */
+    .graph-content {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      background: #140404;
+      position: relative;
+      height: 100%;
+    }
+    
+    .graph-canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #1c0808 0%, #140404 100%);
+      height: 100%;
+    }
+    
+    #graph-svg, #graph-3d-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    
+    /* Graph controls and search overlay */
+    .graph-controls {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      z-index: 10;
+    }
+    
+    .graph-btn {
+      width: 36px;
+      height: 36px;
+      background: #1e0606;
+      border: 1px solid #3d1010;
+      border-radius: 6px;
+      color: #ff9977;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .graph-btn:hover {
+      background: #2d0808;
+      border-color: #ff6644;
+      color: #ffddcc;
+    }
+    
+    .graph-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+    
+    .graph-search-wrap {
+      display: flex;
+      align-items: center;
+      background: #1e0606;
+      border: 1px solid #3d1010;
+      border-radius: 6px;
+      padding: 0 12px;
+      height: 36px;
+      width: 180px;
+      transition: all 0.2s;
+    }
+    
+    .graph-search-wrap:focus-within {
+      border-color: #cc3311;
+      width: 240px;
+    }
+    
+    #graph-search {
+      background: transparent;
+      border: none;
+      color: #ffddcc;
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    }
+    
+    #graph-search::placeholder {
+      color: #6a3030;
+    }
+    
+    /* Details Panel */
+    .graph-details-panel {
+      width: 320px;
+      background: rgba(30, 6, 6, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-left: 1px solid #3d1010;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 10;
+      transition: transform 0.3s ease;
+      position: relative;
+      height: 100%;
+    }
+    
+    .details-placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      color: #8a4030;
+      font-size: 13px;
+      font-style: italic;
+    }
+    
+    .details-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .details-header {
+      border-bottom: 1px solid #3d1010;
+      padding-bottom: 12px;
+    }
+    
+    .details-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffddcc;
+      word-break: break-all;
+    }
+    
+    .details-type-badge {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #2d0808;
+      border: 1px solid #6a2020;
+      color: #ff9977;
+      display: inline-block;
+      margin-top: 6px;
+    }
+    
+    .details-section {
+      background: rgba(20, 4, 4, 0.5);
+      border: 1px solid #2d0e0e;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .details-sec-title {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #aa5040;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    
+    .details-conn-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .details-conn-item {
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      border-radius: 4px;
+      background: rgba(140, 20, 10, 0.05);
+      border: 1px solid rgba(255, 102, 68, 0.15);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    
+    .details-conn-item:hover {
+      background: rgba(255, 102, 68, 0.15);
+      border-color: rgba(255, 102, 68, 0.4);
+    }
+    
+    .details-conn-value {
+      color: #ffddcc;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    
+    .details-conn-signal {
+      font-size: 10px;
+      color: #ff9977;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .details-pivot-btn {
+      width: 100%;
+      background: #8b1a08;
+      border: 1px solid #aa2a10;
+      border-radius: 6px;
+      color: #ffe8e0;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    
+    .details-pivot-btn:hover {
+      background: #aa2a10;
+      border-color: #ff3311;
+    }
+
+    /* Edge and Node SVG styling */
+    .link {
+      fill: none;
+      stroke-linecap: round;
+      transition: stroke-width 0.15s, stroke-opacity 0.15s;
+    }
+    
+    .link.highlighted {
+      stroke-opacity: 0.95 !important;
+      stroke-width: 3px !important;
+    }
+    
+    .link.dimmed {
+      stroke-opacity: 0.05 !important;
+    }
+    
+    .node-group {
+      cursor: pointer;
+    }
+    
+    .node-bg {
+      fill: #140404;
+      stroke-dasharray: none;
+      transition: r 0.2s, stroke-width 0.2s, fill 0.2s;
+    }
+    
+    .node-group:hover .node-bg {
+      fill: #1e0606;
+      stroke-width: 3px;
+    }
+    
+    .node-group.highlighted .node-bg {
+      stroke-width: 3px;
+      fill: #220808;
+    }
+    
+    .node-group.dimmed {
+      opacity: 0.15;
+    }
+    
+    .node-label {
+      font-family: inherit;
+      font-size: 10px;
+      fill: #ffddcc;
+      text-anchor: middle;
+      pointer-events: none;
+      font-weight: 500;
+      text-shadow: 0 1px 2px #000, 0 -1px 2px #000, 1px 0 2px #000, -1px 0 2px #000;
+    }
+    
+    .node-icon {
+      fill: currentColor;
+      pointer-events: none;
+    }
+    
+    /* Radar style confidence rings */
+    .node-ring {
+      fill: none;
+      stroke-dasharray: 4, 3;
+      animation: rotate-radar 25s linear infinite;
+      transform-origin: center;
+      pointer-events: none;
+    }
+    
+    @keyframes rotate-radar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Pulsing animated particles on links */
+    .particle {
+      fill: #ff9977;
+      filter: drop-shadow(0 0 3px #ff6644);
+    }
+    
+    /* ── Geo panel styles ─────────────────────────────── */
+    .geo-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #140404;
+    }
+    
+    .geo-sidebar {
+      width: 320px;
+      height: 100%;
+      border-right: 1px solid rgba(255, 100, 50, 0.15);
+      background: rgba(20, 4, 4, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    
+    .geo-sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 100, 50, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .geo-sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffaa88;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    
+    .geo-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    
+    .geo-item {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      background: rgba(255, 100, 50, 0.03);
+      border: 1px solid rgba(255, 100, 50, 0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .geo-item:hover {
+      background: rgba(255, 100, 50, 0.08);
+      border-color: rgba(255, 100, 50, 0.25);
+      transform: translateY(-1px);
+    }
+    
+    .geo-item.active {
+      background: rgba(255, 100, 50, 0.12);
+      border-color: rgba(255, 100, 50, 0.4);
+      box-shadow: 0 0 10px rgba(255, 100, 50, 0.15);
+    }
+    
+    .geo-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    
+    .geo-item-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: #ffddcc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+    }
+    
+    .geo-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .geo-badge.ip {
+      background: rgba(0, 255, 255, 0.15);
+      color: #00ffff;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+    }
+    
+    .geo-badge.hosting {
+      background: rgba(168, 85, 247, 0.15);
+      color: #a855f7;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    
+    .geo-badge.bio {
+      background: rgba(255, 170, 0, 0.15);
+      color: #ffaa00;
+      border: 1px solid rgba(255, 170, 0, 0.3);
+    }
+    
+    .geo-badge.exif {
+      background: rgba(255, 50, 50, 0.15);
+      color: #ff3232;
+      border: 1px solid rgba(255, 50, 50, 0.3);
+    }
+    
+    .geo-item-coords {
+      font-size: 11px;
+      color: #8a7a72;
+      font-family: monospace;
+    }
+    
+    .geo-viewport-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .geo-controls-overlay {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+    }
+    
+    .geo-btn {
+      background: rgba(20, 4, 4, 0.75);
+      border: 1px solid rgba(255, 100, 50, 0.25);
+      color: #ffaa88;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .geo-btn:hover {
+      background: rgba(255, 100, 50, 0.15);
+      border-color: rgba(255, 100, 50, 0.5);
+      color: #ffddcc;
+    }
+    
+    .geo-btn.active {
+      background: rgba(255, 100, 50, 0.25);
+      border-color: #ff6644;
+      color: #fff;
+    }
+    
+    .geo-details-card {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 320px;
+      background: rgba(20, 4, 4, 0.9);
+      border: 1px solid rgba(255, 100, 50, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      z-index: 10;
+      transform: translateY(150%);
+      transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .geo-details-card.show {
+      transform: translateY(0);
+    }
+    
+    .geo-details-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffddcc;
+      border-bottom: 1px solid rgba(255, 100, 50, 0.15);
+      padding-bottom: 8px;
+    }
+    
+    .geo-details-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(255, 100, 50, 0.08);
+      padding-bottom: 6px;
+    }
+    
+    .geo-details-label {
+      color: #8a7a72;
+    }
+    
+    .geo-details-value {
+      color: #ffddcc;
+      font-weight: 500;
+      text-align: right;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .geo-details-thumbnail {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 100, 50, 0.15);
+      margin-top: 6px;
+    }
+    
+    /* 2D flat-map styling */
+    .geo-flatmap {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #080202;
+      display: none;
+    }
+    
+    .geo-flatmap.active {
+      display: block;
+    }
+    
+    .geo-flatmap-svg {
+      width: 100%;
+      height: 100%;
+      background: #080202;
+    }
+    
+    .geo-flatmap-pin {
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    
+    .geo-flatmap-pin:hover {
+      transform: scale(1.3);
+      filter: brightness(1.2) drop-shadow(0 0 5px currentColor);
+    }
+    
+    .geo-flatmap-pin.active {
+      transform: scale(1.5);
+      filter: brightness(1.4) drop-shadow(0 0 10px currentColor);
+      stroke: #fff;
+      stroke-width: 1px;
+    }
+
+    /* Copy and queue enhancements */
+    .bubble {
+      position: relative;
+    }
+
+    .bubble-copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      background: rgba(30, 6, 6, 0.7);
+      border: 1px solid rgba(255, 102, 68, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 10;
+      color: #ffaa88;
+      padding: 0;
+    }
+
+    .bubble:hover .bubble-copy-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bubble-copy-btn:hover {
+      background: #ff6644;
+      color: #1a0505;
+      border-color: #ff6644;
+    }
+
+    .msg-u .bubble-copy-btn {
+      background: rgba(139, 26, 8, 0.7);
+      border-color: rgba(255, 232, 224, 0.2);
+      color: #ffe8e0;
+    }
+
+    .msg-u .bubble-copy-btn:hover {
+      background: #ffe8e0;
+      color: #8b1a08;
+      border-color: #ffe8e0;
+    }
+
+    .copy-transcript-btn {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffaa88;
+      background: #2d0808;
+      border: 1px solid #6a2020;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      -webkit-app-region: no-drag;
+    }
+
+    .copy-transcript-btn:hover {
+      background: #ff6644;
+      color: #1a0505;
+      border-color: #ff6644;
+    }
+
+    .msg-queued .bubble {
+      background: rgba(139, 26, 8, 0.45) !important;
+      border-color: rgba(170, 42, 16, 0.4) !important;
+      color: rgba(255, 232, 224, 0.7) !important;
+      border-style: dashed !important;
+    }
+
+    .queued-badge {
+      font-size: 10px;
+      color: #ff9977;
+      opacity: 0.8;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .queue-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: rgba(255, 102, 68, 0.05);
+      border-top: 1px solid rgba(255, 102, 68, 0.1);
+      font-size: 11.5px;
+      color: #ffaa88;
+    }
+
+    .queue-spinner {
+      animation: queue-pulse 1.5s infinite ease-in-out;
+      display: inline-block;
+    }
+
+    @keyframes queue-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- Toast notification -->
-<div class="toast" id="toast">
-  <div class="toast-dot"></div>
-  <span id="toast-msg"></span>
-</div>
-
-<div class="titlebar">
-  <div style="display:flex;align-items:center">
-    <div class="dots">
-      <div class="dot dr" onclick="window.close()"></div>
-      <div class="dot dy"></div>
-      <div class="dot dg"></div>
-    </div>
-    <div class="brand">
-      <div class="brand-name">JOE GOLDBERG</div>
-      <div class="brand-sub">OSINT Investigator</div>
-    </div>
-    <span class="mode-badge advisor" id="mode-badge">Advisor</span>
+  <!-- Toast notification -->
+  <div class="toast" id="toast">
+    <div class="toast-dot"></div>
+    <span id="toast-msg"></span>
   </div>
-  <div class="right-controls">
-    <div class="active-pill">
-      <div class="a-dot" id="status-dot"></div>
-      <span id="status-text">Ready</span>
-    </div>
-  </div>
-</div>
 
-<div class="body">
-  <div class="sidebar">
-    <div class="sl">Cases</div>
-    <div id="case-list"><div style="padding:8px 16px;font-size:12px;color:#4a2020">No cases yet</div></div>
-    <div class="sdiv"></div>
-    <div class="sl">Session</div>
-    <div class="srow"><span>Entities</span><span id="s-entities">0</span></div>
-    <div class="srow"><span>Breaches</span><span id="s-breaches">0</span></div>
-    <div class="srow"><span>Pivots</span><span id="s-pivots">0</span></div>
-    <div class="srow"><span>Risk</span><span id="s-risk">—</span></div>
-    <div class="sdiv"></div>
-    <div class="sl">Engine</div>
-    <div class="mrow"><div class="mdot"></div><span class="mname" id="model-display">gemma2:2b</span></div>
-    <div class="sdiv"></div>
-    <div class="tw">
-      <div class="tl">Tools</div>
-      <span class="pill on">sherlock</span>
-      <span class="pill on">maigret</span>
-      <span class="pill on">holehe</span>
-      <span class="pill on">whois</span>
-      <span class="pill on">crt.sh</span>
-      <span class="pill on">wayback</span>
-      <span class="pill on">github</span>
+  <div class="titlebar">
+    <div style="display:flex;align-items:center">
+      <div class="dots">
+        <div class="dot dr" onclick="window.close()"></div>
+        <div class="dot dy"></div>
+        <div class="dot dg"></div>
+      </div>
+      <div class="brand">
+        <div class="brand-name">JOE GOLDBERG</div>
+        <div class="brand-sub">OSINT Investigator</div>
+      </div>
+      <span class="mode-badge advisor" id="mode-badge">Advisor</span>
+    </div>
+    <div class="right-controls">
+      <button class="copy-transcript-btn" onclick="copyTranscript()" title="Copy Full Transcript">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        Copy Transcript
+      </button>
+      <div class="active-pill">
+        <div class="a-dot" id="status-dot"></div>
+        <span id="status-text">Ready</span>
+      </div>
     </div>
   </div>
 
-  <div class="chat">
-    <div class="joe-bg">
-      <img src="joe.jpeg" alt="" onerror="this.style.display='none'">
+  <div class="body">
+    <div class="sidebar">
+      <div class="sl">Cases</div>
+      <div id="case-list">
+        <div style="padding:8px 16px;font-size:12px;color:#4a2020">No cases yet</div>
+      </div>
+      <div class="sdiv"></div>
+      <div class="sl">Session</div>
+      <div class="srow"><span>Entities</span><span id="s-entities">0</span></div>
+      <div class="srow"><span>Breaches</span><span id="s-breaches">0</span></div>
+      <div class="srow"><span>Pivots</span><span id="s-pivots">0</span></div>
+      <div class="srow"><span>Risk</span><span id="s-risk">—</span></div>
+      <div class="sdiv"></div>
+      <div class="sl">Engine</div>
+      <div class="mrow">
+        <div class="mdot"></div><span class="mname" id="model-display">gemma2:2b</span>
+      </div>
+      <div class="sdiv"></div>
+      <div class="tw">
+        <div class="tl">Tools</div>
+        <span class="pill on">sherlock</span>
+        <span class="pill on">maigret</span>
+        <span class="pill on">holehe</span>
+        <span class="pill on">whois</span>
+        <span class="pill on">crt.sh</span>
+        <span class="pill on">wayback</span>
+        <span class="pill on">github</span>
+      </div>
     </div>
-    <div class="joe-fade"></div>
-    <div class="msgs" id="msgs">
-      <!-- Welcome message -->
-      <div class="msg msg-j" id="welcome-msg">
-        <div class="mmeta">Joe &bull; now</div>
-        <div class="bubble">
-          <div class="monologue">
-            "I'm here. Ask me anything — about your target, your approach, where to start.
-            Or just give me a name and I'll do what I do best.<br><br>
-            When you're ready, type <strong>stalk &lt;target&gt;</strong>."
+
+    <div class="chat">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('narrative', true)" id="tab-narrative">Narrative</div>
+        <div class="tab" onclick="switchTab('findings', true)" id="tab-findings">Findings <span class="tab-badge" id="tab-badge-findings">0</span></div>
+        <div class="tab" onclick="switchTab('graph', true)" id="tab-graph">Graph</div>
+        <div class="tab" onclick="switchTab('timeline', true)" id="tab-timeline">Timeline <span class="backlog-indicator">Backlog</span></div>
+        <div class="tab" onclick="switchTab('geo', true)" id="tab-geo">Geo</div>
+        <div class="tab" onclick="switchTab('case-browser', true)" id="tab-case-browser">Case Browser <span class="backlog-indicator">Backlog</span></div>
+        <div class="tab" onclick="switchTab('evidence', true)" id="tab-evidence">Evidence <span class="backlog-indicator">Backlog</span></div>
+      </div>
+
+      <div class="panel active" id="panel-narrative">
+        <div class="joe-bg">
+          <img src="joegui.png" alt="" onerror="this.style.display='none'">
+        </div>
+        <div class="joe-fade"></div>
+        <div class="msgs" id="msgs">
+          <!-- Welcome message -->
+          <div class="msg msg-j" id="welcome-msg">
+            <div class="mmeta">Joe &bull; now</div>
+            <div class="bubble">
+              <button class="bubble-copy-btn" onclick="copyBubbleText(this, event)" title="Copy message">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              <div class="monologue">
+                "I'm here. Ask me anything — about your target, your approach, where to start.
+                Or just give me a name and I'll do what I do best.<br><br>
+                When you're ready, type <strong>stalk &lt;target&gt;</strong>."
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="input-wrap">
-      <div class="pbadge">joe &rsaquo;</div>
-      <input id="msg-input"
-             placeholder="Ask Joe anything, or: stalk target@email.com"
-             autocomplete="off" spellcheck="false">
-      <button class="sbtn" onclick="sendMessage()" id="send-btn">
-        <svg viewBox="0 0 24 24">
-          <line x1="22" y1="2" x2="11" y2="13"/>
-          <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/>
-        </svg>
-      </button>
+
+      <div class="panel" id="panel-findings">
+        <div class="findings-content">
+          <div class="findings-section">
+            <div class="findings-section-header">Verified Hits <span class="ftag ftag-g" id="count-verified">0</span>
+            </div>
+            <div id="list-verified">
+              <div style="font-size:13px;color:#8a4030;font-style:italic">No verified findings yet.</div>
+            </div>
+          </div>
+          <div class="findings-section">
+            <div class="findings-section-header" onclick="toggleUnverified()">Unverified / Inconclusive <span
+                class="ftag ftag-r" id="count-unverified"
+                style="background:#2d0808;color:#ff9977;border:1px solid #6a2020">0</span></div>
+            <div id="list-unverified" style="display:none;">
+              <div style="font-size:13px;color:#8a4030;font-style:italic">No unverified findings yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graph panel -->
+      <div class="panel" id="panel-graph">
+        <div class="graph-content">
+          <div class="graph-canvas-container" id="graph-canvas-container">
+            <div id="graph-3d-canvas" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></div>
+            <div class="graph-controls">
+              <button class="graph-btn" onclick="resetGraphZoom()" title="Reset Zoom">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+              </button>
+              <div class="graph-search-wrap">
+                <input type="text" id="graph-search" placeholder="Search entity..." oninput="searchGraph(this.value)">
+              </div>
+            </div>
+          </div>
+          <div class="graph-details-panel" id="graph-details">
+            <div class="details-placeholder" id="graph-details-placeholder">
+              Select a node in the graph to view intelligence details and correlations.
+            </div>
+            <div class="details-content" id="graph-details-content" style="display:none;">
+              <div class="details-header">
+                <div class="details-title" id="det-value">value</div>
+                <div class="details-type-badge" id="det-type">type</div>
+              </div>
+              
+              <div class="details-section">
+                <div class="details-sec-title">Confidence & Status</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                  <span id="det-ver-badge" class="hit-tag">Verified</span>
+                  <span id="det-conf-text" style="font-weight:700; color:#ff9977;">98%</span>
+                </div>
+                <div class="rbar" style="width:100%;"><div class="rfill" id="det-conf-bar" style="width:98%;"></div></div>
+              </div>
+              
+              <div class="details-section" id="det-screenshot-sec" style="display:none;">
+                <div class="details-sec-title">Captured Evidence</div>
+                <img id="det-screenshot-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width:100%; border-radius:4px; border:1px solid #4a1515; cursor:pointer;" onclick="viewFullEvidence()">
+              </div>
+
+              <div class="details-section">
+                <div class="details-sec-title">Sources</div>
+                <div id="det-sources" style="font-size:12px; color:#ffddcc;">github, social_enum</div>
+              </div>
+              
+              <div class="details-section">
+                <div class="details-sec-title">Correlations & Connections</div>
+                <div class="details-conn-list" id="det-connections">
+                  <!-- connection list items -->
+                </div>
+              </div>
+              
+              <button class="details-pivot-btn" id="det-pivot-btn" onclick="pivotOnEntity()">
+                PIVOT ON ENTITY
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline panel (Backlog placeholder) -->
+      <div class="panel" id="panel-timeline">
+        <div class="backlog-placeholder-content">
+          <div class="backlog-icon">⏳</div>
+          <div class="backlog-title">Chronological Case Timeline</div>
+          <div class="backlog-desc">
+            A linear progression reconstructor to trace precisely when handles, commits, and aliases were created or discovered. Backlog item for Phase 5.
+          </div>
+        </div>
+      </div>
+
+      <!-- Geo panel (Realized) -->
+      <div class="panel" id="panel-geo">
+        <div class="geo-container">
+          <div class="geo-sidebar">
+            <div class="geo-sidebar-header">
+              <div class="geo-sidebar-title">Geographic Targets</div>
+            </div>
+            <div class="geo-list" id="geo-target-list">
+              <!-- Rendered items go here -->
+            </div>
+          </div>
+          <div class="geo-viewport-container">
+            <div class="geo-controls-overlay">
+              <button class="geo-btn active" id="btn-toggle-3d">
+                <span>🌍</span> 3D Globe
+              </button>
+              <button class="geo-btn" id="btn-toggle-2d">
+                <span>🗺️</span> 2D Map
+              </button>
+              <button class="geo-btn" id="btn-geo-reset">
+                <span>🔄</span> Reset View
+              </button>
+            </div>
+            
+            <!-- Three.js Globe viewport -->
+            <div id="geo-globe-viewport" style="width: 100%; height: 100%;"></div>
+            
+            <!-- 2D flat-map viewport -->
+            <div class="geo-flatmap" id="geo-flatmap-viewport">
+              <svg class="geo-flatmap-svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
+                <rect width="1000" height="500" fill="#080202" />
+                <g stroke="rgba(255, 100, 50, 0.15)" stroke-width="0.5">
+                  <!-- Equator and Prime Meridian -->
+                  <line x1="0" y1="250" x2="1000" y2="250" stroke-dasharray="5,5" />
+                  <line x1="500" y1="0" x2="500" y2="500" stroke-dasharray="5,5" />
+                  
+                  <!-- Grid gridlines -->
+                  <line x1="0" y1="125" x2="1000" y2="125" stroke-opacity="0.5" stroke-dasharray="2,5" />
+                  <line x1="0" y1="375" x2="1000" y2="375" stroke-opacity="0.5" stroke-dasharray="2,5" />
+                  <line x1="250" y1="0" x2="250" y2="500" stroke-opacity="0.5" stroke-dasharray="2,5" />
+                  <line x1="750" y1="0" x2="750" y2="500" stroke-opacity="0.5" stroke-dasharray="2,5" />
+                </g>
+                <g id="geo-flatmap-pins"></g>
+              </svg>
+            </div>
+
+            <!-- Floating Selected Location details card -->
+            <div class="geo-details-card" id="geo-details-card">
+              <div class="geo-details-title" id="geo-details-title">Location Details</div>
+              <div class="geo-details-row">
+                <span class="geo-details-label">Type</span>
+                <span class="geo-details-value" id="geo-details-val-type">-</span>
+              </div>
+              <div class="geo-details-row">
+                <span class="geo-details-label">Coordinates</span>
+                <span class="geo-details-value" id="geo-details-val-coords">-</span>
+              </div>
+              <div class="geo-details-row" id="geo-details-row-info">
+                <span class="geo-details-label">Details</span>
+                <span class="geo-details-value" id="geo-details-val-info">-</span>
+              </div>
+              <div class="geo-details-row" id="geo-details-row-source">
+                <span class="geo-details-label">Source</span>
+                <span class="geo-details-value" id="geo-details-val-source">-</span>
+              </div>
+              <img id="geo-details-thumbnail" class="geo-details-thumbnail" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display: none;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Case Browser panel (Backlog placeholder) -->
+      <div class="panel" id="panel-case-browser">
+        <div class="backlog-placeholder-content">
+          <div class="backlog-icon">📁</div>
+          <div class="backlog-title">Cross-Case Intelligence Lookup</div>
+          <div class="backlog-desc">
+            Search across every target database and historic findings directory for usernames, emails, and SSH keys. Backlog item for Phase 6.
+          </div>
+        </div>
+      </div>
+
+      <!-- Evidence panel (Backlog placeholder) -->
+      <div class="panel" id="panel-evidence">
+        <div class="backlog-placeholder-content">
+          <div class="backlog-icon">📸</div>
+          <div class="backlog-title">Evidence Gallery</div>
+          <div class="backlog-desc">
+            A grid gallery of all webpage screenshots, profile avatars, and breach dumps collected during active target sweeps. Backlog item for Phase 6.
+          </div>
+        </div>
+      </div>
+      <div id="queue-status-bar" class="queue-status-bar" style="display: none;">
+        <span class="queue-spinner">⏳</span>
+        <span id="queue-status-text">1 message queued — will process after current scan</span>
+      </div>
+      <div class="input-wrap">
+        <div class="pbadge">joe &rsaquo;</div>
+        <input id="msg-input" placeholder="Ask Joe anything, or: stalk target@email.com" autocomplete="off"
+          spellcheck="false">
+        <button class="sbtn" onclick="sendMessage()" id="send-btn">
+          <svg viewBox="0 0 24 24">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="sbar">
-  <div class="sb"><div class="live-dot" id="engine-dot"></div><span class="v" id="engine-status">SLM Active</span></div>
-  <div class="sb">Model <span class="v" id="sb-model">gemma2:2b</span></div>
-  <div class="sb">Case <span class="v" id="sb-case">none</span></div>
-  <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
-  <div class="sb">Entities <span class="v" id="sb-entities">0</span></div>
-</div>
+  <div class="sbar">
+    <div class="sb">
+      <div class="live-dot" id="engine-dot"></div><span class="v" id="engine-status">SLM Active</span>
+    </div>
+    <div class="sb">Model <span class="v" id="sb-model">gemma2:2b</span></div>
+    <div class="sb">Case <span class="v" id="sb-case">none</span></div>
+    <div class="sb">Uptime <span class="v" id="sb-uptime">00:00</span></div>
+    <div class="sb">Entities <span class="v" id="sb-entities">0</span></div>
+  </div>
 
-<script>
-const state = {
-  entities: 0, breaches: 0, pivots: 0,
-  startTime: Date.now(),
-  scanning: false,
-  hasCase: false,
-  rateLimited: false,
-  isUserScrolledUp: false,
-};
+  <script src="three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
+  <script>
+    // D3 load check / fallback
+    window.addEventListener('load', () => {
+      if (typeof d3 === 'undefined') {
+        console.warn("Failed to load D3.js from primary CDN, attempting fallback...");
+        const s = document.createElement('script');
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js";
+        document.head.appendChild(s);
+      }
+    });
 
-function setScanningState(isScanning) {
-  state.scanning = isScanning;
-  const btn = document.getElementById('send-btn');
-  const input = document.getElementById('msg-input');
-  
-  if (isScanning) {
-    btn.innerHTML = `<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="#fff" stroke="none"/></svg>`;
-    btn.style.background = '#aa2a10';
-    btn.onclick = () => stopInvestigation();
-    input.placeholder = "Investigation in progress... Click Stop to halt.";
-    input.disabled = true;
-  } else {
-    btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/></svg>`;
-    btn.style.background = '';
-    btn.onclick = () => sendMessage();
-    input.placeholder = "Ask Joe anything, or: stalk target@email.com";
-    input.disabled = false;
-    input.focus();
-  }
-}
+    const state = {
+      entities: 0, breaches: 0, pivots: 0,
+      startTime: Date.now(),
+      scanning: false,
+      hasCase: false,
+      rateLimited: false,
+      isUserScrolledUp: false,
+    };
 
-function stopInvestigation() {
-  if (!state.scanning) return;
-  appendScanLine("Aborting investigation...");
-  window.pywebview.api.stop();
-}
+    function setScanningState(isScanning) {
+      state.scanning = isScanning;
+      const btn = document.getElementById('send-btn');
+      const input = document.getElementById('msg-input');
 
-// ── Uptime ────────────────────────────────────────────────────
-setInterval(() => {
-  const s = Math.floor((Date.now() - state.startTime) / 1000);
-  const m = Math.floor(s / 60).toString().padStart(2,'0');
-  const sec = (s % 60).toString().padStart(2,'0');
-  document.getElementById('sb-uptime').textContent = `${m}:${sec}`;
-}, 1000);
+      if (isScanning) {
+        userManuallySelectedTab = false;
+        isFirstEntityOfScan = true;
+        btn.innerHTML = `<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="#fff" stroke="none"/></svg>`;
+        btn.style.background = '#aa2a10';
+        btn.onclick = () => stopInvestigation();
+        input.placeholder = "Type follow-up or correction (queued during scan)...";
+        input.disabled = false;
+      } else {
+        btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none"/></svg>`;
+        btn.style.background = '';
+        btn.onclick = () => sendMessage();
+        input.placeholder = "Ask Joe anything, or: stalk target@email.com";
+        input.disabled = false;
+        input.focus();
+      }
+    }
 
-// ── Toast system ──────────────────────────────────────────────
-let toastTimer = null;
-function showToast(message, type, duration = 4000) {
-  const toast = document.getElementById('toast');
-  const msg = document.getElementById('toast-msg');
-  toast.className = `toast ${type} show`;
-  msg.textContent = message;
-  if (toastTimer) clearTimeout(toastTimer);
-  if (duration > 0) {
-    toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
-  }
-}
+    function stopInvestigation() {
+      if (!state.scanning) return;
+      appendScanLine("Aborting investigation...");
+      window.pywebview.api.stop();
+    }
 
-function hideToast() {
-  document.getElementById('toast').classList.remove('show');
-}
+    // ── Uptime ────────────────────────────────────────────────────
+    setInterval(() => {
+      const s = Math.floor((Date.now() - state.startTime) / 1000);
+      const m = Math.floor(s / 60).toString().padStart(2, '0');
+      const sec = (s % 60).toString().padStart(2, '0');
+      document.getElementById('sb-uptime').textContent = `${m}:${sec}`;
+    }, 1000);
 
-// ── Mode badge ────────────────────────────────────────────────
-function setMode(mode) {
-  const badge = document.getElementById('mode-badge');
-  badge.className = `mode-badge ${mode}`;
-  const labels = {
-    advisor: 'Advisor',
-    investigation: 'Investigation',
-    scanning: 'Scanning...'
-  };
-  badge.textContent = labels[mode] || mode;
-}
+    // ── Toast system ──────────────────────────────────────────────
+    let toastTimer = null;
+    function showToast(message, type, duration = 4000) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toast-msg');
+      toast.className = `toast ${type} show`;
+      msg.textContent = message;
+      if (toastTimer) clearTimeout(toastTimer);
+      if (duration > 0) {
+        toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+      }
+    }
 
-// ── Send message ──────────────────────────────────────────────
-function sendMessage() {
-  const input = document.getElementById('msg-input');
-  const text = input.value.trim();
-  if (!text || state.scanning) return;
-  input.value = '';
+    function hideToast() {
+      document.getElementById('toast').classList.remove('show');
+    }
 
-  // Remove welcome message on first interaction
-  const welcome = document.getElementById('welcome-msg');
-  if (welcome) welcome.remove();
+    // ── Mode badge ────────────────────────────────────────────────
+    function setMode(mode) {
+      const badge = document.getElementById('mode-badge');
+      badge.className = `mode-badge ${mode}`;
+      const labels = {
+        advisor: 'Advisor',
+        investigation: 'Investigation',
+        scanning: 'Scanning...'
+      };
+      badge.textContent = labels[mode] || mode;
+    }
 
-  addUserBubble(text);
-  const parts = text.split(' ');
-  const cmd = parts[0].toLowerCase();
+    // ── Send message ──────────────────────────────────────────────
+    // Queuing and Copying logic
+    let queuedMsgCounter = 0;
+    const pendingQueue = [];
 
-  if (cmd === 'stalk' || cmd === 'pivot') {
-    if (cmd === 'pivot') state.pivots++;
-    setScanningState(true);
-    setMode('scanning');
-    setStatus('Scanning', true);
-    showToast('Investigation started — Joe is watching', 'api-active', 3000);
-    appendScanLine(`Analyzing target context...`);
-    window.pywebview.api.smart_stalk(text);
-  } else if (cmd === 'resume') {
-    window.pywebview.api.resume(parts.slice(1).join(' '));
-  } else if (cmd === 'cases') {
-    window.pywebview.api.list_cases();
-  } else if (cmd === 'export') {
-    window.pywebview.api.export_report();
-  } else if (cmd === 'notes') {
-    window.pywebview.api.add_note(parts.slice(1).join(' '));
-  } else {
-    showTyping();
-    window.pywebview.api.ask(text);
-  }
-}
+    function queuePendingMessage(text) {
+      const msgs = document.getElementById('msgs');
+      const div = document.createElement('div');
+      const id = ++queuedMsgCounter;
+      div.className = 'msg msg-u msg-queued';
+      div.id = `queued-msg-${id}`;
+      div.innerHTML = `<div class="mmeta">You (Queued) &bull; ${now()}</div>
+                   <div class="bubble">
+                     <button class="bubble-copy-btn" onclick="copyBubbleText(this, event)" title="Copy message">
+                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                       </svg>
+                     </button>
+                     ${esc(text)}
+                     <div class="queued-badge">
+                       ⏳ Queued — will process after scan
+                     </div>
+                   </div>`;
+      msgs.appendChild(div);
+      scrollBottom();
 
-document.getElementById('msg-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendMessage();
-});
+      pendingQueue.push({ id: id, text: text });
+      updateQueueStatusBar();
+    }
 
-// ── Python → JS events ────────────────────────────────────────
-window.joe = {
-  receive(event, data) {
-    switch (event) {
-      case 'scan_status':
-        appendScanLine(data.message);
-        break;
+    function updateQueueStatusBar() {
+      const bar = document.getElementById('queue-status-bar');
+      const textEl = document.getElementById('queue-status-text');
+      if (pendingQueue.length > 0) {
+        bar.style.display = 'flex';
+        const msgPlural = pendingQueue.length === 1 ? 'message' : 'messages';
+        textEl.textContent = `${pendingQueue.length} ${msgPlural} queued — will process after current scan`;
+      } else {
+        bar.style.display = 'none';
+      }
+    }
 
-      case 'entity_found':
-        appendHitRow(data);
-        state.entities++;
-        if (data.type === 'breach') state.breaches++;
-        updateStats();
-        break;
+    function processNextQueuedMessage() {
+      if (pendingQueue.length === 0) {
+        updateQueueStatusBar();
+        return;
+      }
+      
+      const item = pendingQueue.shift();
+      updateQueueStatusBar();
+      
+      // Update UI bubble from msg-queued to normal user message
+      const div = document.getElementById(`queued-msg-${item.id}`);
+      if (div) {
+        div.className = 'msg msg-u';
+        const meta = div.querySelector('.mmeta');
+        if (meta) {
+          meta.innerHTML = `You &bull; ${now()}`;
+        }
+        const badge = div.querySelector('.queued-badge');
+        if (badge) {
+          badge.remove();
+        }
+      }
+      
+      executeCommand(item.text);
+    }
 
-      case 'investigation_done':
-        setScanningState(false);
-        state.hasCase = true;
-        setMode('investigation');
-        finishInvestigation(data);
-        setStatus('Ready', false);
-        showToast('Investigation complete — ask Joe anything about the case', 'api-active', 5000);
-        break;
+    function copyBubbleText(btn, event) {
+      event.stopPropagation();
+      const bubble = btn.closest('.bubble');
+      const clone = bubble.cloneNode(true);
+      const copyBtn = clone.querySelector('.bubble-copy-btn');
+      if (copyBtn) copyBtn.remove();
+      const textToCopy = clone.innerText.trim();
+      
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          showToast("Copied to clipboard!", "success");
+          const originalSVG = btn.innerHTML;
+          btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+          setTimeout(() => {
+            btn.innerHTML = originalSVG;
+          }, 1500);
+        })
+        .catch(err => {
+          console.error("Failed to copy message:", err);
+          showToast("Failed to copy message", "error");
+        });
+    }
 
-      case 'joe_answer':
-        removeTyping();
-        if (data.rate_limited) {
-          showToast('Rate limited — Joe is using local model', 'rate-limit', 6000);
-          addJoeMessage(data.text, 'rate-limit-msg');
+    function copyTranscript() {
+      const msgs = document.getElementById('msgs');
+      let transcript = "";
+      
+      msgs.querySelectorAll('.msg').forEach(msg => {
+        if (msg.classList.contains('typing-indicator')) return;
+        const meta = msg.querySelector('.mmeta');
+        const sender = meta ? meta.innerText.replace('•', '-').trim() : '';
+        const bubble = msg.querySelector('.bubble');
+        if (bubble) {
+          const clone = bubble.cloneNode(true);
+          const copyBtn = clone.querySelector('.bubble-copy-btn');
+          if (copyBtn) copyBtn.remove();
+          const bubbleText = clone.innerText.trim();
+          if (bubbleText) {
+            transcript += `[${sender}]\n${bubbleText}\n\n`;
+          }
         } else {
-          addJoeMessage(data.text, 'monologue');
+          const notice = msg.querySelector('.system-error-notice');
+          if (notice) {
+            transcript += `[System Notice]\n${notice.innerText.trim()}\n\n`;
+          }
         }
-        // Update mode badge based on context
-        if (data.mode === 'investigation') setMode('investigation');
-        else if (data.mode === 'advisor') setMode('advisor');
-        break;
+      });
+      
+      if (!transcript.trim()) {
+        showToast("No transcript to copy yet", "info");
+        return;
+      }
+      
+      navigator.clipboard.writeText(transcript.trim())
+        .then(() => showToast("Full transcript copied to clipboard!", "success"))
+        .catch(err => {
+          console.error("Failed to copy transcript:", err);
+          showToast("Failed to copy transcript", "error");
+        });
+    }
 
-      case 'rate_limited':
-        showToast('Daily API limit reached — switching to local SLM', 'rate-limit', 0);
-        document.getElementById('engine-status').textContent = 'SLM Active';
-        document.getElementById('engine-dot').style.background = '#ccaa40';
-        document.getElementById('sb-model').textContent = 'gemma2:2b (local)';
-        document.getElementById('model-display').textContent = 'gemma2:2b (local)';
-        break;
+    function sendMessage() {
+      const input = document.getElementById('msg-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
 
-      case 'cases_loaded':
-        renderCaseList(data.cases);
-        break;
+      // Remove welcome message on first interaction
+      const welcome = document.getElementById('welcome-msg');
+      if (welcome) welcome.remove();
 
-      case 'resumed':
-        resumeCase(data);
-        break;
+      if (state.scanning) {
+        queuePendingMessage(text);
+        return;
+      }
 
-      case 'report_ready':
-        addJoeMessage(`Report saved to: ${data.path}`, 'monologue');
-        showToast(`Report exported`, 'api-active', 3000);
-        break;
+      addUserBubble(text);
+      executeCommand(text);
+    }
 
-      case 'error':
-        addJoeMessage(data.message, 'monologue');
-        setScanningState(false);
-        setMode(state.hasCase ? 'investigation' : 'advisor');
-        setStatus('Ready', false);
-        break;
+    function executeCommand(text) {
+      const parts = text.split(' ');
+      const cmd = parts[0].toLowerCase();
 
-      case 'model_info':
-        document.getElementById('model-display').textContent = data.model;
-        document.getElementById('sb-model').textContent = data.model;
-        if (data.using_gemini) {
-          document.getElementById('engine-status').textContent = 'Gemini Active';
-          document.getElementById('engine-dot').style.background = '#3aad50';
-          showToast('Gemini active for monologue', 'api-active', 3000);
+      // False-positive commands
+      const fpMatch = text.match(/^(?:false\s*positive|fp)[:\s]+(.+)/i)
+        || text.match(/^no\s+that'?s?\s+fake\s*(.*)/i);
+      if (fpMatch) {
+        let remainder = (fpMatch[1] || '').trim();
+        let ctx = 'general';
+        if (remainder.includes('--ctf')) { ctx = 'ctf'; remainder = remainder.replace('--ctf', '').trim(); }
+        else if (remainder.includes('--pentest')) { ctx = 'pentest'; remainder = remainder.replace('--pentest', '').trim(); }
+        showTyping();
+        window.pywebview.api.false_positive(remainder, ctx);
+        return;
+      }
+
+      if (cmd === 'stalk' || cmd === 'pivot') {
+        if (cmd === 'pivot') state.pivots++;
+        setScanningState(true);
+        setMode('scanning');
+        setStatus('Scanning', true);
+        showToast('Investigation started — Joe is watching', 'api-active', 3000);
+        appendScanLine(`Analyzing target context...`);
+        window.pywebview.api.smart_stalk(text);
+      } else if (cmd === 'resume') {
+        window.pywebview.api.resume(parts.slice(1).join(' '));
+      } else if (cmd === 'cases') {
+        window.pywebview.api.list_cases();
+      } else if (cmd === 'export') {
+        window.pywebview.api.export_report();
+      } else if (cmd === 'notes') {
+        window.pywebview.api.add_note(parts.slice(1).join(' '));
+      } else {
+        showTyping();
+        window.pywebview.api.ask(text);
+      }
+    }
+
+    document.getElementById('msg-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // ── Findings Panel Logic ──────────────────────────────────────
+    const findingState = {
+      verified: [],
+      unverified: []
+    };
+
+    function switchTab(tabId, userInitiated = false) {
+      activeTab = tabId;
+      if (userInitiated) {
+        if (tabId === 'narrative' || tabId === 'findings') {
+          userManuallySelectedTab = false;
+        } else {
+          userManuallySelectedTab = true;
         }
-        break;
+      } else {
+        userManuallySelectedTab = false;
+      }
+
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      document.getElementById(`panel-${tabId}`).classList.add('active');
+      if (tabId === 'narrative') {
+        scrollBottom();
+      } else if (tabId === 'graph') {
+        if (graphData.nodes.length > 0) {
+          setTimeout(() => {
+            renderGraph();
+          }, 50);
+        }
+      } else if (tabId === 'geo') {
+        initGeoModule();
+        if (geoRenderer && geoCamera) {
+          setTimeout(() => {
+            const container = document.getElementById('geo-globe-viewport');
+            const width = container.clientWidth || 800;
+            const height = container.clientHeight || 500;
+            geoCamera.aspect = width / height;
+            geoCamera.updateProjectionMatrix();
+            geoRenderer.setSize(width, height);
+          }, 50);
+        }
+      }
     }
-  }
-};
 
-// ── DOM helpers ───────────────────────────────────────────────
-let currentJoeBubble = null;
-
-function addUserBubble(text) {
-  currentJoeBubble = null;
-  const msgs = document.getElementById('msgs');
-  const div = document.createElement('div');
-  div.className = 'msg msg-u';
-  div.innerHTML = `<div class="mmeta">You &bull; ${now()}</div>
-                   <div class="bubble">${esc(text)}</div>`;
-  msgs.appendChild(div);
-  scrollBottom();
-}
-
-function getJoeBubble() {
-  if (currentJoeBubble) return currentJoeBubble;
-  const msgs = document.getElementById('msgs');
-  const wrap = document.createElement('div');
-  wrap.className = 'msg msg-j';
-  wrap.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
-                    <div class="bubble"></div>`;
-  msgs.appendChild(wrap);
-  currentJoeBubble = wrap.querySelector('.bubble');
-  scrollBottom();
-  return currentJoeBubble;
-}
-
-function appendScanLine(msg) {
-  const b = getJoeBubble();
-  const line = document.createElement('div');
-  line.className = 'scan';
-  line.textContent = `› ${msg}`;
-  b.appendChild(line);
-  scrollBottom();
-}
-
-function appendHitRow(data) {
-  const b = getJoeBubble();
-  const isBreach = data.type === 'breach';
-  const row = document.createElement('div');
-  row.className = 'hit-row';
-  
-  let platformHtml = '';
-  if (data.platform) {
-    if (data.url) {
-      platformHtml = `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${data.url}')" class="hit-tag ${isBreach ? 'breach' : 'found'}" title="Open Link">${esc(data.platform)}</a>`;
-    } else {
-      platformHtml = `<span class="hit-tag ${isBreach ? 'breach' : 'found'}">${esc(data.platform)}</span>`;
+    function toggleUnverified() {
+      const el = document.getElementById('list-unverified');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
-  }
 
-  row.innerHTML = `
+    function updateFindingsUI() {
+      // Sort verified by confidence descending
+      findingState.verified.sort((a, b) => b.confidence - a.confidence);
+
+      const vList = document.getElementById('list-verified');
+      if (findingState.verified.length === 0) {
+        vList.innerHTML = `<div style="font-size:13px;color:#8a4030;font-style:italic">No verified findings yet.</div>`;
+      } else {
+        vList.innerHTML = findingState.verified.map(f => `
+      <div class="f-item">
+        <div class="f-item-title">
+          <span class="hit-check">✓</span> ${esc(f.value)}
+          ${f.url ? `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${f.url}')" class="hit-tag found">${esc(f.platform)}</a>` : (f.platform ? `<span class="hit-tag found">${esc(f.platform)}</span>` : '')}
+          <span class="ftag ftag-g">${(f.confidence * 100).toFixed(0)}%</span>
+        </div>
+        <div class="f-item-meta">${esc(f.type)} &middot; Found via ${esc(f.platform)}</div>
+        ${f.quote ? `<div class="f-item-quote">"${esc(f.quote)}"</div>` : ''}
+        ${f.screenshot_path ? `
+          <div style="margin-top: 8px;">
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-screenshot="${esc(f.screenshot_path)}" 
+                 onclick="window.pywebview.api.open_url('${esc(f.screenshot_path)}')" 
+                 style="width: 100px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #4a1515; cursor: pointer; display: block; opacity: 0.8; transition: opacity 0.2s;"
+                 onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8"
+                 title="Click to view full screenshot" />
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+      }
+      document.getElementById('count-verified').textContent = findingState.verified.length;
+
+      const uList = document.getElementById('list-unverified');
+      if (findingState.unverified.length === 0) {
+        uList.innerHTML = `<div style="font-size:13px;color:#8a4030;font-style:italic">No unverified findings yet.</div>`;
+      } else {
+        uList.innerHTML = findingState.unverified.map(f => `
+      <div class="f-item">
+        <div class="f-item-title" style="color:#aa7060">
+          <span class="hit-warn">${f.verified === null ? '?' : '✗'}</span> ${esc(f.value)}
+          ${f.platform ? `<span class="hit-tag ${f.verified === null ? 'inconclusive' : 'unverified'}">${esc(f.platform)}</span>` : ''}
+          <span class="ftag ftag-r">${(f.confidence * 100).toFixed(0)}%</span>
+        </div>
+        <div class="f-item-meta">${esc(f.type)} &middot; Found via ${esc(f.platform)}</div>
+      </div>
+    `).join('');
+      }
+      document.getElementById('count-unverified').textContent = findingState.unverified.length;
+
+      document.getElementById('tab-badge-findings').textContent = findingState.verified.length + findingState.unverified.length;
+      resolveScreenshots();
+    }
+
+    // ── Python → JS events ────────────────────────────────────────
+    window.joe = {
+      receive(event, data) {
+        switch (event) {
+          case 'scan_status':
+            appendScanLine(data.message);
+            break;
+
+          case 'entity_found':
+            if (data.should_narrate) {
+              appendHitRow(data);
+            }
+
+            const fArr = data.verified === true ? findingState.verified : findingState.unverified;
+            const existing = fArr.find(x => x.value === data.value && x.platform === data.platform);
+            if (!existing) {
+              fArr.push(data);
+              updateFindingsUI();
+              if (data.verified === true) {
+                const shouldSwitch = isFirstEntityOfScan || !userManuallySelectedTab || (activeTab === 'narrative' || activeTab === 'findings');
+                if (shouldSwitch) {
+                  switchTab('findings');
+                }
+                isFirstEntityOfScan = false;
+              }
+            } else if (data.confidence > existing.confidence) {
+              existing.confidence = data.confidence;
+              updateFindingsUI();
+            }
+
+            state.entities++;
+            if (data.type === 'breach') state.breaches++;
+            updateStats();
+            addNodeToGraph(data);
+            break;
+
+          case 'investigation_done':
+            setScanningState(false);
+            state.hasCase = true;
+            setMode('investigation');
+            finishInvestigation(data);
+            setStatus('Ready', false);
+            showToast('Investigation complete — ask Joe anything about the case', 'api-active', 5000);
+            if (data.target) {
+              graphData = buildGraphData(data.target.entities || [], data.target.timeline || []);
+              renderGraph();
+              deselectNode();
+            }
+            if (data.target) {
+              initOrUpdateGeoMap(data.target.entities || [], data.target.timeline || []);
+            }
+            setTimeout(() => {
+              processNextQueuedMessage();
+            }, 100);
+            break;
+
+          case 'joe_answer':
+            removeTyping();
+            if (data.error) {
+              addSystemMessage(data.text);
+            } else if (data.rate_limited) {
+              showToast('Rate limited — Joe is using local model', 'rate-limit', 6000);
+              addJoeMessage(data.text, 'rate-limit-msg');
+            } else {
+              addJoeMessage(data.text, 'monologue');
+            }
+            // Update mode badge based on context
+            if (data.mode === 'investigation') setMode('investigation');
+            else if (data.mode === 'advisor') setMode('advisor');
+            break;
+
+          case 'rate_limited':
+            showToast('Daily API limit reached — switching to local SLM', 'rate-limit', 0);
+            document.getElementById('engine-status').textContent = 'SLM Active';
+            document.getElementById('engine-dot').style.background = '#ccaa40';
+            document.getElementById('sb-model').textContent = 'gemma2:2b (local)';
+            document.getElementById('model-display').textContent = 'gemma2:2b (local)';
+            break;
+
+          case 'cases_loaded':
+            renderCaseList(data.cases);
+            break;
+
+          case 'resumed':
+            resumeCase(data);
+            graphData = buildGraphData(data.entities || [], data.timeline || []);
+            renderGraph();
+            deselectNode();
+            initOrUpdateGeoMap(data.entities || [], data.timeline || []);
+            break;
+
+          case 'report_ready':
+            addJoeMessage(`Report saved to: ${data.path}`, 'monologue');
+            showToast(`Report exported`, 'api-active', 3000);
+            break;
+
+          case 'error':
+            addJoeMessage(data.message, 'monologue');
+            setScanningState(false);
+            setMode(state.hasCase ? 'investigation' : 'advisor');
+            setStatus('Ready', false);
+            setTimeout(() => {
+              processNextQueuedMessage();
+            }, 100);
+            break;
+
+          case 'model_info':
+            document.getElementById('model-display').textContent = data.model;
+            document.getElementById('sb-model').textContent = data.model;
+            if (data.using_gemini) {
+              document.getElementById('engine-status').textContent = 'Gemini Active';
+              document.getElementById('engine-dot').style.background = '#3aad50';
+              showToast('Gemini active for monologue', 'api-active', 3000);
+            }
+            break;
+        }
+      }
+    };
+
+    // ── DOM helpers ───────────────────────────────────────────────
+    let currentJoeBubble = null;
+
+    function addUserBubble(text) {
+      currentJoeBubble = null;
+      const msgs = document.getElementById('msgs');
+      const div = document.createElement('div');
+      div.className = 'msg msg-u';
+      div.innerHTML = `<div class="mmeta">You &bull; ${now()}</div>
+                   <div class="bubble">
+                     <button class="bubble-copy-btn" onclick="copyBubbleText(this, event)" title="Copy message">
+                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                       </svg>
+                     </button>
+                     ${esc(text)}
+                   </div>`;
+      msgs.appendChild(div);
+      scrollBottom();
+    }
+
+    function getJoeBubble() {
+      if (currentJoeBubble) return currentJoeBubble;
+      const msgs = document.getElementById('msgs');
+      const wrap = document.createElement('div');
+      wrap.className = 'msg msg-j';
+      wrap.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
+                    <div class="bubble">
+                      <button class="bubble-copy-btn" onclick="copyBubbleText(this, event)" title="Copy message">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                      </button>
+                    </div>`;
+      msgs.appendChild(wrap);
+      currentJoeBubble = wrap.querySelector('.bubble');
+      scrollBottom();
+      return currentJoeBubble;
+    }
+
+    function appendScanLine(msg) {
+      const b = getJoeBubble();
+      const line = document.createElement('div');
+      line.className = 'scan';
+      line.textContent = `› ${msg}`;
+      b.appendChild(line);
+      scrollBottom();
+    }
+
+    function appendHitRow(data) {
+      const b = getJoeBubble();
+      const isBreach = data.type === 'breach';
+      const row = document.createElement('div');
+      row.className = 'hit-row';
+
+      let platformHtml = '';
+      if (data.platform) {
+        if (data.url) {
+          platformHtml = `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${data.url}')" class="hit-tag ${isBreach ? 'breach' : 'found'}" title="Open Link">${esc(data.platform)}</a>`;
+        } else {
+          platformHtml = `<span class="hit-tag ${isBreach ? 'breach' : 'found'}">${esc(data.platform)}</span>`;
+        }
+      }
+
+      // Verification status badge
+      let verifiedHtml = '';
+      if (data.verified === true) {
+        verifiedHtml = '<span class="hit-tag verified">✓ verified</span>';
+      } else if (data.verified === false) {
+        verifiedHtml = '<span class="hit-tag unverified">✗ unverified</span>';
+      } else if (data.verified === null) {
+        verifiedHtml = '<span class="hit-tag inconclusive">? inconclusive</span>';
+      }
+
+      row.innerHTML = `
     <span class="${isBreach ? 'hit-warn' : 'hit-check'}">${isBreach ? '⚠' : '✓'}</span>
     <span class="hit-name">${esc(data.value)}</span>
     ${platformHtml}
+    ${verifiedHtml}
   `;
-  b.appendChild(row);
-  if (data.quote) {
-    const q = document.createElement('div');
-    q.className = 'joe-quote';
-    q.textContent = `"${data.quote}"`;
-    b.appendChild(q);
-  }
-  scrollBottom();
-}
-
-function finishInvestigation(data) {
-  const b = getJoeBubble();
-  const t = data.target;
-  state.entities = t.entities.length;
-  state.breaches = t.breaches.length;
-
-  let html = `<div class="fdiv"></div><div class="findings-head">Findings</div>`;
-
-  // Group usernames
-  const usernames = t.entities.filter(e => e.entity_type === 'username');
-  const emails = t.entities.filter(e => e.entity_type === 'email');
-  const others = t.entities.filter(e => !['username','email'].includes(e.entity_type));
-
-  emails.forEach(e => {
-    let tagHtml = '';
-    if (e.platform) {
-      if (e.metadata && e.metadata.url) {
-        tagHtml = `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${e.metadata.url}')" class="ftag ftag-g" style="text-decoration:none;cursor:pointer" title="Open Link">${esc(e.platform)}</a>`;
-      } else {
-        tagHtml = `<span class="ftag ftag-g">${esc(e.platform)}</span>`;
+      b.appendChild(row);
+      if (data.quote) {
+        const q = document.createElement('div');
+        q.className = 'joe-quote';
+        q.textContent = `"${data.quote}"`;
+        b.appendChild(q);
       }
+      scrollBottom();
     }
-    html += `<div class="f-row"><span class="f-key">email</span>
+
+    function finishInvestigation(data) {
+      const b = getJoeBubble();
+      const t = data.target;
+      state.entities = t.entities.length;
+      state.breaches = t.breaches.length;
+
+      let html = `<div class="fdiv"></div><div class="findings-head">Findings</div>`;
+
+      // Group usernames
+      const usernames = t.entities.filter(e => e.entity_type === 'username');
+      const emails = t.entities.filter(e => e.entity_type === 'email');
+      const others = t.entities.filter(e => !['username', 'email'].includes(e.entity_type));
+
+      emails.forEach(e => {
+        let tagHtml = '';
+        if (e.platform) {
+          if (e.metadata && e.metadata.url) {
+            tagHtml = `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${e.metadata.url}')" class="ftag ftag-g" style="text-decoration:none;cursor:pointer" title="Open Link">${esc(e.platform)}</a>`;
+          } else {
+            tagHtml = `<span class="ftag ftag-g">${esc(e.platform)}</span>`;
+          }
+        }
+        html += `<div class="f-row"><span class="f-key">email</span>
       <span class="f-val">${esc(e.value)} ${tagHtml}
       </span></div>`;
-  });
+      });
 
-  if (usernames.length > 0) {
-    const platforms = usernames.map(e => e.platform).filter(Boolean);
-    html += `<div class="f-row"><span class="f-key">username</span>
+      if (usernames.length > 0) {
+        const platforms = usernames.map(e => e.platform).filter(Boolean);
+        html += `<div class="f-row"><span class="f-key">username</span>
       <span class="f-val">${esc(usernames[0].value)}
         <span class="ftag ftag-g">${usernames.length} platforms</span>
       </span></div>`;
-    if (platforms.length > 0) {
-      html += `<div class="f-row"><span class="f-key"></span>
-        <span class="f-val" style="font-size:11px;color:#aa7060">${esc(platforms.slice(0,8).join(', '))}${platforms.length > 8 ? ` +${platforms.length-8} more` : ''}</span></div>`;
-    }
-  }
+        if (platforms.length > 0) {
+          html += `<div class="f-row"><span class="f-key"></span>
+        <span class="f-val" style="font-size:11px;color:#aa7060">${esc(platforms.slice(0, 8).join(', '))}${platforms.length > 8 ? ` +${platforms.length - 8} more` : ''}</span></div>`;
+        }
+      }
 
-  others.slice(0,4).forEach(e => {
-    html += `<div class="f-row"><span class="f-key">${esc(e.entity_type)}</span>
+      others.slice(0, 4).forEach(e => {
+        html += `<div class="f-row"><span class="f-key">${esc(e.entity_type)}</span>
       <span class="f-val">${esc(e.value)}</span></div>`;
-  });
+      });
 
-  t.breaches.forEach(b2 => {
-    html += `<div class="f-row"><span class="f-key">breach</span>
+      t.breaches.forEach(b2 => {
+        html += `<div class="f-row"><span class="f-key">breach</span>
       <span class="f-val">${esc(b2.name)} <span class="ftag ftag-r">${esc(b2.date)}</span></span></div>`;
-  });
+      });
 
-  const fillW = Math.round(t.risk_score * 100);
-  html += `<div class="f-row"><span class="f-key">risk</span>
+      const fillW = Math.round(t.risk_score * 100);
+      html += `<div class="f-row"><span class="f-key">risk</span>
     <div class="risk-wrap">
       <div class="rbar"><div class="rfill" style="width:${fillW}%"></div></div>
       <span class="rnum">${t.risk_score.toFixed(2)}</span>
     </div></div>
-  <div class="fdiv"></div>
-  <div class="monologue">${formatMonologue(data.monologue)}</div>`;
+  <div class="fdiv"></div>`;
 
-  b.insertAdjacentHTML('beforeend', html);
-  updateStats();
-  document.getElementById('sb-case').textContent = t.primary;
-  scrollBottom();
+      if (data.error) {
+        html += `<div class="system-error-notice">${esc(data.monologue)}</div>`;
+      } else {
+        html += `<div class="monologue">${formatMonologue(data.monologue)}</div>`;
+      }
 
-  // Show model used for monologue
-  if (data.used_gemini) {
-    document.getElementById('engine-status').textContent = 'Gemini Used';
-    document.getElementById('engine-dot').style.background = '#3aad50';
-  }
-}
+      b.insertAdjacentHTML('beforeend', html);
+      updateStats();
+      document.getElementById('sb-case').textContent = t.primary;
+      scrollBottom();
 
-function addJoeMessage(text, cssClass = 'monologue') {
-  currentJoeBubble = null;
-  const msgs = document.getElementById('msgs');
-  const div = document.createElement('div');
-  div.className = 'msg msg-j';
-  div.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
-    <div class="bubble"><div class="${cssClass}">${formatMonologue(text)}</div></div>`;
-  msgs.appendChild(div);
-  scrollBottom();
-}
+      // Show model used for monologue
+      if (data.used_gemini) {
+        document.getElementById('engine-status').textContent = 'Gemini Used';
+        document.getElementById('engine-dot').style.background = '#3aad50';
+      }
+    }
 
-function showTyping() {
-  currentJoeBubble = null;
-  const msgs = document.getElementById('msgs');
-  const div = document.createElement('div');
-  div.className = 'msg msg-j';
-  div.id = 'typing-indicator';
-  div.innerHTML = `<div class="mmeta">Joe</div>
+    function addJoeMessage(text, cssClass = 'monologue') {
+      currentJoeBubble = null;
+      const msgs = document.getElementById('msgs');
+      const div = document.createElement('div');
+      div.className = 'msg msg-j';
+      div.innerHTML = `<div class="mmeta">Joe &bull; ${now()}</div>
+    <div class="bubble">
+      <button class="bubble-copy-btn" onclick="copyBubbleText(this, event)" title="Copy message">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+      <div class="${cssClass}">${formatMonologue(text)}</div>
+    </div>`;
+      msgs.appendChild(div);
+      scrollBottom();
+    }
+
+    function addSystemMessage(text) {
+      currentJoeBubble = null;
+      const msgs = document.getElementById('msgs');
+      const div = document.createElement('div');
+      div.className = 'msg msg-system';
+      div.innerHTML = `<div class="system-error-notice">${esc(text)}</div>`;
+      msgs.appendChild(div);
+      scrollBottom();
+    }
+
+    function showTyping() {
+      currentJoeBubble = null;
+      const msgs = document.getElementById('msgs');
+      const div = document.createElement('div');
+      div.className = 'msg msg-j';
+      div.id = 'typing-indicator';
+      div.innerHTML = `<div class="mmeta">Joe</div>
     <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
-  msgs.appendChild(div);
-  scrollBottom();
-}
+      msgs.appendChild(div);
+      scrollBottom();
+    }
 
-function removeTyping() {
-  const t = document.getElementById('typing-indicator');
-  if (t) t.remove();
-}
+    function removeTyping() {
+      const t = document.getElementById('typing-indicator');
+      if (t) t.remove();
+    }
 
-function renderCaseList(cases) {
-  const list = document.getElementById('case-list');
-  if (!cases.length) {
-    list.innerHTML = `<div style="padding:8px 16px;font-size:12px;color:#4a2020">No cases yet</div>`;
-    return;
-  }
-  list.innerHTML = cases.map(c => `
+    function renderCaseList(cases) {
+      const list = document.getElementById('case-list');
+      if (!cases.length) {
+        list.innerHTML = `<div style="padding:8px 16px;font-size:12px;color:#4a2020">No cases yet</div>`;
+        return;
+      }
+      list.innerHTML = cases.map(c => `
     <div class="case-item" onclick="loadCase('${esc(c.primary)}')">
       <div class="cn">${esc(c.primary)}</div>
       <div class="cm">${c.target_type} &middot; ${c.entities} entities</div>
     </div>`).join('');
-}
+    }
 
-function resumeCase(data) {
-  state.entities = data.entities ? data.entities.length : 0;
-  state.breaches = data.breaches ? data.breaches.length : 0;
-  state.hasCase = true;
-  setMode('investigation');
-  updateStats();
-  document.getElementById('sb-case').textContent = data.primary;
-  addJoeMessage(`Resumed: ${data.primary}. I remember everything.`, 'monologue');
-}
+    function resumeCase(data) {
+      state.entities = data.entities ? data.entities.length : 0;
+      state.breaches = data.breaches ? data.breaches.length : 0;
+      state.hasCase = true;
+      setMode('investigation');
+      updateStats();
+      document.getElementById('sb-case').textContent = data.primary;
+      addJoeMessage(`Resumed: ${data.primary}. I remember everything.`, 'monologue');
 
-function loadCase(target) {
-  window.pywebview.api.resume(target);
-  document.querySelectorAll('.case-item').forEach(el => {
-    el.classList.toggle('active', el.querySelector('.cn')?.textContent === target);
-  });
-}
+      findingState.verified = [];
+      findingState.unverified = [];
+      if (data.entities) {
+        data.entities.forEach(e => {
+          const item = {
+            type: e.entity_type,
+            value: e.value,
+            platform: e.platform || '',
+            confidence: e.confidence,
+            url: e.metadata ? e.metadata.url || '' : '',
+            verified: e.metadata ? e.metadata.verified : null,
+            screenshot_path: e.metadata ? e.metadata.screenshot_path || null : null,
+            quote: e.metadata ? e.metadata.quote || null : null
+          };
+          if (item.verified === true) {
+            findingState.verified.push(item);
+          } else {
+            findingState.unverified.push(item);
+          }
+        });
+      }
+      updateFindingsUI();
+    }
 
-function setStatus(text, pulsing) {
-  document.getElementById('status-text').textContent = text;
-  document.getElementById('status-dot').classList.toggle('pulse', pulsing);
-}
+    function loadCase(target) {
+      window.pywebview.api.resume(target);
+      document.querySelectorAll('.case-item').forEach(el => {
+        el.classList.toggle('active', el.querySelector('.cn')?.textContent === target);
+      });
+    }
 
-function updateStats() {
-  document.getElementById('s-entities').textContent = state.entities;
-  document.getElementById('s-breaches').textContent = state.breaches;
-  document.getElementById('s-pivots').textContent = state.pivots;
-  document.getElementById('sb-entities').textContent = state.entities;
-}
+    function setStatus(text, pulsing) {
+      document.getElementById('status-text').textContent = text;
+      document.getElementById('status-dot').classList.toggle('pulse', pulsing);
+    }
 
-function formatMonologue(text) {
-  let escaped = esc(text);
-  escaped = escaped.replace(/\n\n/g, '<br><br>')
-                   .replace(/\n/g, '<br>')
-                   .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                   .replace(/\*([^*]+?)\*/g, '<em>$1</em>');
-                   
-  escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, label, url) {
-    let cleanUrl = url.replace(/&amp;/g, '&');
-    let safeUrl = cleanUrl.replace(/'/g, "\\'");
-    return `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${safeUrl}')" style="color:#ff6644;text-decoration:underline" title="Open Link">${label}</a>`;
-  });
-  return escaped;
-}
+    function updateStats() {
+      document.getElementById('s-entities').textContent = state.entities;
+      document.getElementById('s-breaches').textContent = state.breaches;
+      document.getElementById('s-pivots').textContent = state.pivots;
+      document.getElementById('sb-entities').textContent = state.entities;
+    }
 
-function esc(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+    function formatMonologue(text) {
+      let escaped = esc(text);
+      escaped = escaped.replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+?)\*/g, '<em>$1</em>');
 
-function now() {
-  return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-}
+      escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (match, label, url) {
+        let cleanUrl = url.replace(/&amp;/g, '&');
+        let safeUrl = cleanUrl.replace(/'/g, "\\'");
+        return `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${safeUrl}')" style="color:#ff6644;text-decoration:underline" title="Open Link">${label}</a>`;
+      });
+      return escaped;
+    }
 
-function scrollBottom() {
-  if (state.isUserScrolledUp) return;
-  const msgs = document.getElementById('msgs');
-  msgs.scrollTop = msgs.scrollHeight;
-}
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
-document.getElementById('msgs').addEventListener('scroll', function() {
-  state.isUserScrolledUp = (this.scrollHeight - this.scrollTop - this.clientHeight) > 50;
-});
+    function now() {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-window.addEventListener('pywebviewready', () => {
-  window.pywebview.api.list_cases();
-  window.pywebview.api.get_model_info();
-});
-</script>
+    function showScreenshotFallback(img) {
+      if (!img) return;
+      
+      const existingFallback = img.parentNode ? img.parentNode.querySelector(`.screenshot-unavailable`) : null;
+      if (existingFallback) {
+        img.style.display = 'none';
+        return;
+      }
+
+      const fallback = document.createElement('div');
+      fallback.className = 'screenshot-unavailable';
+      if (img.id) {
+        fallback.setAttribute('data-fallback-for', img.id);
+      }
+      
+      if (img.id === 'det-screenshot-img') {
+        fallback.style.width = '100%';
+        fallback.style.height = '150px';
+        fallback.style.marginTop = '4px';
+      } else if (img.id === 'geo-details-thumbnail') {
+        fallback.style.width = '100%';
+        fallback.style.height = '120px';
+        fallback.style.marginTop = '6px';
+      } else {
+        fallback.style.width = img.style.width || '100px';
+        fallback.style.height = img.style.height || '60px';
+      }
+      
+      fallback.style.background = '#2d0c0c';
+      fallback.style.border = '1px dashed #6a2020';
+      fallback.style.borderRadius = '4px';
+      fallback.style.display = 'flex';
+      fallback.style.alignItems = 'center';
+      fallback.style.justifyContent = 'center';
+      fallback.style.fontSize = '11px';
+      fallback.style.color = '#ffaa88';
+      fallback.style.textAlign = 'center';
+      fallback.style.padding = '8px';
+      fallback.style.boxSizing = 'border-box';
+      fallback.style.lineHeight = '1.2';
+      fallback.style.cursor = 'default';
+      fallback.textContent = 'Screenshot Unavailable';
+      
+      img.style.display = 'none';
+      if (img.parentNode) {
+        img.parentNode.insertBefore(fallback, img.nextSibling);
+      }
+    }
+
+    function resetScreenshotImage(img) {
+      if (!img) return;
+      img.style.display = 'block';
+      img.onload = null;
+      img.onerror = null;
+      if (img.parentNode) {
+        const fallback = img.parentNode.querySelector(`.screenshot-unavailable`);
+        if (fallback) {
+          fallback.remove();
+        }
+      }
+    }
+
+    function resolveScreenshots() {
+      document.querySelectorAll('img[data-screenshot]').forEach(async (img) => {
+        const relPath = img.getAttribute('data-screenshot');
+        if (!relPath) return;
+        
+        // Ensure image is visible, and clear fallback sibling if any
+        resetScreenshotImage(img);
+        
+        try {
+          const absUri = await window.pywebview.api.get_evidence_uri(relPath);
+          if (absUri) {
+            img.onload = () => {
+              resetScreenshotImage(img);
+            };
+            img.onerror = () => {
+              showScreenshotFallback(img);
+            };
+            img.src = absUri;
+            img.removeAttribute('data-screenshot');
+          } else {
+            showScreenshotFallback(img);
+          }
+        } catch (e) {
+          showScreenshotFallback(img);
+        }
+      });
+    }
+
+    function scrollBottom() {
+      if (state.isUserScrolledUp) return;
+      const msgs = document.getElementById('msgs');
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    document.getElementById('msgs').addEventListener('scroll', function () {
+      state.isUserScrolledUp = (this.scrollHeight - this.scrollTop - this.clientHeight) > 50;
+    });
+
+    // ── Graph Rendering and Helpers ─────────────────────────────────
+    let graphData = { nodes: [], links: [] };
+    let d3Zoom = null;
+    let selectedNode = null;
+    let tbGraphInstance = null;
+    let userManuallySelectedTab = false;
+    let isFirstEntityOfScan = false;
+    let activeTab = 'narrative';
+
+    const ICON_PATHS = {
+      email: '<path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/>',
+      domain: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>',
+      profile_link: '<path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>',
+      username: '<path d="M19.78 12.9L15 8.12V3h-6v10.12l4.78 4.78c.39.39 1.02.39 1.41 0l4.58-4.58c.4-.39.4-1.03 0-1.42zM12 6c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/>',
+      name: '<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>',
+      ip: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>',
+      mention: '<path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>',
+      default: '<path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>'
+    };
+
+    function buildGraphData(entities, timeline) {
+      const oldNodesMap = new Map(graphData.nodes.map(n => [n.id, n]));
+      const nodes = [];
+      const links = [];
+      const nodeMap = new Map();
+
+      function getEntityId(type, val, platform) {
+        const plat = platform || 'unknown';
+        return `${type}:${val}:${plat}`;
+      }
+
+      // 1. Add nodes
+      entities.forEach(e => {
+        const id = getEntityId(e.entity_type || e.type, e.value, e.platform);
+        const oldNode = oldNodesMap.get(id);
+        const node = {
+          id: id,
+          value: e.value,
+          type: e.entity_type || e.type,
+          platform: e.platform || '',
+          confidence: e.confidence || 0.0,
+          verified: e.metadata ? e.metadata.verified : (e.verified !== undefined ? e.verified : null),
+          screenshot_path: e.metadata ? e.metadata.screenshot_path : (e.screenshot_path || null),
+          sources: e.sources || (e.platform ? [e.platform] : []),
+          metadata: e.metadata || {}
+        };
+        if (oldNode) {
+          node.x = oldNode.x;
+          node.y = oldNode.y;
+          node.vx = oldNode.vx;
+          node.vy = oldNode.vy;
+        }
+        nodes.push(node);
+        nodeMap.set(id, node);
+      });
+
+      // 2. Add edges from timeline 'correlation_found' events
+      const addedEdges = new Set();
+      if (timeline) {
+        timeline.forEach(event => {
+          if (event.event === 'correlation_found' && event.data) {
+            const source = event.data.entity_a;
+            const target = event.data.entity_b;
+            const signal = event.data.signal;
+            const confBefore = event.data.confidence_before;
+            const confAfter = event.data.confidence_after;
+
+            const edgeKey = [source, target].sort().join('->');
+            if (!addedEdges.has(edgeKey)) {
+              links.push({
+                source: source,
+                target: target,
+                signal: signal,
+                confidence_before: confBefore,
+                confidence_after: confAfter
+              });
+              addedEdges.add(edgeKey);
+            }
+          }
+        });
+      }
+
+      // 3. Add edges from related_to metadata
+      entities.forEach(e => {
+        const sourceId = getEntityId(e.entity_type || e.type, e.value, e.platform);
+        const metadata = e.metadata || {};
+        if (metadata.related_to) {
+          Object.entries(metadata.related_to).forEach(([relType, relVal]) => {
+            if (!relVal) return;
+            nodes.forEach(o => {
+              if (o.type === relType && o.value.toLowerCase() === String(relVal).toLowerCase()) {
+                const targetId = o.id;
+                if (sourceId !== targetId) {
+                  const edgeKey = [sourceId, targetId].sort().join('->');
+                  if (!addedEdges.has(edgeKey)) {
+                    links.push({
+                      source: sourceId,
+                      target: targetId,
+                      signal: 'related_metadata',
+                      type: relType
+                    });
+                    addedEdges.add(edgeKey);
+                  }
+                }
+              }
+            });
+          });
+        }
+      });
+
+      return { nodes, links };
+    }
+
+    function addNodeToGraph(e) {
+      function getEntityId(type, val, platform) {
+        const plat = platform || 'unknown';
+        return `${type}:${val}:${plat}`;
+      }
+
+      const id = getEntityId(e.type, e.value, e.platform);
+      let node = graphData.nodes.find(n => n.id === id);
+      if (!node) {
+        node = {
+          id: id,
+          value: e.value,
+          type: e.type,
+          platform: e.platform || '',
+          confidence: e.confidence || 0.0,
+          verified: e.verified,
+          screenshot_path: e.screenshot_path || null,
+          sources: e.platform ? [e.platform] : [],
+          x: Math.random() * 400 + 200,
+          y: Math.random() * 300 + 100
+        };
+        graphData.nodes.push(node);
+      } else {
+        node.confidence = Math.max(node.confidence, e.confidence || 0.0);
+        if (e.verified !== undefined) node.verified = e.verified;
+        if (e.screenshot_path) node.screenshot_path = e.screenshot_path;
+      }
+
+      if (e.metadata && e.metadata.related_to) {
+        Object.entries(e.metadata.related_to).forEach(([relType, relVal]) => {
+          if (!relVal) return;
+          graphData.nodes.forEach(o => {
+            if (o.type === relType && o.value.toLowerCase() === String(relVal).toLowerCase()) {
+              const targetId = o.id;
+              if (node.id !== targetId) {
+                const edgeKey = [node.id, targetId].sort().join('->');
+                const existingLink = graphData.links.find(l => {
+                  const sId = typeof l.source === 'object' ? l.source.id : l.source;
+                  const tId = typeof l.target === 'object' ? l.target.id : l.target;
+                  return (sId === node.id && tId === targetId) || (sId === targetId && tId === node.id);
+                });
+                if (!existingLink) {
+                  graphData.links.push({
+                    source: node.id,
+                    target: targetId,
+                    signal: 'related_metadata',
+                    type: relType
+                  });
+                }
+              }
+            }
+          });
+        });
+      }
+
+      renderGraph();
+    }
+
+    function renderGraph() {
+      if (typeof ForceGraph3D === 'undefined') {
+        console.warn("ForceGraph3D not loaded yet, retrying in 100ms...");
+        setTimeout(renderGraph, 100);
+        return;
+      }
+
+      const container = document.getElementById('graph-canvas-container');
+      const canvasEl = document.getElementById('graph-3d-canvas');
+      if (!canvasEl) return;
+      
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 500;
+
+      if (graphData.nodes.length === 0) {
+        canvasEl.innerHTML = `
+          <div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%; color:#6a2020; font-size:14px; font-style:italic;">
+            No entities present to construct relationship graph.
+          </div>
+        `;
+        return;
+      } else {
+        canvasEl.innerHTML = '';
+      }
+
+      if (!tbGraphInstance) {
+        tbGraphInstance = ForceGraph3D()(canvasEl)
+          .backgroundColor('#0d0505')
+          .showNavInfo(false)
+          .width(width)
+          .height(height)
+          .linkDirectionalArrowLength(3.5)
+          .linkDirectionalArrowRelPos(1)
+          .linkWidth(1.5)
+          .onNodeClick((node, event) => {
+            selectNode(node);
+          });
+
+        const controls = tbGraphInstance.controls();
+        if (controls) {
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.05;
+        }
+      }
+
+      const nodesData = graphData.nodes.map(n => ({...n}));
+      const linksData = graphData.links.map(l => ({
+        source: typeof l.source === 'object' ? l.source.id : l.source,
+        target: typeof l.target === 'object' ? l.target.id : l.target,
+        signal: l.signal,
+        type: l.type
+      }));
+
+      tbGraphInstance
+        .nodeThreeObject(node => {
+          const group = new THREE.Group();
+          const radius = 6 + (node.confidence || 0.5) * 6;
+          const color = getNodeBorderColor(node);
+
+          let opacity = 0.85;
+          let wireOpacity = Math.max(0.15, node.confidence * 0.4);
+          let labelOpacity = 1.0;
+
+          if (graphSearchQuery) {
+            const matches = node.value.toLowerCase().includes(graphSearchQuery);
+            if (!matches) {
+              opacity = 0.15;
+              wireOpacity = 0.05;
+              labelOpacity = 0.2;
+            } else {
+              opacity = 1.0;
+              wireOpacity = 0.7;
+              labelOpacity = 1.0;
+            }
+          }
+
+          const sphereGeo = new THREE.SphereGeometry(radius, 16, 16);
+          const sphereMat = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: opacity
+          });
+          const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+          group.add(sphereMesh);
+
+          const wireGeo = new THREE.SphereGeometry(radius + 2, 8, 8);
+          const wireMat = new THREE.MeshBasicMaterial({
+            color: color,
+            wireframe: true,
+            transparent: true,
+            opacity: wireOpacity
+          });
+          const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+          group.add(wireMesh);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 64;
+          const ctx = canvas.getContext('2d');
+          ctx.font = 'Bold 22px Courier New';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          const labelText = truncateLabel(node.value);
+          ctx.fillText(labelText, 128, 32);
+
+          const texture = new THREE.CanvasTexture(canvas);
+          const spriteMat = new THREE.SpriteMaterial({ 
+            map: texture, 
+            transparent: true,
+            opacity: labelOpacity
+          });
+          const sprite = new THREE.Sprite(spriteMat);
+          sprite.scale.set(30, 7.5, 1);
+          sprite.position.set(0, - (radius + 6), 0);
+          group.add(sprite);
+
+          return group;
+        })
+        .linkColor(link => {
+          const origColor = getLinkColor(link.signal);
+          if (graphSearchQuery) {
+            const srcVal = (typeof link.source === 'object' ? link.source.value : (graphData.nodes.find(n => n.id === link.source)?.value || '')).toLowerCase();
+            const tgtVal = (typeof link.target === 'object' ? link.target.value : (graphData.nodes.find(n => n.id === link.target)?.value || '')).toLowerCase();
+            if (srcVal.includes(graphSearchQuery) || tgtVal.includes(graphSearchQuery)) {
+              return origColor;
+            }
+            return '#200505';
+          }
+          return origColor;
+        })
+        .linkWidth(link => {
+          if (graphSearchQuery) {
+            const srcVal = (typeof link.source === 'object' ? link.source.value : (graphData.nodes.find(n => n.id === link.source)?.value || '')).toLowerCase();
+            const tgtVal = (typeof link.target === 'object' ? link.target.value : (graphData.nodes.find(n => n.id === link.target)?.value || '')).toLowerCase();
+            if (srcVal.includes(graphSearchQuery) || tgtVal.includes(graphSearchQuery)) {
+              return 3.0;
+            }
+            return 0.5;
+          }
+          return 1.5;
+        })
+        .graphData({ nodes: nodesData, links: linksData });
+
+      setTimeout(() => {
+        if (tbGraphInstance) {
+          tbGraphInstance.zoomToFit(400);
+        }
+      }, 300);
+
+      if (selectedNode) {
+        const found = nodesData.find(n => n.id === selectedNode.id);
+        if (found) {
+          selectNode(found);
+        }
+      }
+    }
+
+    function getRadius(d) {
+      const minR = 14;
+      const maxR = 26;
+      return minR + (d.confidence || 0.5) * (maxR - minR);
+    }
+
+    function getNodeBorderColor(d) {
+      if (d.verified === true) return "#10b981";
+      if (d.verified === false) return "#ef4444";
+      return "#ccaa40";
+    }
+
+    function getNodeGlow(d) {
+      const color = getNodeBorderColor(d);
+      return `drop-shadow(0 0 6px ${color})`;
+    }
+
+    function getLinkColor(signal) {
+      if (!signal) return "#4a1c1c";
+      switch(signal) {
+        case "name_match": return "#10b981";
+        case "bio_match": return "#8b5cf6";
+        case "avatar_match": return "#06b6d4";
+        case "location_match": return "#f59e0b";
+        case "related_metadata": return "#ec4899";
+        default: return "#4b5563";
+      }
+    }
+
+    function truncateLabel(s) {
+      if (!s) return "";
+      if (s.length > 15) {
+        return s.substring(0, 12) + "...";
+      }
+      return s;
+    }
+
+    let graphSearchQuery = "";
+
+    function selectNode(d) {
+      selectedNode = d;
+      
+      document.getElementById('graph-details-placeholder').style.display = 'none';
+      document.getElementById('graph-details-content').style.display = 'block';
+
+      const valEl = document.getElementById('det-value');
+      const isUrl = d.type === 'profile_link' || d.type === 'domain' || d.value.startsWith('http');
+      if (isUrl) {
+        valEl.innerHTML = `<a href="#" style="color:#ff6644; text-decoration:underline; cursor:pointer;" onclick="if(window.pywebview && window.pywebview.api){window.pywebview.api.open_url('${d.value}');} return false;">${esc(d.value)}</a>`;
+      } else {
+        valEl.textContent = d.value;
+      }
+      document.getElementById('det-type').textContent = d.type;
+      
+      const badge = document.getElementById('det-ver-badge');
+      if (d.verified === true) {
+        badge.className = "hit-tag verified";
+        badge.style.background = "#10b981";
+        badge.style.color = "#042f1a";
+        badge.textContent = "✓ Verified";
+      } else if (d.verified === false) {
+        badge.className = "hit-tag unverified";
+        badge.style.background = "#ef4444";
+        badge.style.color = "#450a0a";
+        badge.textContent = "✗ Unverified";
+      } else {
+        badge.className = "hit-tag inconclusive";
+        badge.style.background = "#ccaa40";
+        badge.style.color = "#3a2a00";
+        badge.textContent = "? Inconclusive";
+      }
+
+      document.getElementById('det-conf-text').textContent = `${(d.confidence * 100).toFixed(0)}%`;
+      document.getElementById('det-conf-bar').style.width = `${(d.confidence * 100).toFixed(0)}%`;
+      document.getElementById('det-conf-bar').style.background = d.verified === true ? 'linear-gradient(90deg, #10b981, #3aad50)' : 'linear-gradient(90deg, #aa2a10, #ff4422)';
+
+      const screenSec = document.getElementById('det-screenshot-sec');
+      const img = document.getElementById('det-screenshot-img');
+      if (img) {
+        resetScreenshotImage(img);
+      }
+
+      if (d.screenshot_path) {
+        screenSec.style.display = 'block';
+        if (img) {
+          img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+          img.setAttribute('data-screenshot', d.screenshot_path);
+          img.alt = d.value;
+          resolveScreenshots();
+        }
+      } else {
+        screenSec.style.display = 'none';
+      }
+
+      document.getElementById('det-sources').textContent = (d.sources || []).join(', ');
+
+      const conns = graphData.links.filter(l => {
+        const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+        const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+        return sourceId === d.id || targetId === d.id;
+      });
+
+      const connList = document.getElementById('det-connections');
+      if (conns.length === 0) {
+        connList.innerHTML = `<div style="font-size:12px; color:#8a4030; font-style:italic;">No active correlations recorded for this entity.</div>`;
+      } else {
+        connList.innerHTML = conns.map(l => {
+          const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+          const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+          const otherId = sourceId === d.id ? targetId : sourceId;
+          const otherNode = graphData.nodes.find(n => n.id === otherId);
+          if (!otherNode) return '';
+          
+          let signalLabel = (l.signal || 'direct connection').replace(/_/g, ' ');
+          if (l.confidence_before !== undefined && l.confidence_after !== undefined) {
+            const diff = ((l.confidence_after - l.confidence_before) * 100).toFixed(1);
+            signalLabel += ` (Boost: +${diff}%)`;
+          }
+
+          return `
+            <div class="details-conn-item" onclick="highlightAndSelectNodeById('${otherNode.id}')">
+              <span class="details-conn-value">${esc(otherNode.value)}</span>
+              <span class="details-conn-signal">
+                <span style="background:${getLinkColor(l.signal)}; width:6px; height:6px; border-radius:50%; display:inline-block;"></span>
+                ${esc(signalLabel)}
+              </span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (tbGraphInstance) {
+        tbGraphInstance.nodeThreeObject(tbGraphInstance.nodeThreeObject());
+      }
+    }
+
+    function deselectNode() {
+      selectedNode = null;
+      document.getElementById('graph-details-placeholder').style.display = 'flex';
+      document.getElementById('graph-details-content').style.display = 'none';
+
+      if (tbGraphInstance) {
+        tbGraphInstance.nodeThreeObject(tbGraphInstance.nodeThreeObject());
+      }
+    }
+
+    function highlightAndSelectNodeById(id) {
+      if (!tbGraphInstance) return;
+      const graphDataState = tbGraphInstance.graphData();
+      const node = graphDataState.nodes.find(n => n.id === id);
+      if (node) {
+        selectNode(node);
+        const distance = 80;
+        const distRatio = 1 + distance/Math.hypot(node.x || 1, node.y || 1, node.z || 1);
+        tbGraphInstance.cameraPosition(
+          { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio },
+          node,
+          1000
+        );
+      }
+    }
+
+    function viewFullEvidence() {
+      if (selectedNode && selectedNode.screenshot_path) {
+        window.pywebview.api.open_url(selectedNode.screenshot_path);
+      }
+    }
+
+    function pivotOnEntity() {
+      if (!selectedNode) return;
+      const val = selectedNode.value;
+      const type = selectedNode.type;
+      
+      const input = document.getElementById('msg-input');
+      switchTab('narrative');
+      
+      if (type === 'username' || type === 'email' || type === 'domain' || type === 'ip') {
+        input.value = `pivot ${val}`;
+      } else {
+        input.value = `stalk ${val}`;
+      }
+      
+      input.focus();
+    }
+
+    function resetGraphZoom() {
+      if (tbGraphInstance) {
+        tbGraphInstance.zoomToFit(500);
+      }
+    }
+
+    function searchGraph(query) {
+      graphSearchQuery = (query || "").trim().toLowerCase();
+      if (tbGraphInstance) {
+        tbGraphInstance
+          .nodeThreeObject(tbGraphInstance.nodeThreeObject())
+          .linkColor(tbGraphInstance.linkColor())
+          .linkWidth(tbGraphInstance.linkWidth());
+      }
+    }
+
+    // ── Geo panel state and variables ───────────────────────────────
+    let geoLocations = [];
+    let geoActiveTab = '3d'; // '3d' or '2d'
+    let selectedGeoItem = null;
+    
+    // Three.js instances
+    let geoScene, geoCamera, geoRenderer, geoGlobe, geoWireframe, geoAmbientLight, geoPointLight;
+    let pinMeshes = [];
+    let isGlobeDragging = false;
+    let previousGlobeMousePosition = { x: 0, y: 0 };
+    let targetGlobeCameraPos = new THREE.Vector3(0, 0, 15);
+    let isTransitioningCamera = false;
+    let geoInitialized = false;
+
+    function initGeoModule() {
+      if (geoInitialized) return;
+      
+      const container = document.getElementById('geo-globe-viewport');
+      if (!container) return;
+      
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 500;
+      
+      // 1. Scene & Camera
+      geoScene = new THREE.Scene();
+      
+      geoCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      geoCamera.position.copy(targetGlobeCameraPos);
+      
+      // 2. Renderer
+      geoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      geoRenderer.setSize(width, height);
+      geoRenderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(geoRenderer.domElement);
+      
+      // 3. Globe mesh
+      const sphereGeo = new THREE.SphereGeometry(5, 64, 64);
+      // Dark textured styling
+      const globeMat = new THREE.MeshPhongMaterial({
+        color: 0x180a0a,
+        specular: 0x331111,
+        shininess: 15,
+        transparent: true,
+        opacity: 0.95
+      });
+      
+      // Load texture offline
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load('world_outline.jpg', (texture) => {
+        globeMat.map = texture;
+        globeMat.color.setHex(0xffffff);
+        globeMat.needsUpdate = true;
+      }, undefined, (err) => {
+        console.warn("Failed to load offline texture, using fallback solid shading", err);
+      });
+      
+      geoGlobe = new THREE.Mesh(sphereGeo, globeMat);
+      geoScene.add(geoGlobe);
+      
+      // Tactical wireframe overlay
+      const wireframeGeo = new THREE.SphereGeometry(5.05, 32, 32);
+      const wireframeMat = new THREE.MeshBasicMaterial({
+        color: 0xff4422,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.08
+      });
+      geoWireframe = new THREE.Mesh(wireframeGeo, wireframeMat);
+      geoGlobe.add(geoWireframe);
+      
+      // 4. Lighting
+      geoAmbientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      geoScene.add(geoAmbientLight);
+      
+      geoPointLight = new THREE.PointLight(0xffeedd, 1.2, 100);
+      geoPointLight.position.set(20, 20, 20);
+      geoScene.add(geoPointLight);
+      
+      const rimLight = new THREE.PointLight(0xff5533, 0.6, 50);
+      rimLight.position.set(-20, -10, -20);
+      geoScene.add(rimLight);
+      
+      // 5. Mouse Interaction Controls
+      const canvas = geoRenderer.domElement;
+      canvas.addEventListener('mousedown', (e) => {
+        isGlobeDragging = true;
+        isTransitioningCamera = false;
+        previousGlobeMousePosition = { x: e.clientX, y: e.clientY };
+      });
+      
+      canvas.addEventListener('mousemove', (e) => {
+        if (!isGlobeDragging) return;
+        
+        const delta = {
+          x: e.clientX - previousGlobeMousePosition.x,
+          y: e.clientY - previousGlobeMousePosition.y
+        };
+        
+        if (geoGlobe) {
+          geoGlobe.rotation.y += delta.x * 0.005;
+          geoGlobe.rotation.x += delta.y * 0.005;
+          geoGlobe.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, geoGlobe.rotation.x));
+          
+          geoPointLight.position.x = 20 * Math.sin(geoGlobe.rotation.y);
+          geoPointLight.position.z = 20 * Math.cos(geoGlobe.rotation.y);
+        }
+        
+        previousGlobeMousePosition = { x: e.clientX, y: e.clientY };
+      });
+      
+      window.addEventListener('mouseup', () => {
+        isGlobeDragging = false;
+      });
+      
+      // Zoom via mouse wheel
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (!geoCamera) return;
+        
+        isTransitioningCamera = false;
+        
+        const zoomFactor = 0.03;
+        const minDist = 6.5;
+        const maxDist = 30.0;
+        
+        const direction = geoCamera.position.clone().normalize();
+        let dist = geoCamera.position.length();
+        
+        dist += e.deltaY * zoomFactor * 0.1;
+        dist = Math.max(minDist, Math.min(maxDist, dist));
+        
+        geoCamera.position.copy(direction.multiplyScalar(dist));
+        targetGlobeCameraPos.copy(geoCamera.position);
+      }, { passive: false });
+      
+      // Touch support for drag and pinch-to-zoom
+      let touchStartDist = 0;
+      let isTouchDragging = false;
+      let previousTouchPosition = { x: 0, y: 0 };
+      
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isTouchDragging = true;
+          isTransitioningCamera = false;
+          previousTouchPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2) {
+          isTouchDragging = false;
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          touchStartDist = Math.sqrt(dx * dx + dy * dy);
+        }
+      }, { passive: true });
+      
+      canvas.addEventListener('touchmove', (e) => {
+        if (isTouchDragging && e.touches.length === 1 && geoGlobe) {
+          const delta = {
+            x: e.touches[0].clientX - previousTouchPosition.x,
+            y: e.touches[0].clientY - previousTouchPosition.y
+          };
+          geoGlobe.rotation.y += delta.x * 0.005;
+          geoGlobe.rotation.x += delta.y * 0.005;
+          geoGlobe.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, geoGlobe.rotation.x));
+          
+          geoPointLight.position.x = 20 * Math.sin(geoGlobe.rotation.y);
+          geoPointLight.position.z = 20 * Math.cos(geoGlobe.rotation.y);
+          
+          previousTouchPosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2 && geoCamera) {
+          e.preventDefault();
+          isTransitioningCamera = false;
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (touchStartDist > 0) {
+            const factor = touchStartDist / dist;
+            const direction = geoCamera.position.clone().normalize();
+            let cameraDist = geoCamera.position.length() * factor;
+            cameraDist = Math.max(6.5, Math.min(30.0, cameraDist));
+            geoCamera.position.copy(direction.multiplyScalar(cameraDist));
+            targetGlobeCameraPos.copy(geoCamera.position);
+          }
+          touchStartDist = dist;
+        }
+      }, { passive: false });
+      
+      canvas.addEventListener('touchend', () => {
+        isTouchDragging = false;
+        touchStartDist = 0;
+      });
+      
+      // Raycasting for pin clicks
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, geoCamera);
+        const intersects = raycaster.intersectObjects(pinMeshes);
+        if (intersects.length > 0) {
+          const clickedPin = intersects[0].object;
+          if (clickedPin.userData) {
+            selectGeoLocation(clickedPin.userData);
+          }
+        }
+      });
+      
+      // 6. UI Action Bindings
+      document.getElementById('btn-toggle-3d').addEventListener('click', () => switchGeoTab('3d'));
+      document.getElementById('btn-toggle-2d').addEventListener('click', () => switchGeoTab('2d'));
+      document.getElementById('btn-geo-reset').addEventListener('click', () => resetGeoCamera());
+      
+      // 7. Start Animation Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        
+        // Auto rotation when idle
+        if (!isGlobeDragging && geoGlobe && !isTransitioningCamera) {
+          geoGlobe.rotation.y += 0.0015;
+        }
+        
+        // Smooth camera transitions
+        if (isTransitioningCamera && geoCamera) {
+          geoCamera.position.lerp(targetGlobeCameraPos, 0.05);
+          geoCamera.lookAt(0, 0, 0);
+          if (geoCamera.position.distanceTo(targetGlobeCameraPos) < 0.02) {
+            isTransitioningCamera = false;
+          }
+        } else if (geoCamera) {
+          geoCamera.lookAt(0, 0, 0);
+        }
+        
+        const time = Date.now() * 0.003;
+        pinMeshes.forEach(mesh => {
+          if (mesh.userData && mesh.userData === selectedGeoItem) {
+            const pulse = 1.3 + Math.sin(time * 2) * 0.2;
+            mesh.scale.set(pulse, pulse, pulse);
+          } else {
+            const pulse = 1.0 + Math.sin(time) * 0.1;
+            mesh.scale.set(pulse, pulse, pulse);
+          }
+        });
+        
+        if (geoRenderer && geoScene && geoCamera) {
+          geoRenderer.render(geoScene, geoCamera);
+        }
+      }
+      
+      animate();
+      geoInitialized = true;
+    }
+
+    function switchGeoTab(tab) {
+      geoActiveTab = tab;
+      document.getElementById('btn-toggle-3d').classList.toggle('active', tab === '3d');
+      document.getElementById('btn-toggle-2d').classList.toggle('active', tab === '2d');
+      
+      document.getElementById('geo-globe-viewport').style.display = tab === '3d' ? 'block' : 'none';
+      document.getElementById('geo-flatmap-viewport').style.display = tab === '2d' ? 'block' : 'none';
+      
+      if (tab === '3d' && geoRenderer) {
+        const container = document.getElementById('geo-globe-viewport');
+        geoRenderer.setSize(container.clientWidth, container.clientHeight);
+      }
+    }
+
+    function resetGeoCamera() {
+      targetGlobeCameraPos.set(0, 0, 15);
+      isTransitioningCamera = true;
+      if (geoGlobe) {
+        geoGlobe.rotation.set(0, 0, 0);
+        if (geoWireframe) geoWireframe.rotation.set(0, 0, 0);
+      }
+      deselectGeoItem();
+    }
+
+    function deselectGeoItem() {
+      selectedGeoItem = null;
+      document.querySelectorAll('.geo-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.geo-flatmap-pin').forEach(el => el.classList.remove('active'));
+      
+      const card = document.getElementById('geo-details-card');
+      card.classList.remove('show');
+    }
+
+    function latLngToVector3(latVal, lngVal, radius) {
+      const lat = parseFloat(latVal);
+      const lng = parseFloat(lngVal);
+      if (isNaN(lat) || isNaN(lng)) return new THREE.Vector3(0, 0, 0);
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
+      
+      return new THREE.Vector3(
+        -radius * Math.sin(phi) * Math.sin(theta),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.cos(theta)
+      );
+    }
+
+    function initOrUpdateGeoMap(entities, timeline) {
+      initGeoModule();
+      
+      geoLocations = [];
+      
+      // Parse Bio locations
+      entities.forEach(e => {
+        if (e.metadata && e.metadata.geocoded) {
+          const g = e.metadata.geocoded;
+          geoLocations.push({
+            id: 'bio-' + e.value + '-' + Math.random().toString(36).substr(2, 4),
+            lat: parseFloat(g.lat),
+            lng: parseFloat(g.lng),
+            type: 'bio',
+            label: e.value,
+            precision: g.precision,
+            source_text: e.metadata.location || 'Profile Bio',
+            extra: `Platform: ${e.platform || 'OSINT'}`
+          });
+        }
+        
+        // EXIF locations
+        if (e.metadata && e.metadata.exif_location) {
+          const g = e.metadata.exif_location;
+          geoLocations.push({
+            id: 'exif-' + e.value + '-' + Math.random().toString(36).substr(2, 4),
+            lat: parseFloat(g.lat),
+            lng: parseFloat(g.lng),
+            type: 'exif',
+            label: e.value,
+            screenshot_path: e.metadata.screenshot_path,
+            extra: `Extracted GPS from screenshot evidence.`
+          });
+        }
+      });
+      
+      // Parse IP locations
+      if (timeline) {
+        timeline.forEach(event => {
+          if (event.event === 'ip_geo' && event.data && event.data.lat !== undefined) {
+            const d = event.data;
+            geoLocations.push({
+              id: 'ip-' + d.ip + '-' + Math.random().toString(36).substr(2, 4),
+              lat: parseFloat(d.lat),
+              lng: parseFloat(d.lon),
+              type: 'ip',
+              label: d.ip,
+              city: d.city,
+              country: d.country,
+              isp: d.isp,
+              is_shared_infrastructure: d.is_shared_infrastructure || false,
+              hosting_provider: d.hosting_provider || null,
+              extra: `ISP: ${d.isp || 'Unknown'} &middot; Org: ${d.org || 'Unknown'}`
+            });
+          }
+        });
+      }
+      
+      // Clear 3D pins
+      if (geoGlobe) {
+        pinMeshes.forEach(mesh => geoGlobe.remove(mesh));
+      }
+      pinMeshes = [];
+      
+      // Render components
+      renderGeoSidebar();
+      render3DPins();
+      render2DPins();
+    }
+
+    function renderGeoSidebar() {
+      const list = document.getElementById('geo-target-list');
+      if (!list) return;
+      
+      if (geoLocations.length === 0) {
+        list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#8a7a72;font-style:italic">No coordinate hits logged in this case yet. Run IP geolocation or extract metadata.</div>`;
+        return;
+      }
+      
+      list.innerHTML = geoLocations.map(loc => {
+        let badgeClass = 'bio';
+        let badgeLabel = 'Bio';
+        let titleVal = loc.label;
+        
+        if (loc.type === 'ip') {
+          if (loc.is_shared_infrastructure) {
+            badgeClass = 'hosting';
+            badgeLabel = 'Hosting';
+          } else {
+            badgeClass = 'ip';
+            badgeLabel = 'IP Geo';
+          }
+        } else if (loc.type === 'exif') {
+          badgeClass = 'exif';
+          badgeLabel = 'EXIF';
+        }
+        
+        return `
+          <div class="geo-item" id="geo-item-${loc.id}" onclick="selectGeoLocationById('${loc.id}')">
+            <div class="geo-item-header">
+              <div class="geo-item-title" title="${esc(titleVal)}">${esc(titleVal)}</div>
+              <span class="geo-badge ${badgeClass}">${badgeLabel}</span>
+            </div>
+            <div class="geo-item-coords">${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function render3DPins() {
+      if (!geoScene) return;
+      
+      geoLocations.forEach(loc => {
+        let color = 0xffaa00; // bio
+        if (loc.type === 'ip') {
+          if (loc.is_shared_infrastructure) color = 0xa855f7;
+          else color = 0x00ffff;
+        }
+        else if (loc.type === 'exif') color = 0xff3232;
+        
+        const pos = latLngToVector3(loc.lat, loc.lng, 5);
+        const pinGeom = new THREE.CylinderGeometry(0.06, 0.01, 0.8, 8);
+        pinGeom.translate(0, 0.4, 0);
+        
+        const pinMat = new THREE.MeshPhongMaterial({
+          color: color,
+          emissive: color,
+          emissiveIntensity: 0.8,
+          specular: 0xffffff,
+          transparent: true,
+          opacity: 0.9
+        });
+        
+        const mesh = new THREE.Mesh(pinGeom, pinMat);
+        mesh.position.copy(pos);
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize());
+        
+        mesh.userData = loc;
+        geoGlobe.add(mesh);
+        pinMeshes.push(mesh);
+      });
+    }
+
+    function render2DPins() {
+      const container = document.getElementById('geo-flatmap-pins');
+      if (!container) return;
+      
+      container.innerHTML = geoLocations.map(loc => {
+        const x = 500 + (loc.lng * (500 / 180));
+        const y = 250 - (loc.lat * (250 / 90));
+        
+        let color = '#ffaa00'; // bio
+        if (loc.type === 'ip') {
+          if (loc.is_shared_infrastructure) color = '#a855f7';
+          else color = '#00ffff';
+        }
+        else if (loc.type === 'exif') color = '#ff3232';
+        
+        return `
+          <g class="geo-flatmap-pin" id="geo-flatmap-pin-${loc.id}" onclick="selectGeoLocationById('${loc.id}')" transform="translate(${x}, ${y})">
+            <circle r="6" fill="${color}" opacity="0.3">
+              <animate attributeName="r" values="3;9;3" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <circle r="3" fill="${color}" />
+          </g>
+        `;
+      }).join('');
+    }
+
+    function selectGeoLocationById(id) {
+      const loc = geoLocations.find(l => l.id === id);
+      if (loc) {
+        selectGeoLocation(loc);
+      }
+    }
+
+    function selectGeoLocation(loc) {
+      deselectGeoItem();
+      selectedGeoItem = loc;
+      
+      const sidebarItem = document.getElementById(`geo-item-${loc.id}`);
+      if (sidebarItem) {
+        sidebarItem.classList.add('active');
+        sidebarItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      
+      const svgPin = document.getElementById(`geo-flatmap-pin-${loc.id}`);
+      if (svgPin) {
+        svgPin.classList.add('active');
+      }
+      
+      if (geoCamera) {
+        const mesh = pinMeshes.find(m => m.userData && m.userData.id === loc.id);
+        if (mesh) {
+          const worldPos = new THREE.Vector3();
+          mesh.getWorldPosition(worldPos);
+          const currentDistance = geoCamera.position.length();
+          targetGlobeCameraPos.copy(worldPos.clone().normalize().multiplyScalar(currentDistance));
+          isTransitioningCamera = true;
+        } else {
+          const pos = latLngToVector3(loc.lat, loc.lng, 5);
+          const currentDistance = geoCamera.position.length();
+          targetGlobeCameraPos.copy(pos.clone().normalize().multiplyScalar(currentDistance));
+          isTransitioningCamera = true;
+        }
+      }
+      
+      document.getElementById('geo-details-val-coords').textContent = `${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`;
+      
+      const typeEl = document.getElementById('geo-details-val-type');
+      const infoRow = document.getElementById('geo-details-row-info');
+      const infoEl = document.getElementById('geo-details-val-info');
+      const sourceRow = document.getElementById('geo-details-row-source');
+      const sourceEl = document.getElementById('geo-details-val-source');
+      const thumb = document.getElementById('geo-details-thumbnail');
+      if (thumb) {
+        resetScreenshotImage(thumb);
+        thumb.style.display = 'none';
+      }
+      
+      if (loc.type === 'ip') {
+        if (loc.is_shared_infrastructure) {
+          typeEl.textContent = 'Shared CDN/Hosting';
+          typeEl.className = 'geo-details-value geo-badge hosting';
+          infoRow.style.display = 'flex';
+          infoEl.innerHTML = `<span style="color:#a855f7; font-weight:bold;">${loc.hosting_provider || 'Shared Infrastructure'}</span> (Shared hosting, not target location)`;
+          sourceRow.style.display = 'flex';
+          sourceEl.textContent = `${loc.city || ''}, ${loc.country || ''}`.trim() || 'Global CDN Range';
+        } else {
+          typeEl.textContent = 'IP Geolocation';
+          typeEl.className = 'geo-details-value geo-badge ip';
+          infoRow.style.display = 'flex';
+          infoEl.textContent = loc.isp || 'Unknown ISP';
+          sourceRow.style.display = 'flex';
+          sourceEl.textContent = `${loc.city || ''}, ${loc.country || ''}`.trim() || 'Global IPRegistry';
+        }
+      } else if (loc.type === 'bio') {
+        typeEl.textContent = 'Profile Bio Geocode';
+        typeEl.className = 'geo-details-value geo-badge bio';
+        infoRow.style.display = 'flex';
+        infoEl.textContent = `Raw: "${loc.source_text}"`;
+        sourceRow.style.display = 'flex';
+        sourceEl.textContent = `Precision: ${loc.precision}`;
+      } else if (loc.type === 'exif') {
+        typeEl.textContent = 'Screenshot EXIF GPS';
+        typeEl.className = 'geo-details-value geo-badge exif';
+        infoRow.style.display = 'flex';
+        infoEl.textContent = 'GPS metadata extracted from image header.';
+        sourceRow.style.display = 'flex';
+        sourceEl.textContent = loc.screenshot_path ? loc.screenshot_path.split('/').pop() : 'Evidence File';
+        
+        if (loc.screenshot_path && thumb) {
+          resetScreenshotImage(thumb);
+          thumb.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+          thumb.setAttribute('data-screenshot', loc.screenshot_path);
+          resolveScreenshots();
+        }
+      }
+      
+      document.getElementById('geo-details-card').classList.add('show');
+    }
+
+    window.addEventListener('resize', () => {
+      if (tbGraphInstance) {
+        const container = document.getElementById('graph-canvas-container');
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 500;
+        tbGraphInstance.width(width).height(height);
+      }
+      if (geoRenderer && geoCamera) {
+        const container = document.getElementById('geo-globe-viewport');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        geoCamera.aspect = width / height;
+        geoCamera.updateProjectionMatrix();
+        geoRenderer.setSize(width, height);
+      }
+    });
+
+    window.addEventListener('pywebviewready', () => {
+      window.pywebview.api.list_cases();
+      window.pywebview.api.get_model_info();
+    });
+  </script>
 </body>
+
 </html>

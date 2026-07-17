@@ -7,14 +7,24 @@ import webview
 import asyncio
 import threading
 import json
+import re
 from pathlib import Path
 from core.orchestrator import Orchestrator
 from core.target_model import Target
+from core.case_brief import CaseBrief, parse_brief_with_slm
 from narrative.joe_voice import JoeVoice
 from narrative.session_memory import SessionMemory
+from memory.lessons_store import LessonsStore
 
 ROOT = Path(__file__).parent
 HTML_PATH = ROOT / "app.html"
+
+# Keywords that signal extra context beyond just the target
+_CONTEXT_SIGNALS = re.compile(
+    r"(work|employ|company|corp|repo|github|leak|old|suspect|ctf|"
+    r"used to|might have|previously|formerly|known as)",
+    re.IGNORECASE,
+)
 
 
 class JoeAPI:
@@ -23,9 +33,11 @@ class JoeAPI:
         self._target: Target = None
         self._memory = SessionMemory()
         self._voice = JoeVoice()
+        self._lessons_store = LessonsStore()
         self._orch = None
         self._stalk_loop = None
         self._stalk_task = None
+        self._last_entity = None  # Track for false-positive command
 
     def set_window(self, window):
         self._window = window
@@ -33,12 +45,13 @@ class JoeAPI:
             on_status=self._on_status,
             on_find=self._on_find,
             on_done=lambda t: self._on_done(t, aborted=False),
+            lessons_store=self._lessons_store,
         )
 
     def stalk(self, target: str):
         print(f"\n[desktop] Starting investigation: {target}")
         self._memory.add("user", f"stalk {target}")
-        threading.Thread(target=self._run_stalk, args=(target,), daemon=True).start()
+        threading.Thread(target=self._run_stalk, args=(target, None), daemon=True).start()
 
     def smart_stalk(self, text: str):
         print(f"\n[desktop] Analyzing intent: {text}")
@@ -48,6 +61,38 @@ class JoeAPI:
     def ask(self, question: str):
         self._memory.add("user", question)
         threading.Thread(target=self._run_ask, args=(question,), daemon=True).start()
+
+    def false_positive(self, platform: str, context: str = "general"):
+        """Record a false-positive lesson from the desktop UI."""
+        if not platform and self._last_entity:
+            platform = self._last_entity.platform
+
+        if not platform:
+            self._emit("error", {"message": "Which platform? Tell me what I got wrong."})
+            return
+
+        trigger = f"{platform} username profile claimed to exist but was a false positive"
+        lesson = f"{platform} gives false positives — lower confidence for future hits on this platform"
+
+        success = self._lessons_store.add_lesson(
+            trigger=trigger,
+            lesson=lesson,
+            platform=platform,
+            context=context,
+        )
+
+        if success:
+            self._emit("joe_answer", {
+                "text": f"Lesson learned about {platform}. I won't make that mistake again.",
+                "rate_limited": False,
+                "mode": "investigation" if self._target else "advisor",
+            })
+        else:
+            self._emit("joe_answer", {
+                "text": "I can't store lessons right now — memory modules aren't installed.",
+                "rate_limited": False,
+                "mode": "advisor",
+            })
 
     def get_model_info(self):
         model = self._voice.slm_model
@@ -93,24 +138,70 @@ class JoeAPI:
         path = generate(self._target)
         self._emit("report_ready", {"path": str(path)})
 
+    def get_evidence_uri(self, relative_path: str) -> str:
+        if not relative_path:
+            return ""
+        rel = relative_path.lstrip("./").lstrip("/")
+        path = (ROOT.parent / rel).resolve()
+        try:
+            path.relative_to(ROOT.parent)
+        except ValueError:
+            return ""
+        if path.exists() and path.is_file():
+            return path.as_uri()
+        return ""
+
     def open_url(self, url: str):
         import webbrowser
+        if url.startswith("cases/") or not url.startswith(("http://", "https://", "file://")):
+            abs_path = (Path(__file__).parent.parent / url).resolve()
+            if abs_path.exists():
+                url = abs_path.as_uri()
         webbrowser.open(url)
 
     def _run_smart_stalk(self, text: str):
-        target_str = self._voice.extract_target(text, self._target)
+        # Deterministic check for target extraction
+        match = re.match(r"^(stalk|pivot)\s+(\S+)", text, re.IGNORECASE)
+        if match and match.group(2).lower() not in ("again", "them", "him", "her", "it", "to", "the", "me"):
+            target_str = match.group(2)
+        else:
+            target_str = self._voice.extract_target(text, self._target)
+
         if not target_str or target_str.lower() == "none":
             self._emit("error", {"message": "Who do you want me to look into? I need a clear target."})
             return
-        
-        self._emit("scan_status", {"message": f"Target locked: {target_str}"})
-        self._emit("scan_status", {"message": "Spinning up background engines..."})
-        self._run_stalk(target_str)
 
-    def _run_stalk(self, target: str):
+        self._emit("scan_status", {"message": f"Target locked: {target_str}"})
+
+        # Extract brief from context beyond the target
+        # If the user typed "stalk johndoe — they worked at Acme Corp"
+        # strip the stalk command and target, use the rest as brief
+        brief = None
+        remainder = text
+        # Remove command prefix
+        for prefix in ["stalk ", "pivot "]:
+            if remainder.lower().startswith(prefix):
+                remainder = remainder[len(prefix):]
+                break
+        # Remove the target string itself
+        remainder = remainder.replace(target_str, "", 1).strip()
+        # Strip common separators
+        remainder = re.sub(r"^[\-—–,;:]+\s*", "", remainder).strip()
+
+        if remainder and _CONTEXT_SIGNALS.search(remainder):
+            self._emit("scan_status", {"message": "Parsing case brief from your context..."})
+            brief = parse_brief_with_slm(remainder)
+            if brief.hints:
+                hints_summary = ", ".join(brief.hints.keys())
+                self._emit("scan_status", {"message": f"Brief extracted: {hints_summary}"})
+
+        self._emit("scan_status", {"message": "Spinning up background engines..."})
+        self._run_stalk(target_str, brief)
+
+    def _run_stalk(self, target: str, brief: CaseBrief = None):
         self._stalk_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._stalk_loop)
-        self._stalk_task = self._stalk_loop.create_task(self._orch.stalk(target))
+        self._stalk_task = self._stalk_loop.create_task(self._orch.stalk(target, brief=brief))
         try:
             self._stalk_loop.run_until_complete(self._stalk_task)
         except asyncio.CancelledError:
@@ -139,7 +230,8 @@ class JoeAPI:
         self._emit("joe_answer", {
             "text": result["text"],
             "rate_limited": result.get("rate_limited", False),
-            "mode": result.get("mode", "advisor")
+            "mode": result.get("mode", "advisor"),
+            "error": result.get("error", False)
         })
 
     async def _on_status(self, msg: str):
@@ -147,20 +239,35 @@ class JoeAPI:
 
     async def _on_find(self, entity, target):
         self._target = target
-        quote = self._voice.inline_quote(
-            entity.entity_type, entity.value, entity.platform or ""
-        )
+        self._last_entity = entity  # Track for false-positive command
+        
+        is_verified = entity.metadata.get("verified")
+        conf = entity.confidence
+        
+        # Narration Gating: Only call SLM if verified, or inconclusive but high confidence
+        should_narrate = (is_verified is True) or (is_verified is None and conf >= 0.7)
+        
+        quote = None
+        if should_narrate:
+            quote = self._voice.inline_quote(
+                entity.entity_type, entity.value, entity.platform or ""
+            )
+
         self._emit("entity_found", {
             "type": entity.entity_type,
             "value": entity.value,
             "platform": entity.platform or "",
-            "confidence": entity.confidence,
+            "confidence": conf,
             "url": entity.metadata.get("url", ""),
+            "verified": is_verified,
             "quote": quote,
+            "should_narrate": should_narrate,
+            "screenshot_path": entity.metadata.get("screenshot_path"),
         })
 
     async def _on_done(self, target, aborted=False):
         self._target = target
+        error = False
         if aborted:
             text = "Investigation aborted. You pulled me away. But I remember what we found so far."
             used_gemini = False
@@ -168,14 +275,16 @@ class JoeAPI:
             result = self._voice.closing_monologue(target)
             text = result["text"]
             used_gemini = result.get("used_gemini", False)
+            error = result.get("error", False)
             if result.get("rate_limited"):
                 self._emit("rate_limited", {})
-        
+
         self._memory.add("joe", text)
         self._emit("investigation_done", {
             "target": target.to_dict(),
             "monologue": text,
             "used_gemini": used_gemini,
+            "error": error
         })
 
     def _emit(self, event: str, data: dict):
@@ -192,6 +301,16 @@ class JoeDesktop:
         dst = ROOT / "joe.jpeg"
         if src.exists() and not dst.exists():
             shutil.copy(src, dst)
+
+        src_back = ROOT.parent / "assets" / "joegui.png"
+        dst_back = ROOT / "joegui.png"
+        if src_back.exists() and not dst_back.exists():
+            shutil.copy(src_back, dst_back)
+
+        src_geo = ROOT.parent / "assets" / "world_outline.jpg"
+        dst_geo = ROOT / "world_outline.jpg"
+        if src_geo.exists() and not dst_geo.exists():
+            shutil.copy(src_geo, dst_geo)
 
         api = JoeAPI()
         window = webview.create_window(
