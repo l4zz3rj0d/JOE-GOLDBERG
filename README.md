@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/joe.jpeg" alt="Joe Goldberg" width="600"/>
+  <img src="assets/joegui.png" alt="Joe Goldberg" width="600"/>
 
   # Joe Goldberg
 
