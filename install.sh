@@ -12,17 +12,23 @@ if [ -n "$VIRTUAL_ENV" ]; then
     echo "  using active virtual environment: $VIRTUAL_ENV"
     VENV_ACTIVATE="$VIRTUAL_ENV/bin/activate"
 else
-    # Try to find the user's most recently created/used virtual environment anywhere in their home folder
-    EXISTING_VENV="$(find "$HOME" -maxdepth 5 -name activate -path "*/bin/activate" ! -path "*/.*" -type f 2>/dev/null | xargs -r ls -t 2>/dev/null | head -1)"
-    
-    if [ -n "$EXISTING_VENV" ]; then
-        echo "  found existing local virtual environment: $EXISTING_VENV"
-        source "$EXISTING_VENV"
-        VENV_ACTIVATE="$EXISTING_VENV"
+    if [ -f "$INSTALL_DIR/joe-env/bin/activate" ]; then
+        echo "  using existing local virtual environment: joe-env"
+        source "$INSTALL_DIR/joe-env/bin/activate"
+        VENV_ACTIVATE="$INSTALL_DIR/joe-env/bin/activate"
+    elif [ -f "$INSTALL_DIR/venv/bin/activate" ]; then
+        echo "  using existing local virtual environment: venv"
+        source "$INSTALL_DIR/venv/bin/activate"
+        VENV_ACTIVATE="$INSTALL_DIR/venv/bin/activate"
+    elif [ -f "$INSTALL_DIR/.venv/bin/activate" ]; then
+        echo "  using existing local virtual environment: .venv"
+        source "$INSTALL_DIR/.venv/bin/activate"
+        VENV_ACTIVATE="$INSTALL_DIR/.venv/bin/activate"
     else
         VENV_DIR="$INSTALL_DIR/joe-env"
         echo "  setting up new virtual environment in $VENV_DIR..."
-        python3 -m venv "$VENV_DIR"
+        # Note: --system-site-packages is required so pywebview can inherit system-level GTK (gi/PyGObject) bindings
+        python3 -m venv --system-site-packages "$VENV_DIR"
         source "$VENV_DIR/bin/activate"
         VENV_ACTIVATE="$VENV_DIR/bin/activate"
     fi
