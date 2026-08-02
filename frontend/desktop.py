@@ -141,14 +141,23 @@ class JoeAPI:
     def get_evidence_uri(self, relative_path: str) -> str:
         if not relative_path:
             return ""
-        rel = relative_path.lstrip("./").lstrip("/")
-        path = (ROOT.parent / rel).resolve()
         try:
-            path.relative_to(ROOT.parent)
-        except ValueError:
-            return ""
-        if path.exists() and path.is_file():
-            return path.as_uri()
+            if relative_path.startswith("file://"):
+                from urllib.parse import unquote, urlparse
+                p_str = unquote(urlparse(relative_path).path)
+                path = Path(p_str).resolve()
+            else:
+                p = Path(relative_path)
+                if p.is_absolute():
+                    path = p.resolve()
+                else:
+                    rel = relative_path.lstrip("./").lstrip("/")
+                    path = (ROOT.parent / rel).resolve()
+
+            if path.exists() and path.is_file():
+                return path.as_uri()
+        except Exception:
+            pass
         return ""
 
     def open_url(self, url: str):

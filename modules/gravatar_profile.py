@@ -63,7 +63,16 @@ async def enrich(target: Target, email: str, on_find=None) -> None:
 
             display_name = entry.get("displayName")
             preferred_username = entry.get("preferredUsername")
-            current_location = entry.get("currentLocation")
+
+            # Extract location string (Gravatar API formats: string or dict with 'formatted'/'name')
+            loc_val = entry.get("currentLocation") or entry.get("location")
+            if isinstance(loc_val, dict):
+                current_location = (loc_val.get("formatted") or loc_val.get("name") or "").strip()
+            elif isinstance(loc_val, str):
+                current_location = loc_val.strip()
+            else:
+                current_location = ""
+
             about_me = entry.get("aboutMe")
             urls = entry.get("urls", [])
             accounts = entry.get("accounts", [])
@@ -128,6 +137,19 @@ async def enrich(target: Target, email: str, on_find=None) -> None:
                 base_meta["avatar_path"] = avatar_path
             if screenshot_path:
                 base_meta["screenshot_path"] = screenshot_path
+
+            # Emit location entity for geocoding engine & location findings list
+            if current_location:
+                loc_entity = Entity(
+                    entity_type="location",
+                    value=current_location,
+                    sources=["gravatar_profile"],
+                    confidence=0.85,
+                    platform="Gravatar",
+                    metadata=dict(base_meta),
+                )
+                if target.add_entity(loc_entity) and on_find:
+                    await on_find(loc_entity)
 
             # Emit display name
             if display_name:

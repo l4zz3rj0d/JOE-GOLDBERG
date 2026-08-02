@@ -79,7 +79,7 @@ class JoeVoice:
 
         # Detect available SLM
         self.slm_model = self._detect_slm()
-        self.client = httpx.Client(timeout=45)
+        self.client = httpx.Client(timeout=180.0)
 
         print(f"[joe_voice] SLM: {self.slm_model}")
         print(f"[joe_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
@@ -281,16 +281,37 @@ class JoeVoice:
             )
             if r.status_code == 200:
                 return {"text": r.json().get("response", "").strip(), "error": False}
-            else:
+        except Exception:
+            # First attempt failed or timed out — attempt lighter fallback retry with 1536 context & 250 tokens
+            try:
+                r = self.client.post(
+                    OLLAMA_URL,
+                    json={
+                        "model": self.slm_model,
+                        "system": system,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {
+                            "temperature": 0.80,
+                            "top_p": 0.9,
+                            "num_predict": min(max_tokens, 250),
+                            "num_ctx": 1536,
+                        },
+                    },
+                    timeout=90,
+                )
+                if r.status_code == 200:
+                    return {"text": r.json().get("response", "").strip(), "error": False}
+            except Exception as e2:
                 return {
-                    "text": f"System Notice: SLM request returned status code {r.status_code}",
+                    "text": f"System Notice: SLM is currently unavailable or timed out ({e2})",
                     "error": True
                 }
-        except Exception as e:
-            return {
-                "text": f"System Notice: SLM is currently unavailable or timed out ({e})",
-                "error": True
-            }
+
+        return {
+            "text": "System Notice: SLM request failed to return a response.",
+            "error": True
+        }
 
     def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 1000) -> tuple[str, bool]:
         """
@@ -347,13 +368,13 @@ class JoeVoice:
             prompt = f"User asked: {question}"
             mode = "investigation"
             # Scale timeout and num_ctx for investigation mode calls
-            res = self._ask_slm(prompt, system, max_tokens=400, timeout=120, num_ctx=4096)
+            res = self._ask_slm(prompt, system, max_tokens=350, timeout=90, num_ctx=2048)
         else:
             # Mode 1 — no case, OSINT advisor
             system = JOE_ADVISOR_PROMPT
             prompt = question
             mode = "advisor"
-            res = self._ask_slm(prompt, system, max_tokens=400, timeout=60, num_ctx=2048)
+            res = self._ask_slm(prompt, system, max_tokens=350, timeout=60, num_ctx=2048)
 
         return {
             "text": res["text"],
@@ -377,11 +398,11 @@ class JoeVoice:
 
         # Try Gemini for better monologue quality
         if self.gemini_available and not self.gemini_rate_limited:
-            text, rate_limited = self._ask_gemini(prompt, system, max_tokens=1000)
+            text, rate_limited = self._ask_gemini(prompt, system, max_tokens=800)
             if rate_limited:
                 self.gemini_rate_limited = True
                 # Fall back to SLM silently
-                res = self._ask_slm(prompt, system, max_tokens=600, timeout=120, num_ctx=4096)
+                res = self._ask_slm(prompt, system, max_tokens=400, timeout=120, num_ctx=2048)
                 return {
                     "text": res["text"],
                     "rate_limited": True,
@@ -392,7 +413,7 @@ class JoeVoice:
                 return {"text": text, "rate_limited": False, "used_gemini": True, "error": False}
 
         # SLM fallback
-        res = self._ask_slm(prompt, system, max_tokens=600, timeout=120, num_ctx=4096)
+        res = self._ask_slm(prompt, system, max_tokens=400, timeout=120, num_ctx=2048)
         return {
             "text": res["text"],
             "rate_limited": False,
