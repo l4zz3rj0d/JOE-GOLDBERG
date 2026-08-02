@@ -155,9 +155,41 @@ class JoeAPI:
                     path = (ROOT.parent / rel).resolve()
 
             if path.exists() and path.is_file():
-                return path.as_uri()
+                import base64
+                import mimetypes
+                
+                mime, _ = mimetypes.guess_type(path)
+                if not mime or not mime.startswith("image/"):
+                    suffix = path.suffix.lower()
+                    if suffix in (".jpg", ".jpeg"):
+                        mime = "image/jpeg"
+                    elif suffix == ".png":
+                        mime = "image/png"
+                    elif suffix == ".gif":
+                        mime = "image/gif"
+                    elif suffix == ".svg":
+                        mime = "image/svg+xml"
+                    elif suffix == ".webp":
+                        mime = "image/webp"
+                    else:
+                        mime = "image/png"
+
+                data = path.read_bytes()
+                b64_str = base64.b64encode(data).decode("ascii")
+                return f"data:{mime};base64,{b64_str}"
         except Exception:
             pass
+        return ""
+
+    def get_map_texture(self) -> str:
+        texture_path = ROOT.parent / "assets" / "world_outline.jpg"
+        if not texture_path.exists():
+            texture_path = ROOT / "world_outline.jpg"
+        if texture_path.exists():
+            import base64
+            data = texture_path.read_bytes()
+            b64_str = base64.b64encode(data).decode("ascii")
+            return f"data:image/jpeg;base64,{b64_str}"
         return ""
 
     def open_url(self, url: str):
@@ -253,25 +285,26 @@ class JoeAPI:
         is_verified = entity.metadata.get("verified")
         conf = entity.confidence
         
-        # Narration Gating: Only call SLM if verified, or inconclusive but high confidence
-        should_narrate = (is_verified is True) or (is_verified is None and conf >= 0.7)
-        
-        quote = None
-        if should_narrate:
-            quote = self._voice.inline_quote(
-                entity.entity_type, entity.value, entity.platform or ""
-            )
+        # Real-time UI status emission (No per-finding SLM calls — single closing monologue runs at end)
+        url_val = (
+            entity.metadata.get("url", "")
+            or entity.metadata.get("profile", "")
+            or entity.metadata.get("source_url", "")
+            or entity.metadata.get("link", "")
+        )
 
         self._emit("entity_found", {
             "type": entity.entity_type,
             "value": entity.value,
             "platform": entity.platform or "",
             "confidence": conf,
-            "url": entity.metadata.get("url", ""),
+            "url": url_val,
             "verified": is_verified,
-            "quote": quote,
-            "should_narrate": should_narrate,
+            "quote": None,
+            "should_narrate": False,
             "screenshot_path": entity.metadata.get("screenshot_path"),
+            "avatar_path": entity.metadata.get("avatar_path"),
+            "metadata": entity.metadata,
         })
 
     async def _on_done(self, target, aborted=False):

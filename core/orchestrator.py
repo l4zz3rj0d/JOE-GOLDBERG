@@ -327,7 +327,8 @@ class Orchestrator:
 
     async def _identity_driven_pivot(self, target: Target):
         """
-        Pivot on any verified name entity discovered during the run.
+        Pivot on any verified name entity discovered during the run, prioritizing real high-confidence
+        discovered username entities over the raw input target/email.
         """
         import modules.dork_fallback as dork_fallback
 
@@ -336,6 +337,35 @@ class Orchestrator:
             e for e in target.entities 
             if e.entity_type == "name" and e.metadata.get("verified")
         ]
+
+        # Look for high-confidence discovered username entities (excluding emails and raw target primary)
+        candidate_usernames = [
+            e for e in target.entities
+            if e.entity_type == "username"
+            and (e.metadata.get("verified") or (e.confidence or 0.5) >= 0.8)
+            and e.value.strip()
+            and e.value.strip().lower() != target.primary.strip().lower()
+            and "@" not in e.value
+        ]
+
+        pivot_username = None
+        if candidate_usernames:
+            # Sort by verified state, confidence, and length (longer unique handles take precedence)
+            candidate_usernames.sort(
+                key=lambda x: (
+                    1 if x.metadata.get("verified") else 0,
+                    x.confidence or 0.5,
+                    len(x.value.strip())
+                ),
+                reverse=True
+            )
+            pivot_username = candidate_usernames[0].value.strip()
+        else:
+            # Fall back to target.primary if not an email, or handle prefix if email
+            if "@" in target.primary:
+                pivot_username = target.primary.split("@")[0].strip()
+            else:
+                pivot_username = target.primary.strip()
 
         for name_entity in verified_names:
             real_name = name_entity.value.strip()
@@ -353,16 +383,30 @@ class Orchestrator:
             if already_pivoted:
                 continue
 
-            await self._status(f"Identity pivot: pivoting on verified name '{real_name}'")
+            await self._status(f"Identity pivot: pivoting on verified name '{real_name}' and username '{pivot_username}'")
             target.log("identity_pivot_triggered", {
                 "name": real_name,
-                "username": target.primary
+                "username": pivot_username
             })
 
-            # Try a plain query and a combined query f'{real_name} {target.primary}'
             cb = self._make_find_cb(target)
-            
-            # Plain name dork
+
+            # Pass 1: Discovered username alone (if available and distinct from real_name)
+            if pivot_username and pivot_username.lower() != real_name.lower():
+                await self._status(f"Identity pivot: searching username '{pivot_username}'...")
+                count_uname, _ = await dork_fallback.dork(
+                    target=target,
+                    query=pivot_username,
+                    site_filter="",
+                    entity_type="domain",
+                    on_find=cb,
+                    module_name=f"identity_pivot_username_{pivot_username}"
+                )
+                if count_uname > 0:
+                    log_tool_fallback(target, f"identity_pivot_username_{pivot_username}", count_uname)
+
+            # Pass 2: Plain name alone
+            await self._status(f"Identity pivot: searching real name '{real_name}'...")
             count_plain, _ = await dork_fallback.dork(
                 target=target,
                 query=real_name,
@@ -374,18 +418,24 @@ class Orchestrator:
             if count_plain > 0:
                 log_tool_fallback(target, f"identity_pivot_{real_name}", count_plain)
 
-            # Combined name + username dork
-            combined_query = f"{real_name} {target.primary}"
-            count_combined, _ = await dork_fallback.dork(
-                target=target,
-                query=combined_query,
-                site_filter="",
-                entity_type="domain",
-                on_find=cb,
-                module_name=f"identity_pivot_combined_{real_name}"
-            )
-            if count_combined > 0:
-                log_tool_fallback(target, f"identity_pivot_combined_{real_name}", count_combined)
+            # Pass 3: Combined name + username dork
+            if pivot_username:
+                combined_query = f"{real_name} {pivot_username}"
+            else:
+                combined_query = real_name
+
+            if combined_query.lower() != real_name.lower() and combined_query.lower() != pivot_username.lower():
+                await self._status(f"Identity pivot: searching combined '{combined_query}'...")
+                count_combined, _ = await dork_fallback.dork(
+                    target=target,
+                    query=combined_query,
+                    site_filter="",
+                    entity_type="domain",
+                    on_find=cb,
+                    module_name=f"identity_pivot_combined_{real_name}"
+                )
+                if count_combined > 0:
+                    log_tool_fallback(target, f"identity_pivot_combined_{real_name}", count_combined)
 
     def _make_find_cb(self, target: Target):
         async def _cb(entity: Entity):

@@ -432,13 +432,6 @@ class JoeCLI:
             print_breach(entity)
         else:
             print_found(entity)
-        quote = self.voice.inline_quote(
-            entity.entity_type,
-            entity.value,
-            entity.platform or "",
-        )
-        if quote:
-            print_joe_quote(quote)
 
     async def _on_done(self, target: Target):
         print_findings(target)

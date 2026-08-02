@@ -47,20 +47,23 @@ Everything is saved as a case file. You can resume any investigation later, add 
 ## Features
 
 - Investigates emails, usernames, domains, IPs, and full names
-- Username enumeration across 300+ platforms via Sherlock and Maigret
-- Email tracking via Holehe (120+ sites) and Gravatar
+- Multi-source username enumeration across 300+ platforms via Sherlock and Maigret
+- Email intelligence via Holehe (120+ sites) and Gravatar profile & avatar extraction
 - Code, commit, and profile intel via deep GitHub reconnaissance
-- Paste site mentions via psbdmp and Google Dorking
+- Discovered handle resolution and multi-pass identity pivoting across unique usernames, real names, and combined queries
+- Paste site mentions via psbdmp and Google Dorking with automated fallback
 - IP Geolocation, Proxy/VPN detection, and AbuseIPDB scraping
 - Historical domain snapshots via Wayback Machine
 - DNS records, WHOIS, subdomain discovery via certificate transparency logs
 - Breach database lookups (BreachDirectory) with exposed field details
-- Joe narrates inline as findings arrive — one quiet observation per discovery
-- Full closing monologue after every investigation
+- Anti-Hallucination Grounding Auditor validating all narration claims against verified entity data
+- Single-pass high-budget closing monologue (`gemma2:2b` local SLM / Gemini)
 - Persistent case files — resume any investigation at any time
 - Free-form chat — ask Joe anything about the current investigation, with input queuing during active sweeps
-- HTML report export with timeline, entity table, and risk score
+- HTML report export with timeline, entity table, visual evidence, and risk score
 - Desktop app with red cinematic UI, conversation transcript copy tools, and an interactive 3D relationship graph
+- Chronological Investigation Timeline panel with event filtering and interactive finding jump-links
+- Visual Evidence Gallery panel rendering profile pictures and page screenshots via base64 Data URIs
 - Interactive IP geolocation flat map and 3D globe visualization (identifies and marks shared CDN/hosting infrastructure)
 - Terminal CLI with the same full experience
 - Callable as a system command from anywhere — just type `joe`

@@ -1058,6 +1058,238 @@
       line-height: 1.6;
     }
 
+    /* ── Timeline Panel Styles ───────────────────────── */
+    .timeline-wrap {
+      padding: 20px;
+      height: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .tl-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #3a1212;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .tl-header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffaa80;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tl-header-count {
+      font-size: 11px;
+      color: #10b981;
+      background: #022c22;
+      border: 1px solid #047857;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .tl-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+    .tl-item {
+      display: flex;
+      gap: 16px;
+      position: relative;
+    }
+    .tl-item::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 36px;
+      bottom: -20px;
+      width: 2px;
+      background: #3a1212;
+      z-index: 0;
+    }
+    .tl-item:last-child::before {
+      display: none;
+    }
+    .tl-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      z-index: 1;
+      background: #0d0505;
+      border: 1px solid currentColor;
+    }
+    .tl-badge-entity { color: #10b981; border-color: #059669; }
+    .tl-badge-correlation { color: #f59e0b; border-color: #d97706; }
+    .tl-badge-pivot { color: #ef4444; border-color: #dc2626; }
+    .tl-badge-dork { color: #a855f7; border-color: #9333ea; }
+    .tl-badge-system { color: #6b7280; border-color: #4b5563; }
+    .tl-card {
+      flex: 1;
+      background: #160808;
+      border: 1px solid #3a1212;
+      border-radius: 6px;
+      padding: 12px 16px;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    .tl-card:hover {
+      border-color: #6a2020;
+      background: #1c0a0a;
+    }
+    .tl-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #a08070;
+      margin-bottom: 6px;
+    }
+    .tl-event-tag {
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      color: #ffaa80;
+    }
+    .tl-time {
+      font-family: monospace;
+      color: #a08070;
+    }
+    .tl-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+    .tl-desc {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+    .timeline-empty, .evidence-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      height: 100%;
+    }
+
+    /* ── Evidence Gallery Styles ──────────────────────── */
+    .gallery-wrap {
+      padding: 20px;
+      height: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .gallery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #3a1212;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .gallery-header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffaa80;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .gallery-header-count {
+      font-size: 11px;
+      color: #60a5fa;
+      background: #1e3a8a;
+      border: 1px solid #2563eb;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .gallery-card {
+      background: #160808;
+      border: 1px solid #3a1212;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+    .gallery-card:hover {
+      transform: translateY(-2px);
+      border-color: #6a2020;
+    }
+    .gallery-img-wrap {
+      position: relative;
+      width: 100%;
+      height: 140px;
+      background: #0d0505;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .gallery-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .gallery-type-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      z-index: 2;
+    }
+    .badge-avatar {
+      background: rgba(16, 185, 129, 0.9);
+      color: #022c22;
+      border: 1px solid #059669;
+    }
+    .badge-screenshot {
+      background: rgba(59, 130, 246, 0.9);
+      color: #1e3a8a;
+      border: 1px solid #2563eb;
+    }
+    .gallery-info {
+      padding: 10px 12px;
+    }
+    .gallery-entity-val {
+      font-weight: 700;
+      font-size: 13px;
+      color: #ffddcc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .gallery-entity-meta {
+      color: #a08070;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
     /* Graph Panel Layout styles */
     .graph-content {
       flex: 1;
@@ -1811,10 +2043,10 @@
         <div class="tab active" onclick="switchTab('narrative', true)" id="tab-narrative">Narrative</div>
         <div class="tab" onclick="switchTab('findings', true)" id="tab-findings">Findings <span class="tab-badge" id="tab-badge-findings">0</span></div>
         <div class="tab" onclick="switchTab('graph', true)" id="tab-graph">Graph</div>
-        <div class="tab" onclick="switchTab('timeline', true)" id="tab-timeline">Timeline <span class="backlog-indicator">Backlog</span></div>
+        <div class="tab" onclick="switchTab('timeline', true)" id="tab-timeline">Timeline</div>
         <div class="tab" onclick="switchTab('geo', true)" id="tab-geo">Geo</div>
         <div class="tab" onclick="switchTab('case-browser', true)" id="tab-case-browser">Case Browser <span class="backlog-indicator">Backlog</span></div>
-        <div class="tab" onclick="switchTab('evidence', true)" id="tab-evidence">Evidence <span class="backlog-indicator">Backlog</span></div>
+        <div class="tab" onclick="switchTab('evidence', true)" id="tab-evidence">Evidence <span class="tab-badge" id="tab-badge-evidence">0</span></div>
       </div>
 
       <div class="panel active" id="panel-narrative">
@@ -1896,14 +2128,29 @@
                 <div class="rbar" style="width:100%;"><div class="rfill" id="det-conf-bar" style="width:98%;"></div></div>
               </div>
               
+              <div class="details-section" id="det-avatar-sec" style="display:none;">
+                <div class="details-sec-title">Profile Picture (Avatar)</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <img id="det-avatar-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width:48px; height:48px; border-radius:50%; border:1px solid #6a2020; cursor:pointer; object-fit:cover;">
+                  <span style="font-size:11px; color:#a08070;">Click to view full image</span>
+                </div>
+              </div>
+              
               <div class="details-section" id="det-screenshot-sec" style="display:none;">
-                <div class="details-sec-title">Captured Evidence</div>
+                <div class="details-sec-title">Page Screenshot</div>
                 <img id="det-screenshot-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width:100%; border-radius:4px; border:1px solid #4a1515; cursor:pointer;" onclick="viewFullEvidence()">
               </div>
 
               <div class="details-section">
                 <div class="details-sec-title">Sources</div>
                 <div id="det-sources" style="font-size:12px; color:#ffddcc;">github, social_enum</div>
+              </div>
+
+              <div class="details-section" id="det-url-sec" style="display:none;">
+                <div class="details-sec-title">Profile / Direct Link</div>
+                <a id="det-url-link" href="javascript:void(0)" style="color:#60a5fa; text-decoration:underline; font-weight:600; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+                  View Profile ↗
+                </a>
               </div>
               
               <div class="details-section">
@@ -1921,14 +2168,12 @@
         </div>
       </div>
 
-      <!-- Timeline panel (Backlog placeholder) -->
+      <!-- Timeline panel -->
       <div class="panel" id="panel-timeline">
-        <div class="backlog-placeholder-content">
-          <div class="backlog-icon">⏳</div>
-          <div class="backlog-title">Chronological Case Timeline</div>
-          <div class="backlog-desc">
-            A linear progression reconstructor to trace precisely when handles, commits, and aliases were created or discovered. Backlog item for Phase 5.
-          </div>
+        <div class="timeline-empty">
+          <div style="font-size: 32px; margin-bottom: 8px; color: #6a2020;">⏳</div>
+          <div style="font-size: 14px; font-weight: 600; color: #ffddcc;">No timeline events recorded yet.</div>
+          <div style="font-size: 12px; color: #a08070; margin-top: 4px;">Run an investigation scan to view chronological intelligence events.</div>
         </div>
       </div>
 
@@ -1963,6 +2208,7 @@
             <div class="geo-flatmap" id="geo-flatmap-viewport">
               <svg class="geo-flatmap-svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
                 <rect width="1000" height="500" fill="#080202" />
+                <image id="geo-flatmap-bg-image" x="0" y="0" width="1000" height="500" opacity="0.35" preserveAspectRatio="none" />
                 <g stroke="rgba(255, 100, 50, 0.15)" stroke-width="0.5">
                   <!-- Equator and Prime Meridian -->
                   <line x1="0" y1="250" x2="1000" y2="250" stroke-dasharray="5,5" />
@@ -2014,14 +2260,12 @@
         </div>
       </div>
 
-      <!-- Evidence panel (Backlog placeholder) -->
+      <!-- Evidence panel -->
       <div class="panel" id="panel-evidence">
-        <div class="backlog-placeholder-content">
-          <div class="backlog-icon">📸</div>
-          <div class="backlog-title">Evidence Gallery</div>
-          <div class="backlog-desc">
-            A grid gallery of all webpage screenshots, profile avatars, and breach dumps collected during active target sweeps. Backlog item for Phase 6.
-          </div>
+        <div class="evidence-empty">
+          <div style="font-size: 32px; margin-bottom: 8px; color: #6a2020;">📸</div>
+          <div style="font-size: 14px; font-weight: 600; color: #ffddcc;">No evidence captured yet.</div>
+          <div style="font-size: 12px; color: #a08070; margin-top: 4px;">Run an investigation scan to capture screenshots and avatars.</div>
         </div>
       </div>
       <div id="queue-status-bar" class="queue-status-bar" style="display: none;">
@@ -2375,7 +2619,251 @@
             geoRenderer.setSize(width, height);
           }, 50);
         }
+      } else if (tabId === 'timeline') {
+        renderTimeline();
+      } else if (tabId === 'evidence') {
+        renderEvidenceGallery();
       }
+    }
+
+    let currentCaseTimeline = [];
+    let currentCaseEntities = [];
+
+    function storeCaseData(entities, timeline) {
+      if (entities) currentCaseEntities = entities;
+      if (timeline) currentCaseTimeline = timeline;
+    }
+
+    function renderTimeline() {
+      const container = document.getElementById('panel-timeline');
+      if (!container) return;
+
+      const events = [];
+
+      // 1. Gather events from timeline array
+      if (currentCaseTimeline && Array.isArray(currentCaseTimeline)) {
+        currentCaseTimeline.forEach(ev => {
+          events.push({
+            timestamp: ev.timestamp || ev.time || '',
+            event_type: ev.event || ev.type || 'system_event',
+            title: ev.event || 'System Event',
+            data: ev.data || {},
+            is_entity: false
+          });
+        });
+      }
+
+      // 2. Gather entity discovery events
+      const allEntities = [...findingState.verified, ...findingState.unverified];
+      if (currentCaseEntities && Array.isArray(currentCaseEntities)) {
+        currentCaseEntities.forEach(e => {
+          if (!allEntities.some(x => x.value === e.value && x.platform === e.platform)) {
+            allEntities.push(e);
+          }
+        });
+      }
+
+      allEntities.forEach(e => {
+        const ts = e.discovered_at || (e.metadata && e.metadata.discovered_at) || '';
+        events.push({
+          timestamp: ts,
+          event_type: 'entity_discovered',
+          title: `Discovered ${e.type || 'Entity'}: ${e.value}`,
+          data: e,
+          is_entity: true
+        });
+      });
+
+      if (events.length === 0) {
+        container.innerHTML = `
+          <div class="timeline-empty">
+            <div style="font-size: 32px; margin-bottom: 8px; color: #6a2020;">⏳</div>
+            <div style="font-size: 14px; font-weight: 600; color: #ffddcc;">No timeline events recorded yet.</div>
+            <div style="font-size: 12px; color: #a08070; margin-top: 4px;">Run an investigation scan to view chronological intelligence events.</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort events chronologically (oldest to newest)
+      events.sort((a, b) => {
+        if (!a.timestamp) return -1;
+        if (!b.timestamp) return 1;
+        return new Date(a.timestamp) - new Date(b.timestamp);
+      });
+
+      const itemsHtml = events.map(ev => {
+        let badgeIcon = '⚙️';
+        let badgeClass = 'tl-badge-system';
+        let titleText = ev.title;
+        let descText = '';
+
+        if (ev.event_type === 'entity_discovered') {
+          badgeIcon = '🔍';
+          badgeClass = 'tl-badge-entity';
+          const entity = ev.data;
+          titleText = `Found ${esc(entity.type || 'Entity')}: ${esc(entity.value)}`;
+          descText = `Source: ${esc(entity.platform || 'System')} &bull; Confidence: ${((entity.confidence || 0.5) * 100).toFixed(0)}%`;
+        } else if (ev.event_type === 'correlation_found') {
+          badgeIcon = '🔗';
+          badgeClass = 'tl-badge-correlation';
+          const d = ev.data || {};
+          titleText = `Correlation: ${esc(d.entity_a || '')} ↔ ${esc(d.entity_b || '')}`;
+          descText = `Signal: ${esc(d.signal || 'Cross-platform match')} &bull; Confidence: ${((d.confidence_after || 0.8) * 100).toFixed(0)}%`;
+        } else if (ev.event_type === 'pivot_triggered' || ev.event_type === 'pivot') {
+          badgeIcon = '⚡';
+          badgeClass = 'tl-badge-pivot';
+          const d = ev.data || {};
+          titleText = `Pivot Triggered: ${esc(d.entity || ev.title)}`;
+          descText = `Initiated secondary OSINT sweep on discovered handle`;
+        } else if (ev.event_type.includes('dork')) {
+          badgeIcon = '🛡️';
+          badgeClass = 'tl-badge-dork';
+          descText = `Dork fallback active`;
+        }
+
+        const timeStr = ev.timestamp ? new Date(ev.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Phase Log';
+        const targetVal = ev.is_entity ? (ev.data && ev.data.value) : (ev.data ? (ev.data.entity_a || ev.data.entity) : null);
+        const clickHandler = targetVal ? `onclick="jumpToEntityInFindings('${esc(targetVal)}')"` : '';
+
+        return `
+          <div class="tl-item">
+            <div class="tl-badge ${badgeClass}">${badgeIcon}</div>
+            <div class="tl-card" ${clickHandler}>
+              <div class="tl-meta">
+                <span class="tl-event-tag">${esc(ev.event_type)}</span>
+                <span class="tl-time">${esc(timeStr)}</span>
+              </div>
+              <div class="tl-title">${titleText}</div>
+              ${descText ? `<div class="tl-desc">${descText}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="timeline-wrap">
+          <div class="tl-header">
+            <div class="tl-header-title">Chronological Investigation Timeline</div>
+            <div class="tl-header-count">${events.length} Events Logged</div>
+          </div>
+          <div class="tl-list">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderEvidenceGallery() {
+      const container = document.getElementById('panel-evidence');
+      if (!container) return;
+
+      const allEntities = [...findingState.verified, ...findingState.unverified];
+      if (currentCaseEntities && Array.isArray(currentCaseEntities)) {
+        currentCaseEntities.forEach(e => {
+          if (!allEntities.some(x => x.value === e.value && x.platform === e.platform)) {
+            allEntities.push(e);
+          }
+        });
+      }
+
+      const items = [];
+      const seenPaths = new Set();
+
+      allEntities.forEach(e => {
+        const avatarPath = getEntityAvatar(e);
+        const screenshotPath = e.screenshot_path || (e.metadata && e.metadata.screenshot_path) || '';
+
+        if (avatarPath && !seenPaths.has(avatarPath)) {
+          seenPaths.add(avatarPath);
+          items.push({
+            type: 'PROFILE PICTURE',
+            path: avatarPath,
+            entity: e,
+            isAvatar: true
+          });
+        }
+
+        if (screenshotPath && !seenPaths.has(screenshotPath)) {
+          seenPaths.add(screenshotPath);
+          items.push({
+            type: 'PAGE SCREENSHOT',
+            path: screenshotPath,
+            entity: e,
+            isAvatar: false
+          });
+        }
+      });
+
+      const badgeCountEl = document.getElementById('tab-badge-evidence');
+      if (badgeCountEl) badgeCountEl.textContent = items.length;
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="evidence-empty">
+            <div style="font-size: 32px; margin-bottom: 8px; color: #6a2020;">📸</div>
+            <div style="font-size: 14px; font-weight: 600; color: #ffddcc;">No evidence captured yet.</div>
+            <div style="font-size: 12px; color: #a08070; margin-top: 4px;">Run an investigation scan to capture screenshots and avatars.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const cardsHtml = items.map(item => {
+        const e = item.entity;
+        const badgeClass = item.isAvatar ? 'badge-avatar' : 'badge-screenshot';
+        const clickHandler = `onclick="jumpToEntityInFindings('${esc(e.value)}')"`;
+
+        return `
+          <div class="gallery-card" ${clickHandler}>
+            <div class="gallery-img-wrap">
+              <span class="gallery-type-badge ${badgeClass}">${item.type}</span>
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
+                   data-screenshot="${esc(item.path)}" 
+                   class="gallery-img" 
+                   alt="${esc(item.type)}" />
+            </div>
+            <div class="gallery-info">
+              <div class="gallery-entity-val" title="${esc(e.value)}">${esc(e.value)}</div>
+              <div class="gallery-entity-meta">${esc(e.type || 'Entity')} &bull; ${esc(e.platform || 'Platform')}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="gallery-wrap">
+          <div class="gallery-header">
+            <div class="gallery-header-title">Captured Visual Evidence</div>
+            <div class="gallery-header-count">${items.length} Images Collected</div>
+          </div>
+          <div class="gallery-grid">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+
+      resolveScreenshots();
+    }
+
+    function jumpToEntityInFindings(val) {
+      if (!val) return;
+      switchTab('findings');
+      setTimeout(() => {
+        const items = document.querySelectorAll('.f-item');
+        for (const item of items) {
+          if (item.textContent.includes(val)) {
+            item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            item.style.border = '1px solid #ff9977';
+            item.style.boxShadow = '0 0 12px rgba(255, 100, 50, 0.4)';
+            setTimeout(() => {
+              item.style.border = '';
+              item.style.boxShadow = '';
+            }, 2000);
+            break;
+          }
+        }
+      }, 100);
     }
 
     function toggleUnverified() {
@@ -2383,34 +2871,100 @@
       el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
 
+    function getEntityUrl(f) {
+      if (!f) return '';
+      if (f.url) return f.url;
+      const meta = f.metadata || {};
+      return meta.profile || meta.url || meta.source_url || meta.link || '';
+    }
+
+    function getEntityAvatar(f) {
+      if (!f) return '';
+      if (f.avatar_path) return f.avatar_path;
+      const meta = f.metadata || {};
+      return meta.avatar_path || meta.avatar || '';
+    }
+
     function updateFindingsUI() {
       // Sort verified by confidence descending
       findingState.verified.sort((a, b) => b.confidence - a.confidence);
+
+      const seenScreenshots = new Set();
+
+      const renderItem = f => {
+        const targetUrl = getEntityUrl(f);
+        const avatarPath = getEntityAvatar(f);
+        const screenshotPath = f.screenshot_path || (f.metadata && f.metadata.screenshot_path) || '';
+
+        let screenshotHtml = '';
+        if (screenshotPath) {
+          if (!seenScreenshots.has(screenshotPath)) {
+            seenScreenshots.add(screenshotPath);
+            screenshotHtml = `
+              <div style="margin-top: 8px;">
+                <div style="font-size: 11px; color: #a08070; font-weight: 500; margin-bottom: 3px;">Page Screenshot</div>
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-screenshot="${esc(screenshotPath)}" 
+                     onclick="window.pywebview.api.open_url('${esc(screenshotPath)}')" 
+                     style="width: 120px; height: 72px; object-fit: cover; border-radius: 4px; border: 1px solid #4a1515; cursor: pointer; display: block; opacity: 0.85; transition: opacity 0.2s;"
+                     onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.85"
+                     title="Click to view full page screenshot" />
+              </div>
+            `;
+          } else {
+            screenshotHtml = `
+              <div style="margin-top: 6px; font-size: 11px; color: #a08070; display: flex; align-items: center; gap: 4px;">
+                <span>📸 Shared evidence — same profile lookup</span>
+                <a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${esc(screenshotPath)}')" 
+                   style="color: #60a5fa; text-decoration: underline; margin-left: 2px;">
+                  View ↗
+                </a>
+              </div>
+            `;
+          }
+        }
+
+        let avatarHtml = '';
+        if (avatarPath) {
+          avatarHtml = `
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-screenshot="${esc(avatarPath)}" 
+                   onclick="window.pywebview.api.open_url('${esc(avatarPath)}')" 
+                   style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #6a2020; cursor: pointer; flex-shrink: 0;"
+                   title="Profile Picture (Avatar) — Click to view" />
+              <span style="font-size: 11px; color: #a08070; font-weight: 500;">Profile Picture</span>
+            </div>
+          `;
+        }
+
+        return `
+      <div class="f-item">
+        <div class="f-item-title">
+          <span class="hit-check">✓</span> ${esc(f.value)}
+          ${targetUrl ? `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${esc(targetUrl)}')" class="hit-tag found" title="${esc(targetUrl)}">${esc(f.platform || 'Link')} ↗</a>` : (f.platform ? `<span class="hit-tag found">${esc(f.platform)}</span>` : '')}
+          <span class="ftag ftag-g">${(f.confidence * 100).toFixed(0)}%</span>
+        </div>
+        <div class="f-item-meta">${esc(f.type)} &middot; Found via ${esc(f.platform)}</div>
+        ${targetUrl ? `
+          <div style="margin-top: 4px; font-size: 12px;">
+            <a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${esc(targetUrl)}')" 
+               style="color: #60a5fa; text-decoration: underline; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" 
+               title="${esc(targetUrl)}">
+              View Profile ↗
+            </a>
+          </div>
+        ` : ''}
+        ${f.quote ? `<div class="f-item-quote">"${esc(f.quote)}"</div>` : ''}
+        ${avatarHtml}
+        ${screenshotHtml}
+      </div>
+    `;
+      };
 
       const vList = document.getElementById('list-verified');
       if (findingState.verified.length === 0) {
         vList.innerHTML = `<div style="font-size:13px;color:#8a4030;font-style:italic">No verified findings yet.</div>`;
       } else {
-        vList.innerHTML = findingState.verified.map(f => `
-      <div class="f-item">
-        <div class="f-item-title">
-          <span class="hit-check">✓</span> ${esc(f.value)}
-          ${f.url ? `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${f.url}')" class="hit-tag found">${esc(f.platform)}</a>` : (f.platform ? `<span class="hit-tag found">${esc(f.platform)}</span>` : '')}
-          <span class="ftag ftag-g">${(f.confidence * 100).toFixed(0)}%</span>
-        </div>
-        <div class="f-item-meta">${esc(f.type)} &middot; Found via ${esc(f.platform)}</div>
-        ${f.quote ? `<div class="f-item-quote">"${esc(f.quote)}"</div>` : ''}
-        ${f.screenshot_path ? `
-          <div style="margin-top: 8px;">
-            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-screenshot="${esc(f.screenshot_path)}" 
-                 onclick="window.pywebview.api.open_url('${esc(f.screenshot_path)}')" 
-                 style="width: 100px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #4a1515; cursor: pointer; display: block; opacity: 0.8; transition: opacity 0.2s;"
-                 onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8"
-                 title="Click to view full screenshot" />
-          </div>
-        ` : ''}
-      </div>
-    `).join('');
+        vList.innerHTML = findingState.verified.map(renderItem).join('');
       }
       document.getElementById('count-verified').textContent = findingState.verified.length;
 
@@ -2418,16 +2972,72 @@
       if (findingState.unverified.length === 0) {
         uList.innerHTML = `<div style="font-size:13px;color:#8a4030;font-style:italic">No unverified findings yet.</div>`;
       } else {
-        uList.innerHTML = findingState.unverified.map(f => `
-      <div class="f-item">
-        <div class="f-item-title" style="color:#aa7060">
-          <span class="hit-warn">${f.verified === null ? '?' : '✗'}</span> ${esc(f.value)}
-          ${f.platform ? `<span class="hit-tag ${f.verified === null ? 'inconclusive' : 'unverified'}">${esc(f.platform)}</span>` : ''}
-          <span class="ftag ftag-r">${(f.confidence * 100).toFixed(0)}%</span>
+        uList.innerHTML = findingState.unverified.map(f => {
+          const targetUrl = getEntityUrl(f);
+          const avatarPath = getEntityAvatar(f);
+          const screenshotPath = f.screenshot_path || (f.metadata && f.metadata.screenshot_path) || '';
+
+          let screenshotHtml = '';
+          if (screenshotPath) {
+            if (!seenScreenshots.has(screenshotPath)) {
+              seenScreenshots.add(screenshotPath);
+              screenshotHtml = `
+                <div style="margin-top: 8px;">
+                  <div style="font-size: 11px; color: #a08070; font-weight: 500; margin-bottom: 3px;">Page Screenshot</div>
+                  <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-screenshot="${esc(screenshotPath)}" 
+                       onclick="window.pywebview.api.open_url('${esc(screenshotPath)}')" 
+                       style="width: 120px; height: 72px; object-fit: cover; border-radius: 4px; border: 1px solid #4a1515; cursor: pointer; display: block; opacity: 0.85;"
+                       title="Click to view full page screenshot" />
+                </div>
+              `;
+            } else {
+              screenshotHtml = `
+                <div style="margin-top: 6px; font-size: 11px; color: #a08070; display: flex; align-items: center; gap: 4px;">
+                  <span>📸 Shared evidence — same profile lookup</span>
+                  <a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${esc(screenshotPath)}')" 
+                     style="color: #60a5fa; text-decoration: underline; margin-left: 2px;">
+                    View ↗
+                  </a>
+                </div>
+              `;
+            }
+          }
+
+          let avatarHtml = '';
+          if (avatarPath) {
+            avatarHtml = `
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-screenshot="${esc(avatarPath)}" 
+                     onclick="window.pywebview.api.open_url('${esc(avatarPath)}')" 
+                     style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #6a2020; cursor: pointer; flex-shrink: 0;"
+                     title="Profile Picture (Avatar) — Click to view" />
+                <span style="font-size: 11px; color: #a08070; font-weight: 500;">Profile Picture</span>
+              </div>
+            `;
+          }
+
+          return `
+        <div class="f-item">
+          <div class="f-item-title" style="color:#aa7060">
+            <span class="hit-warn">${f.verified === null ? '?' : '✗'}</span> ${esc(f.value)}
+            ${targetUrl ? `<a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${esc(targetUrl)}')" class="hit-tag ${f.verified === null ? 'inconclusive' : 'unverified'}" title="${esc(targetUrl)}">${esc(f.platform || 'Link')} ↗</a>` : (f.platform ? `<span class="hit-tag ${f.verified === null ? 'inconclusive' : 'unverified'}">${esc(f.platform)}</span>` : '')}
+            <span class="ftag ftag-r">${(f.confidence * 100).toFixed(0)}%</span>
+          </div>
+          <div class="f-item-meta">${esc(f.type)} &middot; Found via ${esc(f.platform)}</div>
+          ${targetUrl ? `
+            <div style="margin-top: 4px; font-size: 12px;">
+              <a href="javascript:void(0)" onclick="window.pywebview.api.open_url('${esc(targetUrl)}')" 
+                 style="color: #60a5fa; text-decoration: underline; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" 
+                 title="${esc(targetUrl)}">
+                View Profile ↗
+              </a>
+            </div>
+          ` : ''}
+          ${avatarHtml}
+          ${screenshotHtml}
         </div>
-        <div class="f-item-meta">${esc(f.type)} &middot; Found via ${esc(f.platform)}</div>
-      </div>
-    `).join('');
+      `;
+        }).join('');
       }
       document.getElementById('count-unverified').textContent = findingState.unverified.length;
 
@@ -2469,6 +3079,14 @@
             if (data.type === 'breach') state.breaches++;
             updateStats();
             addNodeToGraph(data);
+            if (activeTab === 'timeline') renderTimeline();
+            if (activeTab === 'evidence') renderEvidenceGallery();
+            break;
+
+          case 'timeline_event':
+            if (!currentCaseTimeline) currentCaseTimeline = [];
+            currentCaseTimeline.push(data);
+            if (activeTab === 'timeline') renderTimeline();
             break;
 
           case 'investigation_done':
@@ -2479,13 +3097,14 @@
             setStatus('Ready', false);
             showToast('Investigation complete — ask Joe anything about the case', 'api-active', 5000);
             if (data.target) {
+              storeCaseData(data.target.entities || [], data.target.timeline || []);
               graphData = buildGraphData(data.target.entities || [], data.target.timeline || []);
               renderGraph();
               deselectNode();
-            }
-            if (data.target) {
               initOrUpdateGeoMap(data.target.entities || [], data.target.timeline || []);
             }
+            if (activeTab === 'timeline') renderTimeline();
+            if (activeTab === 'evidence') renderEvidenceGallery();
             setTimeout(() => {
               processNextQueuedMessage();
             }, 100);
@@ -2520,10 +3139,13 @@
 
           case 'resumed':
             resumeCase(data);
+            storeCaseData(data.entities || [], data.timeline || []);
             graphData = buildGraphData(data.entities || [], data.timeline || []);
             renderGraph();
             deselectNode();
             initOrUpdateGeoMap(data.entities || [], data.timeline || []);
+            if (activeTab === 'timeline') renderTimeline();
+            if (activeTab === 'evidence') renderEvidenceGallery();
             break;
 
           case 'report_ready':
@@ -2924,6 +3546,11 @@
         const relPath = img.getAttribute('data-screenshot');
         if (!relPath) return;
         
+        if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_evidence_uri) {
+          setTimeout(resolveScreenshots, 300);
+          return;
+        }
+
         // Ensure image is visible, and clear fallback sibling if any
         resetScreenshotImage(img);
         
@@ -3013,27 +3640,39 @@
         nodeMap.set(id, node);
       });
 
+      function findNodeId(valOrId) {
+        if (!valOrId) return null;
+        if (nodeMap.has(valOrId)) return valOrId;
+        const targetVal = String(valOrId).toLowerCase();
+        for (const [id, node] of nodeMap.entries()) {
+          if (node.id === valOrId || (node.value && String(node.value).toLowerCase() === targetVal)) {
+            return id;
+          }
+        }
+        return null;
+      }
+
       // 2. Add edges from timeline 'correlation_found' events
       const addedEdges = new Set();
       if (timeline) {
         timeline.forEach(event => {
           if (event.event === 'correlation_found' && event.data) {
-            const source = event.data.entity_a;
-            const target = event.data.entity_b;
+            const sourceId = findNodeId(event.data.entity_a);
+            const targetId = findNodeId(event.data.entity_b);
             const signal = event.data.signal;
-            const confBefore = event.data.confidence_before;
-            const confAfter = event.data.confidence_after;
 
-            const edgeKey = [source, target].sort().join('->');
-            if (!addedEdges.has(edgeKey)) {
-              links.push({
-                source: source,
-                target: target,
-                signal: signal,
-                confidence_before: confBefore,
-                confidence_after: confAfter
-              });
-              addedEdges.add(edgeKey);
+            if (sourceId && targetId && sourceId !== targetId) {
+              const edgeKey = [sourceId, targetId].sort().join('->');
+              if (!addedEdges.has(edgeKey)) {
+                links.push({
+                  source: sourceId,
+                  target: targetId,
+                  signal: signal,
+                  confidence_before: event.data.confidence_before,
+                  confidence_after: event.data.confidence_after
+                });
+                addedEdges.add(edgeKey);
+              }
             }
           }
         });
@@ -3066,6 +3705,30 @@
           });
         }
       });
+
+      // 4. Connect isolated floating nodes to primary origin node
+      if (nodes.length > 1) {
+        const rootId = nodes[0].id;
+        const connectedNodes = new Set();
+        addedEdges.forEach(k => {
+          const [a, b] = k.split('->');
+          connectedNodes.add(a);
+          connectedNodes.add(b);
+        });
+
+        nodes.forEach(n => {
+          if (n.id !== rootId && !connectedNodes.has(n.id)) {
+            const edgeKey = [n.id, rootId].sort().join('->');
+            links.push({
+              source: n.id,
+              target: rootId,
+              signal: 'discovered_entity'
+            });
+            addedEdges.add(edgeKey);
+            connectedNodes.add(n.id);
+          }
+        });
+      }
 
       return { nodes, links };
     }
@@ -3174,12 +3837,15 @@
       }
 
       const nodesData = graphData.nodes.map(n => ({...n}));
-      const linksData = graphData.links.map(l => ({
-        source: typeof l.source === 'object' ? l.source.id : l.source,
-        target: typeof l.target === 'object' ? l.target.id : l.target,
-        signal: l.signal,
-        type: l.type
-      }));
+      const nodeIds = new Set(nodesData.map(n => n.id));
+      const linksData = graphData.links
+        .map(l => ({
+          source: typeof l.source === 'object' ? l.source.id : l.source,
+          target: typeof l.target === 'object' ? l.target.id : l.target,
+          signal: l.signal,
+          type: l.type
+        }))
+        .filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
 
       tbGraphInstance
         .nodeThreeObject(node => {
@@ -3270,8 +3936,10 @@
             return 0.5;
           }
           return 1.5;
-        })
-        .graphData({ nodes: nodesData, links: linksData });
+        });
+
+      console.log("[GraphData Debug]", JSON.stringify({ nodes: nodesData, links: linksData }));
+      tbGraphInstance.graphData({ nodes: nodesData, links: linksData });
 
       setTimeout(() => {
         if (tbGraphInstance) {
@@ -3363,6 +4031,20 @@
       document.getElementById('det-conf-bar').style.width = `${(d.confidence * 100).toFixed(0)}%`;
       document.getElementById('det-conf-bar').style.background = d.verified === true ? 'linear-gradient(90deg, #10b981, #3aad50)' : 'linear-gradient(90deg, #aa2a10, #ff4422)';
 
+      const avatarSec = document.getElementById('det-avatar-sec');
+      const avatarImg = document.getElementById('det-avatar-img');
+      const avatarPath = getEntityAvatar(d);
+      if (avatarPath && avatarSec && avatarImg) {
+        avatarSec.style.display = 'block';
+        resetScreenshotImage(avatarImg);
+        avatarImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        avatarImg.setAttribute('data-screenshot', avatarPath);
+        avatarImg.onclick = () => window.pywebview.api.open_url(avatarPath);
+        resolveScreenshots();
+      } else if (avatarSec) {
+        avatarSec.style.display = 'none';
+      }
+
       const screenSec = document.getElementById('det-screenshot-sec');
       const img = document.getElementById('det-screenshot-img');
       if (img) {
@@ -3382,6 +4064,17 @@
       }
 
       document.getElementById('det-sources').textContent = (d.sources || []).join(', ');
+
+      const targetUrl = getEntityUrl(d);
+      const urlSec = document.getElementById('det-url-sec');
+      const urlLink = document.getElementById('det-url-link');
+      if (targetUrl && urlSec && urlLink) {
+        urlSec.style.display = 'block';
+        urlLink.onclick = () => window.pywebview.api.open_url(targetUrl);
+        urlLink.title = targetUrl;
+      } else if (urlSec) {
+        urlSec.style.display = 'none';
+      }
 
       const conns = graphData.links.filter(l => {
         const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
@@ -3534,15 +4227,34 @@
         opacity: 0.95
       });
       
-      // Load texture offline
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load('world_outline.jpg', (texture) => {
-        globeMat.map = texture;
-        globeMat.color.setHex(0xffffff);
-        globeMat.needsUpdate = true;
-      }, undefined, (err) => {
-        console.warn("Failed to load offline texture, using fallback solid shading", err);
-      });
+      // Load texture (base64 Data URI supported for local http webview rendering)
+      function applyWorldTexture(uri) {
+        if (!uri) return;
+        if (typeof THREE !== 'undefined' && globeMat) {
+          const textureLoader = new THREE.TextureLoader();
+          textureLoader.load(uri, (texture) => {
+            globeMat.map = texture;
+            globeMat.color.setHex(0xffffff);
+            globeMat.needsUpdate = true;
+          }, undefined, (err) => {
+            console.warn("Failed to load map texture, using fallback solid shading", err);
+          });
+        }
+        const bgImg = document.getElementById('geo-flatmap-bg-image');
+        if (bgImg) {
+          bgImg.setAttribute('href', uri);
+          bgImg.setAttribute('xlink:href', uri);
+        }
+      }
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_map_texture) {
+        window.pywebview.api.get_map_texture().then(dataUri => {
+          if (dataUri) applyWorldTexture(dataUri);
+          else applyWorldTexture('world_outline.jpg');
+        }).catch(() => applyWorldTexture('world_outline.jpg'));
+      } else {
+        applyWorldTexture('world_outline.jpg');
+      }
       
       geoGlobe = new THREE.Mesh(sphereGeo, globeMat);
       geoScene.add(geoGlobe);

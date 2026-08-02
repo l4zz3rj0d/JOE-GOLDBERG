@@ -260,7 +260,7 @@ class JoeVoice:
 
         return "\n".join(lines)
 
-    def _ask_slm(self, prompt: str, system: str, max_tokens: int = 400, timeout: int = 60, num_ctx: int = 2048) -> dict:
+    def _ask_slm(self, prompt: str, system: str, max_tokens: int = 400, timeout: int = 60, num_ctx: int = 2048, temperature: float = 0.55) -> dict:
         """Ask the local SLM. Returns a dict: {'text': response, 'error': bool}"""
         try:
             r = self.client.post(
@@ -271,7 +271,7 @@ class JoeVoice:
                     "prompt": prompt,
                     "stream": False,
                     "options": {
-                        "temperature": 0.85,
+                        "temperature": temperature,
                         "top_p": 0.9,
                         "num_predict": max_tokens,
                         "num_ctx": num_ctx,
@@ -385,40 +385,51 @@ class JoeVoice:
 
     def closing_monologue(self, target: Target) -> dict:
         """
-        Post-scan monologue. Try Gemini first for richer prose,
-        fall back to SLM silently.
+        Single synthesized post-scan monologue. Try Gemini first,
+        fall back to single SLM call silently. Runs grounding check audit.
         Returns {text, rate_limited, used_gemini, error}
         """
+        from narrative.grounding_check import verify_grounding
+
         case_data = self._build_case_data(target)
         system = JOE_MONOLOGUE_PROMPT.format(case_data=case_data)
         prompt = (
             f"Write the closing monologue for this investigation of {target.primary}. "
-            f"Be specific about every platform and finding listed above."
+            f"Be specific about every platform and finding listed above. "
+            f"Do not invent unverified bios or describe what profile photos visually look like."
         )
+
+        res_text = ""
+        rate_limited = False
+        used_gemini = False
+        error = False
 
         # Try Gemini for better monologue quality
         if self.gemini_available and not self.gemini_rate_limited:
-            text, rate_limited = self._ask_gemini(prompt, system, max_tokens=800)
-            if rate_limited:
+            text, r_limited = self._ask_gemini(prompt, system, max_tokens=1000)
+            if r_limited:
                 self.gemini_rate_limited = True
-                # Fall back to SLM silently
-                res = self._ask_slm(prompt, system, max_tokens=400, timeout=120, num_ctx=2048)
-                return {
-                    "text": res["text"],
-                    "rate_limited": True,
-                    "used_gemini": False,
-                    "error": res["error"]
-                }
-            if text:
-                return {"text": text, "rate_limited": False, "used_gemini": True, "error": False}
+                rate_limited = True
+                res = self._ask_slm(prompt, system, max_tokens=600, timeout=180, num_ctx=4096, temperature=0.55)
+                res_text = res["text"]
+                error = res["error"]
+            elif text:
+                res_text = text
+                used_gemini = True
 
-        # SLM fallback
-        res = self._ask_slm(prompt, system, max_tokens=400, timeout=120, num_ctx=2048)
+        if not res_text:
+            res = self._ask_slm(prompt, system, max_tokens=600, timeout=180, num_ctx=4096, temperature=0.55)
+            res_text = res["text"]
+            error = res["error"]
+
+        grounded_text, warnings = verify_grounding(res_text, target)
+
         return {
-            "text": res["text"],
-            "rate_limited": False,
-            "used_gemini": False,
-            "error": res["error"]
+            "text": grounded_text,
+            "rate_limited": rate_limited,
+            "used_gemini": used_gemini,
+            "error": error,
+            "grounding_warnings": warnings
         }
 
     def rate_limit_response(self) -> str:

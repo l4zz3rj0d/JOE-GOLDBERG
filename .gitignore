@@ -75,3 +75,4 @@ api_keys*
 *.zip
 data/
 memory/
+scratch/
