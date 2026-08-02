@@ -14,6 +14,13 @@ async def run(target: Target, email: str, on_find=None) -> None:
         _check_gravatar(target, email, on_find),
     )
 
+    # Run multi-technique email intelligence enrichment (Gravatar, Libravatar, Google Maps dork)
+    try:
+        import modules.email_intel as email_intel
+        await email_intel.enrich(target, email, on_find)
+    except Exception:
+        pass
+
 
 async def _check_breachdirectory(target, email, on_find):
     """BreachDirectory free API — no key needed."""
