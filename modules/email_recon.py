@@ -63,6 +63,14 @@ async def _check_holehe(target, email, on_find):
                 )
                 if target.add_entity(entity) and on_find:
                     await on_find(entity)
+
+                # Follow-up profile enrichment if holehe detects Gravatar registration
+                if "gravatar" in site.lower():
+                    try:
+                        import modules.gravatar_profile as gravatar_profile
+                        await gravatar_profile.enrich(target, email, on_find)
+                    except Exception:
+                        pass
     except FileNotFoundError:
         pass
     except Exception:
@@ -70,28 +78,9 @@ async def _check_holehe(target, email, on_find):
 
 
 async def _check_gravatar(target, email, on_find):
-    """Check if email has a Gravatar — reveals real name sometimes."""
-    import hashlib
+    """Check if email has a Gravatar — fetches public profile, name, location, links, avatar, screenshot."""
     try:
-        email_hash = hashlib.md5(email.lower().encode()).hexdigest()
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.get(
-                f"https://www.gravatar.com/{email_hash}.json",
-            )
-            if r.status_code == 200:
-                data = r.json()
-                entry = data.get("entry", [{}])[0]
-                name = entry.get("displayName") or entry.get("preferredUsername")
-                if name:
-                    entity = Entity(
-                        entity_type="username",
-                        value=name,
-                        sources=["gravatar"],
-                        confidence=0.7,
-                        platform="Gravatar",
-                        metadata={"email": email, "profile": f"https://gravatar.com/{email_hash}"},
-                    )
-                    if target.add_entity(entity) and on_find:
-                        await on_find(entity)
+        import modules.gravatar_profile as gravatar_profile
+        await gravatar_profile.enrich(target, email, on_find)
     except Exception:
         pass

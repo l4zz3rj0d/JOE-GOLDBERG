@@ -144,8 +144,8 @@ def _compute_phash_dist(file_a: str, platform_a: str, file_b: str, platform_b: s
 
 
 async def check_avatar_match(entity_a: Entity, entity_b: Entity) -> bool:
-    path_a = entity_a.metadata.get("screenshot_path")
-    path_b = entity_b.metadata.get("screenshot_path")
+    path_a = entity_a.metadata.get("avatar_path") or entity_a.metadata.get("screenshot_path")
+    path_b = entity_b.metadata.get("avatar_path") or entity_b.metadata.get("screenshot_path")
     if not path_a or not path_b:
         return False
     
