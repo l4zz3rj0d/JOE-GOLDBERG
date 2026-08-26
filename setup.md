@@ -10,7 +10,7 @@ Joe uses **gemma2:2b** running locally by default for all narration and context 
 3. Paste it into `config.yaml` in the project root:
 
 ```yaml
-gemini_api_key: "AIzaSy..."
+gemini_api_key: "YOUR_GEMINI_API_KEY"
 ```
 
 *(Alternatively, you can set it as an environment variable `GEMINI_API_KEY`, but `config.yaml` is recommended for reliability.)*

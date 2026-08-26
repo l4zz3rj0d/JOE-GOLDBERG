@@ -1,158 +1,135 @@
 <div align="center">
-  <img src="assets/joegui.png" alt="Joe Goldberg" width="600"/>
+  <img src="assets/joegui.png" alt="Joe Goldberg — OSINT Investigator & Ethical Stalker" width="650"/>
 
   # Joe Goldberg
 
-  **Autonomous OSINT Investigator — fully local, zero cost**
+  **OSINT Investigator & Ethical Stalker — fully local, persona-enforced, zero cost**
 
   ![Python](https://img.shields.io/badge/Python-3.10%2B-c0392b?style=flat-square&logo=python&logoColor=white)
-  ![LLM](https://img.shields.io/badge/LLM-Gemini%20%7C%20Ollama-e8a020?style=flat-square)
+  ![Engine](https://img.shields.io/badge/LLM-Ollama%20%7C%20NVIDIA%20NIM%20%7C%20Gemini-e8a020?style=flat-square)
+  ![Voice](https://img.shields.io/badge/Voice-Fish%20Audio%20TTS-8b2010?style=flat-square)
   ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-8b2010?style=flat-square)
   ![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square)
-  ![Status](https://img.shields.io/badge/Status-Active%20Development-2d7a3a?style=flat-square)
+  ![Persona](https://img.shields.io/badge/Persona-Joe%20Goldberg-ff5a5f?style=flat-square)
 
-  > *"I notice everything."*
+  > *"I notice everything. You think you're hidden behind aliases and encrypted lines... but every target leaves a digital trail."*
 </div>
 
 ---
 
-## What is Joe Goldberg?
+## 👁️ What is Joe Goldberg?
 
-Joe Goldberg is an OSINT investigation tool named after the obsessive, detail-oriented character from the series YOU. Just like Joe, this tool notices everything — it gathers publicly available information about a target, connects the dots, and narrates findings in his voice.
+**Joe Goldberg** is an autonomous **OSINT Investigator & Ethical Stalker** workspace built for penetration testers, bug bounty hunters, CTF players, and security researchers. Named after the detail-obsessed protagonist of *YOU*, Joe approaches digital reconnaissance with surgical precision—gathering publicly available intelligence, mapping identity webs, and narrating findings in his signature **internal monologue voice**.
 
-Built for penetration testers, bug bounty hunters, CTF players, and security researchers. No API keys for recon. No subscriptions. No data leaving your machine.
-
----
-
-## What it does
-
-Give Joe a target — an email, username, domain, IP, or full name — and he investigates it. He scans hundreds of platforms for linked accounts, checks breach databases, pulls DNS and certificate records, harvests linked emails, and builds a complete picture of the target's digital footprint.
-
-While scanning, Joe speaks. Every significant find gets a brief observation in his voice. When the investigation is complete, he delivers a full closing monologue — connecting every dot, reading between the lines, the way only Joe would.
-
-Everything is saved as a case file. You can resume any investigation later, add notes, ask Joe follow-up questions, and export a full HTML report.
+Unlike generic tools, Joe operates with a **persona-enforced narration engine** coupled with an NLP filter that strips atmospheric stage directions, ensuring all audio and text outputs remain purely internal monologue.
 
 ---
 
-## Interface
+## ⚡ Key Highlights & Architecture
+
+- 💳 **Collapsible Inline Card System**: Evidence ledgers, location maps, correlation graphs, and settings overlays are housed in structured collapsible cards with smooth chevron dropdowns (`▼` / `▶`) and real-time entity badges.
+- 👁️ **API Credential Security**: All API key input fields (Gemini, NVIDIA NIM, Fish Audio) feature transparent eye toggle buttons (`👁`) with dynamic input masking (`password` ↔ `text`).
+- 🎙️ **Filtered Audio Narration**: Integrates Fish Audio TTS voice synthesis with an NLP filtering layer to deliver Joe's voice monologues seamlessly without reading out brackets or stage notes.
+- 🕸️ **Guaranteed 2D/3D Correlation Graph Engine**: Never renders blank. Connects target roots to default active OSINT skill nodes (Sherlock, WHOIS, DNS, Holehe, GeoIP, Wayback, EXIF) with an interactive 2D SVG radial network fallback when 3D WebGL is unavailable.
+- 🔍 **Deep Multi-Pass OSINT Modules**:
+  - **Username Enumeration**: Cross-platform scans over 300+ sites via Sherlock and Maigret.
+  - **Email Recon**: Gravatar/Libravatar profile extraction, Holehe lookups across 120+ services.
+  - **Domain & IP Intelligence**: WHOIS, DNS records, Subdomain discovery via CT logs, AbuseIPDB scoring, and IP Geolocation.
+  - **Code & Mentions**: Deep GitHub repository search, commit parsing, paste site mentions via psbdmp, and Google Dork fallback.
+  - **Breach Enrichment**: Exposure checks with field-level details.
+
+---
+
+## 🖥️ Workspace Interface
 
 <div align="center">
-  <img src="assets/Interface.png" alt="Joe Goldberg Interface" width="800"/>
+  <img src="assets/Interface.png" alt="Joe Goldberg Investigative Workspace" width="850"/>
   <br/>
-  <sub>Joe's cinematic terminal UI — red-on-black, inline narration, live findings</sub>
+  <sub>High-fidelity, dark noir interface — featuring collapsible evidence cards, instant streaming text, and interactive network mapping</sub>
 </div>
 
 ---
 
-## Features
+## 🛠️ Installation & Quickstart
 
-- Investigates emails, usernames, domains, IPs, and full names
-- Multi-source username enumeration across 300+ platforms via Sherlock and Maigret
-- Email intelligence via Holehe (120+ sites) and Gravatar profile & avatar extraction
-- Code, commit, and profile intel via deep GitHub reconnaissance
-- Discovered handle resolution and multi-pass identity pivoting across unique usernames, real names, and combined queries
-- Paste site mentions via psbdmp and Google Dorking with automated fallback
-- IP Geolocation, Proxy/VPN detection, and AbuseIPDB scraping
-- Historical domain snapshots via Wayback Machine
-- DNS records, WHOIS, subdomain discovery via certificate transparency logs
-- Breach database lookups (BreachDirectory) with exposed field details
-- Anti-Hallucination Grounding Auditor validating all narration claims against verified entity data
-- Single-pass high-budget closing monologue (`gemma2:2b` local SLM / Gemini)
-- Persistent case files — resume any investigation at any time
-- Free-form chat — ask Joe anything about the current investigation, with input queuing during active sweeps
-- HTML report export with timeline, entity table, visual evidence, and risk score
-- Desktop app with red cinematic UI, conversation transcript copy tools, and an interactive 3D relationship graph
-- Chronological Investigation Timeline panel with event filtering and interactive finding jump-links
-- Visual Evidence Gallery panel rendering profile pictures and page screenshots via base64 Data URIs
-- Interactive IP geolocation flat map and 3D globe visualization (identifies and marks shared CDN/hosting infrastructure)
-- Terminal CLI with the same full experience
-- Callable as a system command from anywhere — just type `joe`
+### Prerequisites
+- **Python 3.10+** & **Git**
+- **Ollama** (installed automatically for local fallback)
+- **curl** (default on Linux/macOS)
 
----
-
-## Requirements
-
-- Python 3.10+
-- Git
-- Ollama (installed automatically)
-- curl (installed by default on Linux/macOS)
-
----
-
-## Installation
+### 1-Line Setup
 ```bash
 git clone https://github.com/project-hellhound-org/JOE-GOLDBERG.git
 cd JOE-GOLDBERG
 
-# Linux / macOS
+# Run system installer
 bash install.sh
 ```
 
-The installer handles Python dependencies, Sherlock, Maigret, Ollama, and pulls the local model automatically.
-
-After installation `joe` works as a system command from any directory — no need to activate a virtualenv or navigate to the project folder.
+After installation, `joe` works as a system command from any terminal directory.
 
 ---
 
-## Narration Configuration
+## 🚀 Usage & Commands
 
-Joe uses **gemma2:2b** running completely locally by default via Ollama for all narration, intent extraction, and context awareness. This ensures your investigation data never leaves your machine.
-
-For faster, richer closing monologues, you can optionally configure a Google Gemini API key.
-
-See the [Gemini Setup Guide](setup.md) for instructions on how to configure your shell and environment for optional Gemini narration.
-
----
-
-## Usage
 ```bash
-joe                              # desktop app
-joe --cli                        # terminal CLI
-joe stalk target@email.com       # investigate directly
-joe stalk johndoe_87             # username
-joe stalk target.com             # domain
-joe stalk "john doe"             # full name
+joe                              # Launch Desktop Application
+joe --cli                        # Launch Terminal CLI Interface
+joe stalk target@email.com       # Investigate email address directly
+joe stalk johndoe_87             # Investigate username across 300+ platforms
+joe stalk target.com             # Investigate domain & infrastructure
+joe stalk "John Doe"             # Investigate target full name
 ```
 
-### Commands
+### Workspace Commands
 
 | Command | Description |
 |---|---|
-| `stalk <target>` | Start a new investigation |
-| `resume <target>` | Continue a saved case |
-| `pivot <entity>` | Investigate a discovered entity |
-| `cases` | List all saved investigations |
-| `notes <text>` | Add a note to the current case |
-| `export` | Export case as HTML report |
-| `help` | Show all commands |
-| `exit` | Leave |
-
-Or just type anything — Joe answers questions about the current investigation with full memory of everything found so far.
+| `stalk <target>` | Initialize a fresh investigation sweep |
+| `resume <target>` | Resume an existing case file with full chat history |
+| `pivot <entity>` | Pivot investigation focus onto a discovered handle or IP |
+| `cases` | View all archived case files |
+| `notes <text>` | Append investigation notes to the active case |
+| `export` | Generate an offline HTML case report |
+| `help` | Display command guide |
+| `exit` | Close workspace |
 
 ---
 
-## Desktop Icon (Linux)
+## 🔑 Security & Configuration
 
-After installation, Joe will appear in your system's application menu. Search for **Joe Goldberg** or look under the Security category. You can pin it to your dock or panel just like any other application.
+API credentials can be configured directly inside the **Settings Card** overlay in the GUI or defined in `config.yaml`:
+
+```yaml
+# Language Models & Fallbacks
+model: "qwen2.5:3b-instruct-q4_0"
+ollama_url: "http://localhost:11434"
+gemini_api_key: "YOUR_GEMINI_API_KEY"
+nvidia_api_key: "YOUR_NVIDIA_API_KEY"
+
+# Spoken Voice Narration (Fish Audio)
+voice_enabled: true
+fish_audio_api_key: "YOUR_FISH_AUDIO_API_KEY"
+fish_audio_voice_id: "d53856ce61ff..."
+```
 
 ---
 
-## Ethical Use
+## ⚖️ Ethical Use Notice
 
-This tool is for authorized security work only — penetration testing engagements, bug bounty programs, CTF challenges, and authorized investigations.
+This software is designed exclusively for authorized penetration testing, bug bounty programs, CTF challenges, and security research engagements. 
 
-Do not use against individuals or systems without explicit written authorization. This software is licensed under the **GNU General Public License v3 (GPLv3)**.
+Always obtain explicit authorization before gathering intelligence or testing targets. Distributed under the **GNU General Public License v3 (GPLv3)**.
 
 ---
 
-## Author
+## 👤 Author & Credits
 
 <a href="https://l4zz3rj0d.github.io">
   <img src="https://img.shields.io/badge/Founder-L4ZZ3RJ0D-c0392b?style=for-the-badge" alt="L4ZZ3RJ0D"/>
 </a>
 
-
-
 <div align="center">
+  <br/>
   <sub>Built with obsession. Like Joe would.</sub>
 </div>
