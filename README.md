@@ -82,10 +82,9 @@ You ──> joe stalk <target> ──> Input Parser ──> Scope & Entity Resol
 Autonomous intelligence gathering and multi-pass identity pivoting utilize fast SLMs and frontier LLMs for intent parsing and monologue synthesis.
 
 > [!TIP]
-> ### 💡 Recommended AI Providers (Free & Paid)
-> - **For Local Users (100% Offline)**: Run **gemma2:2b** or **qwen2.5:3b** locally via Ollama. Zero cost and complete privacy.
-> - **For Free Cloud Inference**: Use **Google Gemini 2.5 Flash** or **NVIDIA NIM** (`meta/llama-3.3-70b-instruct`) for rapid monologue synthesis and deep context handling.
-> - **For Voice Synthesis**: Use **Fish Audio TTS** with custom reference models (`s2.1-pro-free`).
+> ### 💡 Recommended AI Engines
+> - **NVIDIA NIM (Strongly Recommended for Cloud)**: Use **NVIDIA NIM** (`meta/llama-3.3-70b-instruct` or `nvidia/nemotron-3-super-120b-a12b`). It is **instant, ultra-fast**, and provides generous free API credits for frontier-class 70B–120B reasoning at zero cost.
+> - **Local Qwen (Strongly Recommended for Local & Offline)**: Run **Qwen** (`qwen2.5:3b` or `qwen2.5:7b` / `qwen2.5:14b`) locally via Ollama. Delivers exceptional local reasoning, structured output adherence, and 100% privacy with zero data leaving your machine.
 
 ---
 
@@ -101,10 +100,20 @@ Everything you need to install, configure AI backends, and run Joe Goldberg in o
 
 ### 2. Fast Deploy
 
-#### Standard Git Clone
+#### Option A: One-Line Remote Installer
+```bash
+curl -fsSL https://raw.githubusercontent.com/project-hellhound-org/JOE-GOLDBERG/main/install.sh | bash
+```
+
+#### Option B: Standard Git Clone
 ```bash
 git clone https://github.com/project-hellhound-org/JOE-GOLDBERG.git
 cd JOE-GOLDBERG
+
+# Initialize config from template
+cp config.yaml.example config.yaml
+
+# Run system installer
 chmod +x install.sh
 ./install.sh
 ```
@@ -116,6 +125,7 @@ source ~/.bashrc   # or source ~/.zshrc
 
 The automated installer will:
 - Set up an isolated Python environment.
+- Initialize `config.yaml` from template configuration.
 - Install OSINT tools (Sherlock, Maigret, Holehe, etc.).
 - Mount the desktop application dependencies (`pywebview`).
 - Create global `joe` command integration.

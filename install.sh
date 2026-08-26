@@ -8,6 +8,11 @@ echo ""
 # ── Python Environment ────────────────────────────────────────
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+if [ ! -f "$INSTALL_DIR/config.yaml" ] && [ -f "$INSTALL_DIR/config.yaml.example" ]; then
+    echo "  initializing config.yaml from config.yaml.example..."
+    cp "$INSTALL_DIR/config.yaml.example" "$INSTALL_DIR/config.yaml"
+fi
+
 if [ -n "$VIRTUAL_ENV" ]; then
     echo "  using active virtual environment: $VIRTUAL_ENV"
     VENV_ACTIVATE="$VIRTUAL_ENV/bin/activate"
