@@ -11,7 +11,15 @@ import asyncio
 import threading
 import json
 import re
+import subprocess
+import time
+import os
 from pathlib import Path
+
+try:
+    import speech_recognition as sr
+except ImportError:
+    sr = None
 from core.orchestrator import Orchestrator
 from core.target_model import Target
 from core.case_brief import CaseBrief, parse_brief_with_slm
@@ -597,30 +605,55 @@ class JoeAPI:
         return {"success": True, "status": "started"}
 
     def _bg_voice_loop(self):
+        if not sr:
+            print("[desktop] Voice listener disabled: speech_recognition package not installed in environment.")
+            return
+
         wav_path = "/tmp/joe_auto_voice.wav"
         recognizer = sr.Recognizer()
+        recognizer.energy_threshold = 300
+        recognizer.dynamic_energy_threshold = True
+
+        rec_candidates = [
+            ["arecord", "-D", "plughw:1,0", "-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "2", wav_path],
+            ["arecord", "-D", "default", "-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "2", wav_path],
+            ["ffmpeg", "-y", "-f", "alsa", "-i", "default", "-ar", "16000", "-ac", "1", "-t", "2", wav_path],
+            ["ffmpeg", "-y", "-f", "pulse", "-i", "default", "-ar", "16000", "-ac", "1", "-t", "2", wav_path]
+        ]
+
+        # Probe candidate commands to find the single working command for this system
+        working_cmd = None
+        for cmd in rec_candidates:
+            if os.path.exists(wav_path):
+                try: os.remove(wav_path)
+                except Exception: pass
+            try:
+                proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                proc.wait(timeout=3)
+                if os.path.exists(wav_path) and os.path.getsize(wav_path) > 1000:
+                    working_cmd = cmd
+                    print(f"[desktop] Audio capture device initialized: {' '.join(cmd[:4])}")
+                    break
+            except Exception:
+                pass
+
+        if not working_cmd:
+            working_cmd = rec_candidates[0]
 
         while getattr(self, '_bg_voice_active', False):
             try:
-                rec_cmds = [
-                    ["arecord", "-D", "default", "-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "3", wav_path],
-                    ["arecord", "-D", "plughw:1,0", "-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "3", wav_path],
-                    ["ffmpeg", "-y", "-f", "alsa", "-i", "default", "-ar", "16000", "-ac", "1", "-t", "3.5", wav_path],
-                    ["ffmpeg", "-y", "-f", "pulse", "-i", "default", "-ar", "16000", "-ac", "1", "-t", "3.5", wav_path]
-                ]
-                recorded = False
-                for cmd in rec_cmds:
-                    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    try:
-                        proc.wait(timeout=4.5)
-                        if os.path.exists(wav_path) and os.path.getsize(wav_path) > 1000:
-                            recorded = True
-                            break
-                    except Exception:
-                        proc.kill()
+                if os.path.exists(wav_path):
+                    try: os.remove(wav_path)
+                    except Exception: pass
 
-                if not recorded or not os.path.exists(wav_path) or os.path.getsize(wav_path) == 0:
-                    time.sleep(0.3)
+                proc = subprocess.Popen(working_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                try:
+                    proc.wait(timeout=3)
+                except Exception:
+                    proc.kill()
+
+                if not os.path.exists(wav_path) or os.path.getsize(wav_path) < 1000:
+                    time.sleep(0.1)
                     continue
 
                 with sr.AudioFile(wav_path) as source:
@@ -633,22 +666,20 @@ class JoeAPI:
                     match = re.search(pattern, text, re.IGNORECASE)
                     if match:
                         clean = text[match.end():].strip()
+                        # Wake word detected — immediately activate HUD listening mode
                         self._emit("joe_wake_word_detected", {"raw": text, "clean": clean})
+                        if clean:
+                            # Command followed the wake word (e.g. "Joe search for target")
+                            self._emit("joe_voice_detected", {"text": clean, "raw": text})
+                            time.sleep(1.0)
                     else:
-                        clean = text
-
-                    if not clean:
-                        clean = text
-
-                    self._emit("joe_voice_detected", {
-                        "text": clean,
-                        "raw": text
-                    })
-                    time.sleep(4.0)
+                        # Follow-up speech while already listening
+                        self._emit("joe_voice_detected", {"text": text, "raw": text})
+                        time.sleep(0.8)
             except sr.UnknownValueError:
                 pass
             except Exception as e:
-                time.sleep(0.5)
+                time.sleep(0.2)
 
     def _emit(self, event: str, data: dict):
         if self._window:
