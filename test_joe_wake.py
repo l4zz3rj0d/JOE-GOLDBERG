@@ -88,16 +88,20 @@ def test_mic_sources():
 
                 if text:
                     print(f"\n\n[HEARD SPEECH]: \"{text}\"")
-                    match = re.search(r'\b(hey\s+)?joe\b\s*,?\s*(.*)', text, re.IGNORECASE)
+                    
+                    # Robust matching for Joe/Jo/Hai Jo/Hi Joe/Yo Jo
+                    pattern = r'^(?:(?:hey|hi|hai|yo|hello)\s+)?(?:joe|jo|zho|joey)\b\s*,?\s*|\b(?:joe|jo|zho|joey)\b\s*,?\s*'
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    
                     if match:
-                        prompt_after_joe = match.group(2).strip()
-                        print("  ✓ WAKE WORD DETECTED! ('Joe')")
+                        prompt_after_joe = text[match.end():].strip()
+                        print("  ✓ WAKE WORD DETECTED! ('Joe' / 'Jo')")
                         if prompt_after_joe:
-                            print(f"  🎯 PROMPT AFTER 'JOE': \"{prompt_after_joe}\"")
+                            print(f"  🎯 PROMPT EXTRACTED: \"{prompt_after_joe}\"")
                         else:
-                            print("  ⚠️ Wake word 'Joe' detected, but no prompt followed.")
+                            print(f"  🎯 FULL PHRASE: \"{text}\"")
                     else:
-                        print(f"  ℹ️ Speech recognized, but 'Joe' wake-word was not in phrase.")
+                        print(f"  🎯 GENERAL SPEECH DETECTED: \"{text}\"")
                     print("-" * 60)
             except sr.UnknownValueError:
                 pass

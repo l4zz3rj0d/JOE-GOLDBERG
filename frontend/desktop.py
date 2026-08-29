@@ -629,7 +629,13 @@ class JoeAPI:
 
                 if text:
                     print(f"[voice listener] Recognized: '{text}'")
-                    clean = re.sub(r'^(hey\s+)?joe,?\s*', '', text, flags=re.IGNORECASE).strip()
+                    pattern = r'^(?:(?:hey|hi|hai|yo|hello)\s+)?(?:joe|jo|zho|joey)\b\s*,?\s*|\b(?:joe|jo|zho|joey)\b\s*,?\s*'
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        clean = text[match.end():].strip()
+                    else:
+                        clean = text
+
                     if not clean:
                         clean = text
 
