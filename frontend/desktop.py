@@ -633,6 +633,7 @@ class JoeAPI:
                     match = re.search(pattern, text, re.IGNORECASE)
                     if match:
                         clean = text[match.end():].strip()
+                        self._emit("joe_wake_word_detected", {"raw": text, "clean": clean})
                     else:
                         clean = text
 

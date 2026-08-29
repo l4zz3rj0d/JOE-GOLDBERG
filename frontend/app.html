@@ -2355,6 +2355,11 @@ function playJoeAudio(text, audioData) {
 window.joe = {
   receive(event, data) {
     switch (event) {
+      case 'joe_wake_word_detected':
+        setHudState('listening');
+        addStatusLine("⚡ Joe heard wake phrase... listening...");
+        break;
+
       case 'joe_voice_detected':
         if (data && (data.text || data.raw)) {
           const cleanText = (data.text || data.raw).trim();
@@ -2365,7 +2370,7 @@ window.joe = {
             setTimeout(() => {
               setHudState('thinking');
               handleSend();
-            }, 500);
+            }, 1600); // 1.6s visible HUD listening pulse transition
           }
         }
         break;
