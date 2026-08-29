@@ -2,10 +2,21 @@
 # Copy this file to config.yaml and fill in your values
 # NEVER commit config.yaml — it contains secrets
 
-model: llama3.2:3b
+model: qwen2.5:3b-instruct-q4_0
 ollama_url: http://localhost:11434
 
-# ── Gemini API (recommended — free tier, fast) ─────────────────
+# ── NVIDIA NIM (recommended — fast, free credits) ──────────────
+# Get your free key at: https://build.nvidia.com
+# Supports fast 11B–70B models at zero cost with generous free tier.
+# Then set it as an environment variable (recommended):
+#   export NVIDIA_API_KEY="nvapi-your_key_here"
+#   echo 'export NVIDIA_API_KEY="nvapi-your_key_here"' >> ~/.bashrc
+#
+# Or paste it here (less secure — make sure config.yaml is gitignored):
+nvidia_api_key: YOUR_NVIDIA_API_KEY_HERE
+nvidia_model: meta/llama-3.2-11b-vision-instruct
+
+# ── Gemini API (free tier, fast) ───────────────────────────────
 # Get your free key at: https://aistudio.google.com/apikey
 # Then set it as an environment variable (recommended):
 #   export GEMINI_API_KEY="your_key_here"

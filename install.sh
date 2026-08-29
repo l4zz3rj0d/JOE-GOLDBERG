@@ -50,23 +50,18 @@ echo "  installing playwright chromium..."
 "$VENV_BIN/python3" -m pip install playwright
 "$VENV_BIN/python3" -m playwright install chromium 2>/dev/null || true
 
-# ── Ollama ────────────────────────────────────────────────────
-if ! command -v ollama &> /dev/null; then
-    echo "  installing ollama..."
-    curl -fsSL https://ollama.com/install.sh | sh
-fi
+# ── Ollama Check (Optional — Local Fallback) ──────────────────
+echo ""
+echo "  ─────────────────────────────────────────────────────────"
+echo "  Joe Goldberg uses NVIDIA NIM or Gemini API for primary"
+echo "  inference. No local models are automatically downloaded."
+echo "  ─────────────────────────────────────────────────────────"
+echo ""
 
-# Start ollama if not running
-if ! pgrep -x "ollama" > /dev/null; then
-    echo "  starting ollama..."
-    ollama serve &>/dev/null &
-    sleep 3
-fi
-
-# ── Pull model ────────────────────────────────────────────────
-if ! ollama list 2>/dev/null | grep -q "gemma2:2b"; then
-    echo "  pulling gemma2:2b (fast local fallback)..."
-    ollama pull gemma2:2b
+if command -v ollama &> /dev/null; then
+    echo "  ollama detected ✓ (Optional local fallback ready if models exist)"
+else
+    echo "  ollama not installed (Cloud APIs will be used for LLM features)"
 fi
 
 # ── System command ────────────────────────────────────────────
@@ -84,13 +79,7 @@ sudo chmod +x /usr/local/bin/joe
 # ── Desktop entry ─────────────────────────────────────────────
 echo "  creating desktop entry..."
 
-ICON_PATH="$INSTALL_DIR/assets/joe.jpeg"
-
-# Convert to PNG if imagemagick available — better icon support
-if command -v convert &> /dev/null; then
-    convert "$ICON_PATH" "$INSTALL_DIR/assets/joe-icon.png" 2>/dev/null && \
-    ICON_PATH="$INSTALL_DIR/assets/joe-icon.png"
-fi
+ICON_PATH="$INSTALL_DIR/assets/joe-icon.png"
 
 mkdir -p ~/.local/share/applications
 

@@ -18,16 +18,16 @@ def boot_checks():
         r = httpx.get("http://localhost:11434/api/tags", timeout=3)
         if r.status_code == 200:
             models = [m["name"] for m in r.json().get("models", [])]
-            if not any("gemma2" in m for m in models):
-                issues.append("gemma2:2b not pulled.\n  Run: ollama pull gemma2:2b")
-    except:
+            if not models:
+                issues.append("No local Ollama models pulled.\n  Run: ollama pull <model> (e.g., llama3.2:3b, qwen2.5:3b, gemma2:2b)")
+    except Exception:
         issues.append("Ollama not running.\n  Run: ollama serve")
 
     if issues:
-        print("\n[joe] Pre-flight issues:\n")
+        print("\n[joe] Pre-flight notice:\n")
         for issue in issues:
-            print(f"  ✗ {issue}\n")
-        print("  Joe can still run — LLM features will be limited.\n")
+            print(f"  ⓘ {issue}\n")
+        print("  Joe can still run using Cloud APIs (NVIDIA NIM / Gemini) or your configured local model.\n")
 
 
 def launch_cli(initial_target: str = None):

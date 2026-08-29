@@ -6,13 +6,13 @@
 <p align="center">
   <b>Autonomous OSINT Investigator & Ethical Stalker Workspace by Project Hellhound</b>
   <br>
-  <i>Target enumeration, identity pivoting, multi-source username scans, email intelligence, internal voice monologue synthesis, interactive 2D/3D correlation topology graphs, collapsible card UI, and zero-leak privacy — from initial handle to evidence report.</i>
+  <i>Target enumeration, identity pivoting, multi-source username scans, email intelligence, text-to-text monologue synthesis, interactive 2D/3D correlation topology graphs, microphone speech-to-text input, collapsible card UI, and zero-leak privacy — from initial handle to evidence report.</i>
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> ·
   <a href="#installation--setup">Installation & Setup</a> ·
-  <a href="#ai-model-routing--voice-synthesis">AI & Voice Routing</a> ·
+  <a href="#ai-model-routing">AI Routing</a> ·
   <a href="#commands">Commands</a> ·
   <a href="#the-osint-arsenal">Arsenal</a> ·
   <a href="#what-it-finds">What It Finds</a> ·
@@ -24,7 +24,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-blue?style=flat-square&logo=python&logoColor=white" alt="Python Version"/></a>
   <a href="https://github.com/project-hellhound-org/JOE-GOLDBERG/releases"><img src="https://img.shields.io/badge/Release-v2.0.0-red?style=flat-square" alt="Release Version"/></a>
   <img src="https://img.shields.io/badge/AI--Powered-Ollama%20%7C%20NVIDIA%20NIM%20%7C%20Gemini-red?style=flat-square" alt="AI Support"/>
-  <img src="https://img.shields.io/badge/Voice-Fish%20Audio%20TTS-orange?style=flat-square" alt="Voice Engine"/>
+  <img src="https://img.shields.io/badge/Input-Speech--to--Text%20%7C%20Mic-orange?style=flat-square" alt="User Speech Input"/>
   <img src="https://img.shields.io/badge/Recon-Sherlock%20%7C%20Maigret%20%7C%20Holehe%20%7C%20DNS%20%7C%20Wayback%20%7C%20EXIF-red?style=flat-square" alt="Recon Toolchain"/>
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey?style=flat-square" alt="Platform"/>
   <img src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square" alt="License"/>
@@ -34,7 +34,7 @@
 
 > [!NOTE]
 > ### 👁️ Persona & Privacy Notice
-> **Joe Goldberg** operates as an autonomous OSINT stalker and investigator. He gathers open-source intelligence, connects target identity webs, and narrate findings in his signature **internal monologue voice**. All requests run locally or through encrypted API bridges with zero data leaving your machine without explicit permission.
+> **Joe Goldberg** operates as an autonomous OSINT stalker and investigator. He gathers open-source intelligence, connects target identity webs, and presents findings in his signature **internal monologue text**. All requests run locally or through encrypted API bridges with zero data leaving your machine without explicit permission.
 
 ---
 
@@ -47,7 +47,7 @@ It features **persistent target memory and an automated case blackboard**—disc
 Works across three flexible interfaces:
 - **Interactive Terminal**: An interactive terminal environment with real-time monologue streaming, live progress feedback, and inline command execution (`joe --cli`).
 - **Headless CLI Runner**: Direct one-line command execution for automated scripts (`joe stalk <target>`).
-- **Desktop GUI Application**: A dedicated pywebview/fastapi desktop application featuring collapsible card modules, transparent eye API toggles, 2D/3D radial topology graphs, and live Fish Audio TTS voice narration (`joe`).
+- **Desktop GUI Application**: A dedicated pywebview/fastapi desktop application featuring collapsible card modules, transparent eye API toggles, 2D/3D radial topology graphs, and microphone speech-to-text input with "Hey Joe" wake word detection (`joe`).
 
 ---
 
@@ -65,14 +65,14 @@ You ──> joe stalk <target> ──> Input Parser ──> Scope & Entity Resol
                                      │
                                      ▼ (Populates Non-Prunable Case Blackboard)
                            Narrator Engine <── NLP Stage-Direction Filter
-                                     │            (Fish Audio TTS / Gemma2 Local)
+                                     │            (Strict Text-to-Text / Ollama / NIM)
                                      ▼
                            /export (Submission-Ready HTML Case Report)
 ```
 
 - **Collapsible Card System**: Settings, ledgers, and maps render in responsive card components with collapsible header toggles (`▼` / `▶`) and real-time state badges.
-- **Eye Toggle Security**: API key fields (Gemini, NVIDIA NIM, Fish Audio) feature transparent eye buttons (`👁`) for password visibility control.
-- **Filtered Voice Monologue**: Fish Audio TTS integration with an NLP filter that strips stage directions, keeping Joe's voice strictly in character.
+- **Eye Toggle Security**: API key fields (Gemini, NVIDIA NIM) feature transparent eye buttons (`👁`) for password visibility control.
+- **User Speech-to-Text Mic Input**: Hands-free voice typing via microphone icon (`🎤`) with automatic "Hey Joe..." wake phrase detection.
 - **Guaranteed Graph Topology**: 2D SVG radial network fallback + 3D WebGL graph populating target connections alongside active OSINT skill nodes.
 
 ---
@@ -222,9 +222,9 @@ joe
 ```
 
 - **Collapsible Cards System**: Declutter your workspace by expanding or collapsing Settings, Evidence Ledgers, and Location Maps (`▼` / `▶`).
-- **Transparent Eye API Key Toggles**: Securely view or hide API keys (Gemini, NVIDIA, Fish Audio) with dynamic input masking (`👁`).
+- **Transparent Eye API Key Toggles**: Securely view or hide API keys (Gemini, NVIDIA NIM) with dynamic input masking (`👁`).
 - **Guaranteed Topology Graph**: 2D SVG radial network fallback + WebGL 3D relationship graph populated with active OSINT skill nodes.
-- **Filtered Voice Transcript**: Real-time Fish Audio narration with an NLP filter removing stage directions for a true internal monologue.
+- **Speech-to-Text Mic Input**: Hands-free voice input button (`🎤`) with automatic "Hey Joe..." wake word recognition for instant target stalking.
 
 ---
 
