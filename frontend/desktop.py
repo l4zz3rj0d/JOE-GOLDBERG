@@ -652,9 +652,11 @@ class JoeAPI:
 
     def _emit(self, event: str, data: dict):
         if self._window:
-            self._window.evaluate_js(
-                f"window.joe && window.joe.receive('{event}', {json.dumps(data)})"
-            )
+            try:
+                js_code = f"window.joe && window.joe.receive && window.joe.receive('{event}', {json.dumps(data)})"
+                self._window.evaluate_js(js_code)
+            except Exception as e:
+                print(f"[desktop] JS evaluate error for {event}: {e}")
 
 
 class JoeDesktop:
@@ -692,4 +694,5 @@ class JoeDesktop:
         )
 
         api.set_window(window)
+        api.start_background_voice_listener()
         webview.start(debug=False)
