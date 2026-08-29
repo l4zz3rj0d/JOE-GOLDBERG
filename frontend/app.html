@@ -1245,11 +1245,24 @@ const state = {
 let currentStreamingElem = null;
 let streamingBuffer = "";
 
-const $ = (sel) => document.querySelector(sel);
-const thread = $('#thread');
+let userHasScrolledUp = false;
 
-function api() { return window.pywebview && window.pywebview.api; }
-function scrollThreadToBottom() { thread.scrollTop = thread.scrollHeight; }
+function scrollThreadToBottom(force = false) {
+  if (!thread) return;
+  if (force) {
+    userHasScrolledUp = false;
+    thread.scrollTop = thread.scrollHeight;
+  } else if (!userHasScrolledUp) {
+    thread.scrollTop = thread.scrollHeight;
+  }
+}
+
+if (thread) {
+  thread.addEventListener('scroll', () => {
+    const distanceToBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
+    userHasScrolledUp = distanceToBottom > 80;
+  });
+}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -1302,7 +1315,7 @@ function addUserMessage(text) {
   el.className = 'msg-user';
   el.textContent = text;
   thread.appendChild(el);
-  scrollThreadToBottom();
+  scrollThreadToBottom(true);
 }
 
 function addStatusLine(text) {
@@ -3076,7 +3089,6 @@ window.addEventListener('pywebviewready', () => {
   if (api() && api().start_background_voice_listener) {
     api().start_background_voice_listener().then(res => {
       console.log('[JoeVoice] Automatic background voice listener initialized:', res);
-      addStatusLine("Automatic voice listener ready — say 'Joe...' anytime");
     }).catch(err => {
       console.warn('[JoeVoice] Background voice listener error:', err);
     });
