@@ -106,6 +106,29 @@ class SystemSkillEngine:
         except Exception as e:
             return f"Failed to create skill '{safe_name}': {e}"
 
+    @staticmethod
+    def is_relative_query(query: str) -> bool:
+        """
+        Check if search query relies on relative pronouns or conversational context
+        (e.g., "that guy", "him", "he", "this person", "that target", "bro").
+        """
+        if not query:
+            return True
+        q_clean = query.strip().lower()
+        if len(q_clean) <= 2:
+            return True
+        relative_patterns = [
+            r'\b(?:that|this)\s+(?:guy|man|person|user|target|handle|profile|account|individual|dude|bro)\b',
+            r'\b(?:him|her|he|she|them|they|it|that|this)\b',
+            r'^(?:on\s+|about\s+|for\s+)?(?:that|this|him|her|he|she|them|it|bro|guy)(?:\s+bro)?$',
+            r'\bthat\s+guy\b',
+            r'\bon\s+that\b'
+        ]
+        for pat in relative_patterns:
+            if re.search(pat, q_clean):
+                return True
+        return False
+
     def try_execute(self, command_text: str) -> tuple[bool, str, bool, str]:
         """
         Check if user input matches an OS system skill command or search request.
@@ -141,13 +164,22 @@ class SystemSkillEngine:
 
         if query:
             # Clean filler prefix/suffix
-            clean_query = re.sub(r'^(?:about|for|is|what|doing|see|find)\s+', '', query, flags=re.IGNORECASE).strip()
+            clean_query = re.sub(r'^(?:about|for|is|what|doing|see|find|on)\s+', '', query, flags=re.IGNORECASE).strip()
             if not clean_query:
                 clean_query = query
+
+            # If query relies on conversation context (e.g. "that guy", "him"), defer to LLM context resolution
+            if self.is_relative_query(clean_query):
+                return False, "", True, clean_query
+
             msg = self.google_search(clean_query)
             return True, msg, True, clean_query
 
-        # 2. Open Application pattern
+        # 2. Export case report pattern
+        if text_lower in ["export", "/export", "export report", "export case", "save report"]:
+            return True, "Generating HTML investigation report for current case...", False, ""
+
+        # 3. Open Application pattern
         open_match = re.search(r'^(?:open|launch|run|start)\s+(?:application|app|program)?\s*([a-zA-Z0-9_\-\s]+)$', text_lower, re.IGNORECASE)
         if open_match:
             app = open_match.group(1).strip()

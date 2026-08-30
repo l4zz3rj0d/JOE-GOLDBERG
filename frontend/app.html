@@ -658,9 +658,99 @@
     animation: jarvis-scan 2s linear infinite;
   }
   @keyframes jarvis-scan {
-    0% { top: 0%; opacity: 0; }
+    0% { top: 0; opacity: 0.8; }
     50% { opacity: 1; }
-    100% { top: 100%; opacity: 0; }
+    100% { top: 100%; opacity: 0.2; }
+  }
+
+  /* Live Sub-Conscious Stream & Voice Telemetry Subtitle Ribbon */
+  #joe-hud-subtitles {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 640px;
+    background: rgba(10, 14, 22, 0.88);
+    border: 1px solid rgba(112, 214, 255, 0.35);
+    border-radius: 20px;
+    padding: 8px 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 16px rgba(112, 214, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #joe-hud-subtitles.joe-subtitles-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 12px);
+  }
+  .joe-subtitles-tag {
+    font-size: 9.5px;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #70d6ff;
+    background: rgba(112, 214, 255, 0.12);
+    border: 1px solid rgba(112, 214, 255, 0.3);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(112, 214, 255, 0.5);
+  }
+  .joe-subtitles-text {
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: #e2f1ff;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+
+  /* Evidence Screenshot Cards */
+  .evidence-card {
+    background: rgba(15, 20, 30, 0.9);
+    border: 1px solid rgba(112, 214, 255, 0.25);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .evidence-card:hover {
+    transform: translateY(-3px);
+    border-color: #70d6ff;
+    box-shadow: 0 8px 20px rgba(112, 214, 255, 0.25);
+  }
+  .evidence-card-img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    background: #080c14;
+    border-bottom: 1px solid rgba(112, 214, 255, 0.15);
+  }
+  .evidence-card-info {
+    padding: 10px;
+  }
+  .evidence-card-name {
+    font-size: 11.5px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .evidence-card-time {
+    font-size: 9.5px;
+    font-family: var(--mono);
+    color: rgba(160, 185, 215, 0.7);
+    margin-top: 4px;
   }
   .jarvis-query-box {
     background: rgba(112, 214, 255, 0.08);
@@ -968,6 +1058,9 @@
     <button class="nav-btn" id="globe-nav">
       <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>View geo globe
     </button>
+    <button class="nav-btn" id="evidence-nav">
+      <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>Evidence Gallery
+    </button>
     <button class="nav-btn" id="skills-nav">
       <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Skills palette
     </button>
@@ -1165,12 +1258,19 @@
           
           <div class="geo-flatmap" id="geo-flatmap-viewport">
             <svg class="geo-flatmap-svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
-              <rect width="1000" height="500" fill="#080202" />
-              <image id="geo-flatmap-bg-image" x="0" y="0" width="1000" height="500" opacity="0.35" preserveAspectRatio="none" />
-              <g stroke="rgba(255, 100, 50, 0.15)" stroke-width="0.5">
-                <line x1="0" y1="250" x2="1000" y2="250" stroke-dasharray="5,5" />
-                <line x1="500" y1="0" x2="500" y2="500" stroke-dasharray="5,5" />
+              <rect width="1000" height="500" fill="#0b0f19" />
+              <image id="geo-flatmap-bg-image" x="0" y="0" width="1000" height="500" opacity="0.85" preserveAspectRatio="none" />
+              
+              <!-- High-Tech World Grid Lines -->
+              <g stroke="rgba(112, 214, 255, 0.15)" stroke-width="1">
+                <line x1="0" y1="250" x2="1000" y2="250" stroke-dasharray="6,4" />
+                <line x1="500" y1="0" x2="500" y2="500" stroke-dasharray="6,4" />
+                <line x1="0" y1="125" x2="1000" y2="125" stroke-dasharray="3,3" opacity="0.4" />
+                <line x1="0" y1="375" x2="1000" y2="375" stroke-dasharray="3,3" opacity="0.4" />
+                <line x1="250" y1="0" x2="250" y2="500" stroke-dasharray="3,3" opacity="0.4" />
+                <line x1="750" y1="0" x2="750" y2="500" stroke-dasharray="3,3" opacity="0.4" />
               </g>
+              
               <g id="geo-flatmap-pins"></g>
             </svg>
           </div>
@@ -1250,6 +1350,33 @@
       </div>
     </div>
   </div>
+<!-- Live Sub-Conscious Stream & Voice Telemetry Subtitle Ribbon -->
+<div id="joe-hud-subtitles" class="joe-subtitles-hidden">
+  <div class="joe-subtitles-tag" id="joe-subtitle-tag">LIVE TELEMETRY</div>
+  <div class="joe-subtitles-text" id="joe-subtitle-text">Listening... say "Hey Joe..."</div>
+</div>
+
+<!-- Visual Evidence Screenshot Drawer Overlay -->
+<div class="overlay" id="evidence-overlay">
+  <div class="overlay-panel" style="width:740px; height:82%;">
+    <div class="overlay-head">
+      <span class="t" style="color:#70d6ff; font-family:var(--mono);">📸 EVIDENCE SCREENSHOT GALLERY</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button id="evidence-export-btn" style="padding:5px 12px; background:rgba(112, 214, 255, 0.15); border:1px solid #70d6ff; color:#70d6ff; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">Export HTML Report</button>
+        <button class="overlay-close" id="evidence-overlay-close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="overlay-body" style="padding:20px; overflow-y:auto;">
+      <div id="evidence-gallery-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap:16px;">
+        <!-- Evidence cards rendered dynamically -->
+      </div>
+      <div id="evidence-empty-msg" style="padding:40px; text-align:center; color:var(--text-muted); font-size:13px; font-family:var(--mono); display:none;">
+        No visual evidence screenshots captured yet for active case.
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Settings Overlay -->
@@ -1301,6 +1428,35 @@
             </div>
           </div>
           <div class="settings-hint">Primary high-speed LLM engine (build.nvidia.com).</div>
+        </div>
+      </div>
+
+      <!-- Card 2: Voice Synthesis (Cartesia TTS) -->
+      <div class="collapsible-card settings-card">
+        <div class="collapsible-card-header" onclick="toggleCardCollapse(this)">
+          <div class="collapsible-card-title">
+            <span>🎙️</span>
+            <span>Cartesia TTS Voice Engine</span>
+          </div>
+          <div class="collapsible-card-badge">Sonic 3.5</div>
+          <div class="collapsible-card-chevron">▼</div>
+        </div>
+        <div class="collapsible-card-body">
+          <div class="settings-row">
+            <label>Cartesia API Key</label>
+            <div class="key-input-wrap">
+              <input type="password" id="cfg-cartesia-key" placeholder="sk_car_..." />
+              <button type="button" class="eye-btn" onclick="togglePasswordVisibility('cfg-cartesia-key', this)" title="Show/Hide API Key">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="settings-hint">Ultra-low latency speech synthesis key (play.cartesia.ai).</div>
+          <div class="settings-row"><label>Cartesia Voice ID</label><input type="text" id="cfg-cartesia-voice" placeholder="b1ce5126-4d08-42c3-adef-d3eb39e90c7a" /></div>
+          <div class="settings-hint">Voice persona embedding UUID for Joe.</div>
         </div>
       </div>
 
@@ -1811,6 +1967,84 @@ function openGlobeOverlay() {
 $('#globe-overlay-close').addEventListener('click', () => { $('#globe-overlay').classList.remove('open'); });
 $('#globe-nav').addEventListener('click', openGlobeOverlay);
 
+/* ---------- Evidence Gallery Overlay JS ---------- */
+function openEvidenceOverlay() {
+  $('#evidence-overlay').classList.add('open');
+  loadEvidenceGallery();
+}
+
+function closeEvidenceOverlay() {
+  $('#evidence-overlay').classList.remove('open');
+}
+
+function loadEvidenceGallery() {
+  const grid = $('#evidence-gallery-grid');
+  const emptyMsg = $('#evidence-empty-msg');
+  if (!grid) return;
+  grid.innerHTML = '';
+  
+  if (api() && api().get_evidence_list) {
+    api().get_evidence_list().then(items => {
+      if (!items || items.length === 0) {
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+      }
+      if (emptyMsg) emptyMsg.style.display = 'none';
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'evidence-card';
+        if (api().get_evidence_uri) {
+          api().get_evidence_uri(item.path).then(uri => {
+            if (uri) {
+              card.innerHTML = `
+                <img class="evidence-card-img" src="${uri}" alt="Evidence Screenshot" />
+                <div class="evidence-card-info">
+                  <div class="evidence-card-name" title="${esc(item.filename)}">${esc(item.filename)}</div>
+                  <div class="evidence-card-time">${esc(item.time || '')}</div>
+                </div>
+              `;
+            }
+          });
+        }
+        grid.appendChild(card);
+      });
+    }).catch(e => {
+      console.warn('[Evidence] Failed to list evidence:', e);
+      if (emptyMsg) emptyMsg.style.display = 'block';
+    });
+  } else {
+    if (emptyMsg) emptyMsg.style.display = 'block';
+  }
+}
+
+if ($('#evidence-nav')) $('#evidence-nav').addEventListener('click', openEvidenceOverlay);
+if ($('#evidence-overlay-close')) $('#evidence-overlay-close').addEventListener('click', closeEvidenceOverlay);
+if ($('#evidence-export-btn')) {
+  $('#evidence-export-btn').addEventListener('click', () => {
+    if (api() && api().export_report) api().export_report();
+  });
+}
+
+/* ---------- Live Sub-Conscious Stream & Voice Subtitle Ribbon ---------- */
+let subtitleHideTimer = null;
+
+function showSubtitles(text, tag = 'LIVE TELEMETRY') {
+  const sub = $('#joe-hud-subtitles');
+  const tagEl = $('#joe-subtitle-tag');
+  const textEl = $('#joe-subtitle-text');
+  if (!sub || !text) return;
+
+  if (tagEl) tagEl.textContent = tag.toUpperCase();
+  if (textEl) textEl.textContent = text;
+
+  sub.classList.remove('joe-subtitles-hidden');
+
+  if (subtitleHideTimer) clearTimeout(subtitleHideTimer);
+  subtitleHideTimer = setTimeout(() => {
+    sub.classList.add('joe-subtitles-hidden');
+  }, 6000);
+}
+
 function openSkillsOverlay() {
   $('#skills-overlay').classList.add('open');
 }
@@ -1882,7 +2116,6 @@ document.querySelectorAll('.voice-toggle').forEach((t) => {
 });
 
 function applyConfigToForm(cfg) {
-  // Filter placeholders so users see empty fields instead of YOUR_..._HERE
   function clean(val) {
     if (!val || typeof val !== 'string') return '';
     if (val.startsWith('YOUR_') || val.endsWith('_HERE')) return '';
@@ -1892,6 +2125,8 @@ function applyConfigToForm(cfg) {
   if (cfg.ollama_url) $('#cfg-ollama-url').value = cfg.ollama_url;
   $('#cfg-gemini-key').value = clean(cfg.gemini_api_key);
   $('#cfg-nvidia-key').value = clean(cfg.nvidia_api_key);
+  if ($('#cfg-cartesia-key')) $('#cfg-cartesia-key').value = clean(cfg.cartesia_api_key);
+  if ($('#cfg-cartesia-voice')) $('#cfg-cartesia-voice').value = cfg.cartesia_voice_id || '';
   if (cfg.tools) {
     Object.keys(cfg.tools).forEach((k) => {
       const el = document.querySelector(`.voice-toggle[data-tool="${k}"]`);
@@ -1910,6 +2145,8 @@ $('#settings-save').addEventListener('click', () => {
     ollama_url: $('#cfg-ollama-url').value,
     gemini_api_key: $('#cfg-gemini-key').value,
     nvidia_api_key: $('#cfg-nvidia-key').value,
+    cartesia_api_key: $('#cfg-cartesia-key') ? $('#cfg-cartesia-key').value : '',
+    cartesia_voice_id: $('#cfg-cartesia-voice') ? $('#cfg-cartesia-voice').value : '',
     tools: tools,
   };
   if (api() && api().save_config) {
@@ -2006,6 +2243,7 @@ let lastSendTime = 0;
 let lastSentText = '';
 
 function handleSend() {
+  resetJoeAudioQueue();
   const input = $('#chat-input');
   const text = input.value.trim();
   if (!text && !state.pendingImagePath) return;
@@ -2862,6 +3100,7 @@ function processJoeAudioQueue() {
   isPlayingJoeQueue = true;
   const item = joeAudioQueue.shift();
   setHudState('speaking');
+  if (item.text) showSubtitles(item.text, 'JOE SPEECH AUDIO');
 
   try {
     const audio = new Audio(item.src);
@@ -2907,26 +3146,45 @@ window.joe = {
       case 'open_jarvis_popup':
         if (data) {
           openJarvisSearchPopup(data.query, data.text);
+          showSubtitles(`JARVIS Live Intel: ${data.query}`, 'JARVIS SEARCH');
         }
+        break;
+      case 'joe_stt_interim':
+        if (data && data.text) showSubtitles(data.text, 'VOICE STT (RECORDING)');
+        break;
+      case 'joe_stt_final':
+        if (data && data.text) showSubtitles(data.text, 'VOICE COMMAND');
         break;
       case 'joe_speech_started':
       case 'joe_wake_word_detected':
-        if (joeHudState === 'idle' || joeHudState === 'listening') {
+        resetJoeAudioQueue();
+        showSubtitles('HEY JOE (WAKE DETECTED) — Listening...', 'VOICE STT');
+        if (joeHudState === 'idle' || joeHudState === 'listening' || joeHudState === 'speaking') {
           setHudState('listening');
         }
         break;
 
+      case 'joe_vad_speech_end':
       case 'joe_speech_ended':
         if (joeHudState === 'listening') {
           if (joeWakeTimer) clearTimeout(joeWakeTimer);
           setHudState('idle');
+          showSubtitles('VAD post-speech silence detected. Window closed.', 'TELEMETRY');
+        }
+        break;
+
+      case 'joe_grounding_warning':
+        if (data && data.warnings && data.warnings.length > 0) {
+          showSubtitles(`⚠️ GROUNDING AUDIT: ${data.warnings.join(' | ')}`, 'GROUNDING AUDIT');
         }
         break;
 
       case 'joe_voice_detected':
         if (joeWakeTimer) clearTimeout(joeWakeTimer);
+        resetJoeAudioQueue();
         if (data && (data.text || data.raw)) {
           const cleanText = (data.text || data.raw).trim();
+          showSubtitles(cleanText, 'INPUT COMMAND');
           const now = Date.now();
           if (cleanText && (cleanText !== lastSentText || (now - lastSendTime) >= 2000)) {
             setHudState('thinking');
@@ -2944,6 +3202,7 @@ window.joe = {
         showThinking(true);
         setHudState('thinking');
         addStatusLine(data.message);
+        showSubtitles(data.message, 'RECON STREAM');
         $('#session-status').textContent = 'running';
         break;
 
@@ -3456,6 +3715,11 @@ function initGeoModule() {
           globeMat.map = tex; globeMat.color.setHex(0xffffff); globeMat.needsUpdate = true;
         });
       }
+      const bgImg = $('#geo-flatmap-bg-image');
+      if (bgImg && uri) {
+        bgImg.setAttribute('href', uri);
+        bgImg.setAttribute('opacity', '0.85');
+      }
     });
   }
 
@@ -3545,6 +3809,8 @@ function initOrUpdateGeoMap(entities, timeline) {
   }
 
   renderGeoSidebar();
+
+  // Plot 3D Globe Pins
   if (geoGlobe) {
     geoLocations.forEach(loc => {
       const pos = latLngToVector3(loc.lat, loc.lng, 5);
@@ -3557,6 +3823,22 @@ function initOrUpdateGeoMap(entities, timeline) {
       geoGlobe.add(mesh);
       pinMeshes.push(mesh);
     });
+  }
+
+  // Plot 2D Flatmap Pins
+  const flatmapPins = $('#geo-flatmap-pins');
+  if (flatmapPins) {
+    flatmapPins.innerHTML = geoLocations.map(loc => {
+      const x = ((loc.lng + 180) / 360) * 1000;
+      const y = ((90 - loc.lat) / 180) * 500;
+      return `
+        <g onclick="selectGeoLoc('${loc.id}')" style="cursor:pointer;">
+          <circle cx="${x}" cy="${y}" r="12" fill="rgba(255, 90, 95, 0.2)" stroke="#ff5a5f" stroke-width="1.5" />
+          <circle cx="${x}" cy="${y}" r="5" fill="#ff5a5f" />
+          <text x="${x}" y="${y + 22}" text-anchor="middle" fill="#ffddcc" font-size="10px" font-family="monospace">${esc(loc.label)}</text>
+        </g>
+      `;
+    }).join('');
   }
 }
 

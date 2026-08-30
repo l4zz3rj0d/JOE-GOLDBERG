@@ -442,6 +442,16 @@ class Orchestrator:
 
     def _make_find_cb(self, target: Target):
         async def _cb(entity: Entity):
+            # Asynchronously trigger evidence screenshot capture for verified URL entities
+            url = (entity.metadata or {}).get("url") or (entity.value if str(entity.value).startswith("http") else None)
+            if url and (entity.metadata or {}).get("verified") is not False:
+                try:
+                    from modules.evidence import capture
+                    case_slug = target.primary.replace("@", "_").replace(".", "_")
+                    asyncio.create_task(capture(url, case_slug, entity.entity_id))
+                except Exception as e:
+                    print(f"[orchestrator] Evidence capture trigger error: {e}")
+
             if self.on_find:
                 await self.on_find(entity, target)
         return _cb

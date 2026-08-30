@@ -115,11 +115,13 @@ class JoeVoice:
         self.slm_model = self._detect_slm()
         self.client = httpx.Client(timeout=180.0)
 
-        # Memory and OS Skill Engines
+        # Memory, Session Memory and OS Skill Engines
         from core.joe_memory import JoeMemory
         from core.system_skills import SystemSkillEngine
+        from narrative.session_memory import SessionMemory
         self.memory = JoeMemory()
         self.skills = SystemSkillEngine()
+        self.session_memory = SessionMemory()
 
         # Determine active engine label for logging
         if self.nvidia_available:
@@ -445,10 +447,11 @@ class JoeVoice:
                 with self.client.stream("POST", NVIDIA_URL, headers=headers, json=payload, timeout=60.0) as r:
                     if r.status_code == 429:
                         self.nvidia_rate_limited = True
+                        print(f"[joe_voice] NVIDIA NIM API rate-limited (429). Switching to fallback.")
                         return "", True
-                    if r.status_code in (404, 410):
-                        continue
                     if r.status_code != 200:
+                        err_body = r.read().decode('utf-8', errors='ignore')[:300]
+                        print(f"[joe_voice] NVIDIA NIM API rejected request ({model_name}): {r.status_code} — {err_body}")
                         continue
 
                     for line in r.iter_lines():
@@ -519,8 +522,11 @@ class JoeVoice:
             with self.client.stream("POST", url, params={"key": self.gemini_key}, headers=headers, json=payload, timeout=60.0) as r:
                 if r.status_code == 429:
                     self.gemini_rate_limited = True
+                    print(f"[joe_voice] Gemini API rate-limited (429). Switching to fallback.")
                     return "", True
                 if r.status_code != 200:
+                    err_body = r.read().decode('utf-8', errors='ignore')[:300]
+                    print(f"[joe_voice] Gemini API rejected request: {r.status_code} — {err_body}")
                     return "", False
 
                 for line in r.iter_lines():
@@ -603,6 +609,8 @@ class JoeVoice:
             r = self.client.post("https://api.cartesia.ai/tts/bytes", headers=headers, json=payload, timeout=15.0)
             if r.status_code == 200:
                 return r.content
+            else:
+                print(f"[joe_voice] Cartesia TTS rejected request: {r.status_code} — {r.text[:500]}")
         except Exception as e:
             print(f"[joe_voice] Cartesia TTS error: {e}")
         return None
@@ -618,23 +626,56 @@ class JoeVoice:
 
     # ── Public interface ──────────────────────────────────────
 
+    def resolve_search_subject(self, query: str, target: Target = None) -> str:
+        """
+        Resolve relative pronouns ('that guy', 'him', 'he', 'bro') to concrete target handles
+        or active conversation subjects.
+        """
+        clean_q = query.strip()
+        if not clean_q or self.skills.is_relative_query(clean_q):
+            if target and getattr(target, 'name', None):
+                return target.name
+            if target and getattr(target, 'primary', None):
+                return target.primary
+
+            # Inspect session memory to extract last target/handle
+            history_text = self.session_memory.to_text(10)
+            if history_text:
+                # 1. Look for quoted strings (e.g. "l4zz3rj0d")
+                quoted = re.findall(r'["\']([a-zA-Z0-9_\-\.]+)\b["\']', history_text)
+                if quoted:
+                    return quoted[-1]
+                # 2. Look for target identifiers or handles
+                handles = re.findall(r'\b[a-zA-Z0-9_\-]{3,20}\b', history_text)
+                stops = {
+                    "investigate", "search", "google", "about", "who", "that", "this", "tell",
+                    "user", "joe", "goldberg", "detective", "record", "live", "intelligence",
+                    "scan", "findings", "case", "target", "bro", "guy", "what", "there", "info"
+                }
+                candidates = [h for h in handles if h.lower() not in stops and not h.isdigit()]
+                if candidates:
+                    return candidates[-1]
+        return clean_q
+
     def chat(self, question: str, target: Target = None, on_token: callable = None, image_path: str = None) -> dict:
         """
         Mode 1 or Mode 3 depending on whether target has findings.
         Priority: NVIDIA NIM → Gemini → local SLM.
-        Returns {text, rate_limited, mode, error}
+        Returns {text, rate_limited, mode, error, jarvis_search, search_query}
         """
         # 1. System OS Skill execution check
         handled, skill_msg, is_search, search_query = self.skills.try_execute(question)
-        if handled:
+        if handled and not is_search:
+            self.session_memory.add("user", question)
+            self.session_memory.add("joe", skill_msg)
             return {
                 "text": skill_msg,
                 "rate_limited": False,
                 "mode": "advisor",
                 "error": False,
                 "engine": "system_skill",
-                "jarvis_search": is_search,
-                "search_query": search_query
+                "jarvis_search": False,
+                "search_query": ""
             }
 
         # 2. Check for investigation trigger with ambiguous target
@@ -653,46 +694,82 @@ class JoeVoice:
                 "engine": "dialog_trigger"
             }
 
-        # Inject Memory summary into system prompt
+        # 3. Handle live web search resolution & synthesis
+        has_search_intent = is_search or bool(re.search(r'\b(?:search|google|look\s+up|find\s+info|who\s+is|tell\s+me\s+about)\b', question, re.IGNORECASE))
+        resolved_search_query = ""
+        live_search_intel = ""
+
+        if has_search_intent:
+            raw_query = search_query if search_query else question
+            resolved_search_query = self.resolve_search_subject(raw_query, target)
+            if resolved_search_query:
+                intel_summary, _ = self.skills.perform_live_search(resolved_search_query)
+                if intel_summary:
+                    live_search_intel = f"\n\n[LIVE INTEL WEB SCAN RESULTS FOR '{resolved_search_query}']:\n{intel_summary}\n\n[INSTRUCTIONS FOR RESPONSE]: Use the live web scan results above to answer the user's question directly. Maintain your signature Joe Goldberg voice—cynical, clinical, observant, and sharp. Summarize key findings naturally; do NOT list raw record numbers verbatim."
+
+        # Inject Memory summary into system prompt & session history
         mem_summary = self.memory.get_memory_summary_for_prompt()
+        recent_history = self.session_memory.to_text(6)
 
         if target and target.entities:
             # Mode 3 — case loaded, answer from findings
             case_data = self._build_case_data(target)
             system = JOE_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data) + "\n\n" + mem_summary
-            prompt = f"User asked: {question}"
+            if live_search_intel:
+                system += live_search_intel
+            if recent_history:
+                prompt = f"Recent Conversation History:\n{recent_history}\n\nUser follow-up question: {question}"
+            else:
+                prompt = f"User asked: {question}"
             mode = "investigation"
             max_tok = 800
         else:
             # Mode 1 — no case, OSINT advisor
-            system = JOE_ADVISOR_PROMPT + "\n\n" + mem_summary
-            prompt = question
+            active_target_note = f"\nActive Investigation Target: {target.name}" if (target and getattr(target, 'name', None)) else ""
+            system = JOE_ADVISOR_PROMPT + active_target_note + "\n\n" + mem_summary
+            if live_search_intel:
+                system += live_search_intel
+            if recent_history:
+                prompt = f"Recent Conversation History:\n{recent_history}\n\nUser follow-up question: {question}"
+            else:
+                prompt = question
             mode = "advisor"
-            max_tok = 250
+            max_tok = 450
+
+        is_jarvis_popup = bool(resolved_search_query)
 
         # Try cloud engines first (NVIDIA → Gemini)
         cloud = self._ask_cloud(prompt, system, max_tokens=max_tok, on_token=on_token, image_path=image_path)
         if cloud["text"]:
             clean_text = self._clean_reasoning(cloud["text"])
             clean_text = self._mirror_greeting(question, clean_text)
+            self.session_memory.add("user", question)
+            self.session_memory.add("joe", clean_text)
             return {
                 "text": clean_text,
                 "rate_limited": False,
                 "mode": mode,
                 "error": False,
                 "engine": cloud["engine"],
+                "jarvis_search": is_jarvis_popup,
+                "search_query": resolved_search_query
             }
 
         # Fall back to local SLM
         slm_res = self._ask_slm(prompt, system, max_tokens=max_tok, timeout=120, num_ctx=4096, on_token=on_token)
         clean_text = self._clean_reasoning(slm_res["text"])
         clean_text = self._mirror_greeting(question, clean_text)
+        if clean_text:
+            self.session_memory.add("user", question)
+            self.session_memory.add("joe", clean_text)
         return {
             "text": clean_text,
             "rate_limited": cloud["rate_limited"],
             "mode": mode,
             "error": slm_res["error"],
             "engine": "slm",
+            "jarvis_search": is_jarvis_popup,
+            "search_query": resolved_search_query
         }
 
     def classify_intent(self, text: str, current_target: Target = None) -> dict:

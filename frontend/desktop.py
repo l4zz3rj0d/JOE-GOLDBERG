@@ -36,6 +36,7 @@ except ImportError:
 from core.orchestrator import Orchestrator
 from core.target_model import Target
 from core.case_brief import CaseBrief, parse_brief_with_slm
+from core.wake_word import WakeWordEngine
 from narrative.joe_voice import JoeVoice
 from narrative.session_memory import SessionMemory
 from memory.lessons_store import LessonsStore
@@ -63,6 +64,26 @@ class JoeAPI:
         self._stalk_task = None
         self._last_entity = None  # Track for false-positive command
         self._wake_window_expires = 0.0
+
+        # openWakeWord Engine & VAD Command Window
+        self._wake_engine = WakeWordEngine(
+            on_wake_detected=self._on_wake_word_detected,
+            on_speech_ended=self._on_vad_speech_ended,
+            silence_timeout_sec=1.2,
+            max_window_sec=30.0
+        )
+        self._wake_engine.start()
+
+    def _on_wake_word_detected(self, phrase: str):
+        print(f"[desktop] openWakeWord triggered ('{phrase}'). Opening STT command capture window.")
+        now = time.time()
+        self._wake_window_expires = now + 30.0
+        self._emit("joe_wake_word_detected", {"raw": phrase, "clean": ""})
+
+    def _on_vad_speech_ended(self):
+        print("[desktop] VAD detected post-speech silence. Closing STT command window early.")
+        self._wake_window_expires = 0.0
+        self._emit("joe_vad_speech_end", {})
 
     def set_window(self, window):
         self._window = window
@@ -172,7 +193,9 @@ class JoeAPI:
                     "ollama_url": config.get("ollama_url", "http://localhost:11434"),
                     "gemini_api_key": clean("gemini_api_key"),
                     "nvidia_api_key": clean("nvidia_api_key"),
-                    "nvidia_model": config.get("nvidia_model", "meta/llama-3.2-11b-vision-instruct"),
+                    "nvidia_model": config.get("nvidia_model", "nvidia/nemotron-3-super-120b-a12b"),
+                    "cartesia_api_key": clean("CARTESIA_API_KEY"),
+                    "cartesia_voice_id": config.get("cartesia_voice_id", "b1ce5126-4d08-42c3-adef-d3eb39e90c7a"),
                     "tools": config.get("tools", {}),
                 }
         except Exception as e:
@@ -180,26 +203,25 @@ class JoeAPI:
         return {}
 
     def toggle_voice(self, enabled: bool):
-        """Voice synthesis is disabled — Joe is text-to-text only."""
-        return False
+        """Voice synthesis toggle."""
+        return True
 
     def save_config(self, cfg: dict):
         """Save settings from the UI back to config.yaml."""
         try:
-            # Load existing config to preserve fields the UI doesn't expose
             existing = {}
             if CONFIG_PATH.exists():
                 with open(CONFIG_PATH) as f:
                     existing = yaml.safe_load(f) or {}
 
-            # Write every field the UI sends — use 'in' not .get() so empty
-            # strings are written (allowing users to clear fields)
             field_map = {
                 "model": "model",
                 "ollama_url": "ollama_url",
                 "gemini_api_key": "gemini_api_key",
                 "nvidia_api_key": "nvidia_api_key",
                 "nvidia_model": "nvidia_model",
+                "cartesia_api_key": "CARTESIA_API_KEY",
+                "cartesia_voice_id": "cartesia_voice_id",
             }
             for ui_key, yaml_key in field_map.items():
                 if ui_key in cfg:
@@ -212,13 +234,11 @@ class JoeAPI:
             with open(CONFIG_PATH, "w") as f:
                 yaml.dump(existing, f, default_flow_style=False, sort_keys=False)
 
-            # Hot-reload the voice engine with new keys so changes take
-            # effect immediately without restarting
             self._voice = JoeVoice()
 
             engine = "SLM"
             if self._voice.nvidia_available:
-                engine = "NVIDIA NIM"
+                engine = f"NVIDIA NIM ({self._voice.nvidia_model})"
             elif self._voice.gemini_available:
                 engine = "Gemini"
 
@@ -229,6 +249,25 @@ class JoeAPI:
             print(f"[desktop] Error saving config: {e}")
             self._emit("error", {"message": f"Failed to save config: {e}"})
             return False
+
+    def get_evidence_list(self) -> list:
+        """Return list of captured evidence screenshot items for the active case."""
+        if not self._target:
+            return []
+        evidence_items = []
+        try:
+            case_slug = self._target.primary.replace("@", "_").replace(".", "_")
+            evidence_dir = Path.home() / ".joe" / "cases" / case_slug / "evidence"
+            if evidence_dir.exists():
+                for p in evidence_dir.glob("*.png"):
+                    evidence_items.append({
+                        "filename": p.name,
+                        "path": str(p),
+                        "time": time.ctime(p.stat().st_mtime)
+                    })
+        except Exception as e:
+            print(f"[desktop] Error listing evidence: {e}")
+        return evidence_items
 
     def get_model_info(self):
         model = self._voice.slm_model
@@ -444,9 +483,10 @@ class JoeAPI:
 
             if self._voice and self._voice.cartesia_available:
                 sentence_buffer += chunk
-                m = re.search(r'([^.!?\n]+[.!?\n]+)', sentence_buffer)
+                # Abbreviation-aware sentence boundary regex: ignores Mr., Dr., vs., e.g., i.e. and decimal numbers 3.5, 10.0
+                m = re.search(r'((?:(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|eg|ie|Inc|Ltd|St))\x2e(?!\d)|[.!?\n])+)', sentence_buffer)
                 if m:
-                    sentence = m.group(1).strip()
+                    sentence = sentence_buffer[:m.end()].strip()
                     sentence_buffer = sentence_buffer[m.end():]
                     if len(sentence) > 3:
                         sent_count += 1
@@ -495,6 +535,17 @@ class JoeAPI:
         if worker_thread:
             tts_queue.put(None)
 
+        # Post-hoc grounding check audit on full assembled LLM response text
+        if self._target and result.get("text"):
+            try:
+                from narrative.grounding_check import verify_grounding
+                _, warnings = verify_grounding(result["text"], self._target)
+                if warnings:
+                    print(f"[desktop] Grounding audit warning for active case {self._target.primary}: {warnings}")
+                    self._emit("joe_grounding_warning", {"warnings": warnings, "target": self._target.primary})
+            except Exception as e:
+                print(f"[desktop] Post-hoc grounding check audit notice: {e}")
+
         self._emit("joe_answer", {
             "text": result["text"],
             "audio": None,
@@ -509,7 +560,28 @@ class JoeAPI:
             self._emit("open_investigate_dialog", {})
         if result.get("jarvis_search"):
             self._emit("open_jarvis_popup", {"query": result.get("search_query", ""), "text": result["text"]})
+        if "Generating HTML investigation report" in result.get("text", ""):
+            self.export_report()
         self._wake_window_expires = time.time() + 30.0
+
+    def export_report(self) -> str:
+        """Export current investigation target findings to a standalone HTML report."""
+        if not self._target:
+            msg = "No active investigation case loaded to export."
+            self._emit("joe_answer", {"text": msg, "mode": "advisor"})
+            return msg
+        try:
+            from exporters.html_report import generate
+            report_path = generate(self._target)
+            msg = f"HTML investigation report generated successfully at: {report_path}"
+            print(f"[desktop] {msg}")
+            self._emit("joe_answer", {"text": f"Report exported for {self._target.primary}. Saved to: {report_path}", "mode": "investigation"})
+            return str(report_path)
+        except Exception as e:
+            err_msg = f"Failed to export report: {e}"
+            print(f"[desktop] {err_msg}")
+            self._emit("joe_answer", {"text": err_msg, "mode": "advisor"})
+            return err_msg
 
     def pick_image(self):
         """Open native file dialog to select an image for analysis."""
