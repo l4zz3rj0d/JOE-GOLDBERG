@@ -60,7 +60,7 @@ def main():
 
     if "--cli" in args or "--tui" in args:
         launch_cli()
-    elif args and args[0] == "stalk" and len(args) > 1:
+    elif args and args[0] in ("investigate", "stalk") and len(args) > 1:
         launch_cli(initial_target=args[1])
     elif args and args[0] == "resume" and len(args) > 1:
         from tui.joe_cli import JoeCLI

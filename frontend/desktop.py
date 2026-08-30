@@ -9,12 +9,25 @@ CONFIG_PATH = Path(__file__).parent.parent / "config.yaml"
 import webview
 import asyncio
 import threading
+import queue
 import json
 import re
 import subprocess
 import time
 import os
-from pathlib import Path
+import struct
+import wave
+# Suppress C-level ALSA / JACK warning log spam in terminal
+try:
+    from ctypes import CFUNCTYPE, c_char_p, c_int, cdll
+    _ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+    def _py_error_handler(filename, line, function, err, fmt):
+        pass
+    _c_error_handler = _ERROR_HANDLER_FUNC(_py_error_handler)
+    asound = cdll.LoadLibrary('libasound.so.2')
+    asound.snd_lib_error_set_handler(_c_error_handler)
+except Exception:
+    pass
 
 try:
     import speech_recognition as sr
@@ -49,6 +62,7 @@ class JoeAPI:
         self._stalk_loop = None
         self._stalk_task = None
         self._last_entity = None  # Track for false-positive command
+        self._wake_window_expires = 0.0
 
     def set_window(self, window):
         self._window = window
@@ -65,6 +79,14 @@ class JoeAPI:
         threading.Thread(target=self._run_process_input, args=(text,), daemon=True).start()
 
     def _run_process_input(self, text: str):
+        # Fast-path check: system skills and search commands execute instantly without 2s intent classification latency
+        if hasattr(self._voice, 'skills') and self._voice.skills:
+            handled, _, _, _ = self._voice.skills.try_execute(text)
+            if handled:
+                print(f"[desktop] System skill/search fast-path triggered for: '{text}'")
+                self._run_ask(text)
+                return
+
         intent = self._voice.classify_intent(text, self._target)
         print(f"[desktop] AI Intent decision: {intent}")
         if intent["type"] == "investigate" and intent.get("target"):
@@ -77,13 +99,19 @@ class JoeAPI:
         else:
             self._run_ask(text)
 
-    def stalk(self, target: str):
+    def investigate(self, target: str):
         print(f"\n[desktop] Starting investigation: {target}")
-        self._memory.add("user", f"stalk {target}")
+        self._memory.add("user", f"investigate {target}")
         threading.Thread(target=self._run_stalk, args=(target, None), daemon=True).start()
 
-    def smart_stalk(self, text: str):
+    # Backward-compatible alias for older frontend builds calling api.stalk(...)
+    stalk = investigate
+
+    def smart_investigate(self, text: str):
         self.process_input(text)
+
+    # Backward-compatible alias
+    smart_stalk = smart_investigate
 
     def ask(self, question: str):
         self.process_input(question)
@@ -311,7 +339,7 @@ class JoeAPI:
 
     def _run_smart_stalk(self, text: str):
         # Deterministic check for target extraction
-        match = re.match(r"^(stalk|pivot)\s+(\S+)", text, re.IGNORECASE)
+        match = re.match(r"^(investigate|stalk|pivot)\s+(\S+)", text, re.IGNORECASE)
         if match and match.group(2).lower() not in ("again", "them", "him", "her", "it", "to", "the", "me"):
             target_str = match.group(2)
         else:
@@ -324,12 +352,12 @@ class JoeAPI:
         self._emit("scan_status", {"message": f"Target locked: {target_str}"})
 
         # Extract brief from context beyond the target
-        # If the user typed "stalk johndoe — they worked at Acme Corp"
-        # strip the stalk command and target, use the rest as brief
+        # If the user typed "investigate johndoe — they worked at Acme Corp"
+        # strip the command and target, use the rest as brief
         brief = None
         remainder = text
         # Remove command prefix
-        for prefix in ["stalk ", "pivot "]:
+        for prefix in ["investigate ", "stalk ", "pivot "]:
             if remainder.lower().startswith(prefix):
                 remainder = remainder[len(prefix):]
                 break
@@ -373,12 +401,164 @@ class JoeAPI:
         if self._stalk_task and self._stalk_loop:
             self._stalk_loop.call_soon_threadsafe(self._stalk_task.cancel)
 
+    def _synthesize_and_emit_sentence(self, sentence: str):
+        if not self._voice or not self._voice.cartesia_available:
+            return
+        try:
+            audio_b64 = self._voice.synthesize_speech_b64(sentence)
+            if audio_b64:
+                self._emit("joe_audio_chunk", {"audio": audio_b64, "text": sentence})
+        except Exception as e:
+            print(f"[desktop] Sentence TTS streaming error: {e}")
+
     def _run_ask(self, question: str):
+        self._emit("joe_stream_start", {})
+        sentence_buffer = ""
+        tts_queue = queue.Queue()
+        sent_count = 0
+
+        def tts_worker():
+            while True:
+                item = tts_queue.get()
+                if item is None:
+                    tts_queue.task_done()
+                    break
+                try:
+                    sentence = item
+                    audio_b64 = self._voice.synthesize_speech_b64(sentence)
+                    if audio_b64:
+                        self._emit("joe_audio_chunk", {"audio": audio_b64, "text": sentence})
+                except Exception as e:
+                    print(f"[desktop] Sentence TTS streaming error: {e}")
+                finally:
+                    tts_queue.task_done()
+
+        worker_thread = None
+        if self._voice and self._voice.cartesia_available:
+            worker_thread = threading.Thread(target=tts_worker, daemon=True)
+            worker_thread.start()
+
+        def on_token(chunk: str):
+            nonlocal sentence_buffer, sent_count
+            self._emit("joe_stream_chunk", {"chunk": chunk})
+
+            if self._voice and self._voice.cartesia_available:
+                sentence_buffer += chunk
+                m = re.search(r'([^.!?\n]+[.!?\n]+)', sentence_buffer)
+                if m:
+                    sentence = m.group(1).strip()
+                    sentence_buffer = sentence_buffer[m.end():]
+                    if len(sentence) > 3:
+                        sent_count += 1
+                        tts_queue.put(sentence)
+
+        result = self._voice.chat(question, self._target, on_token=on_token)
+        if result.get("rate_limited"):
+            self._emit("rate_limited", {})
+
+        # Flush any remaining sentence buffer
+        if sentence_buffer.strip() and self._voice and self._voice.cartesia_available:
+            frag = sentence_buffer.strip()
+            if len(frag) > 2:
+                sent_count += 1
+                tts_queue.put(frag)
+
+        # System skill / non-streamed response TTS & text streaming fallback: if no streaming chunks were generated,
+        # simulate word-by-word text streaming on screen AND enqueue clean spoken sentences for Cartesia!
+        if sent_count == 0 and result.get("text"):
+            raw_text = result["text"]
+            # 1. Simulate streaming text on screen word-by-word
+            words = raw_text.split(' ')
+            for i, w in enumerate(words):
+                token = w + (" " if i < len(words) - 1 else "")
+                self._emit("joe_stream_chunk", {"chunk": token})
+                time.sleep(0.015)  # 15ms smooth word typing effect
+
+            # 2. Extract clean printable sentences for speech synthesis
+            if self._voice and self._voice.cartesia_available:
+                clean_lines = []
+                for line in raw_text.splitlines():
+                    line_s = line.strip()
+                    if not line_s:
+                        continue
+                    line_s = re.sub(r'^(?:\d+\.|\bullet|[\*\-\+])\s*', '', line_s).strip()
+                    if line_s:
+                        clean_lines.append(line_s)
+                
+                full_clean = ". ".join(clean_lines)
+                sentences = re.split(r'(?<=[.!?])\s+', full_clean)
+                for s in sentences:
+                    s_clean = s.strip()
+                    if len(s_clean) > 3:
+                        tts_queue.put(s_clean)
+
+        if worker_thread:
+            tts_queue.put(None)
+
+        self._emit("joe_answer", {
+            "text": result["text"],
+            "audio": None,
+            "rate_limited": result.get("rate_limited", False),
+            "mode": result.get("mode", "advisor"),
+            "error": result.get("error", False),
+            "open_dialog": result.get("open_dialog", False),
+            "jarvis_search": result.get("jarvis_search", False),
+            "search_query": result.get("search_query", "")
+        })
+        if result.get("open_dialog"):
+            self._emit("open_investigate_dialog", {})
+        if result.get("jarvis_search"):
+            self._emit("open_jarvis_popup", {"query": result.get("search_query", ""), "text": result["text"]})
+        self._wake_window_expires = time.time() + 30.0
+
+    def pick_image(self):
+        """Open native file dialog to select an image for analysis."""
+        if not self._window:
+            return
+        try:
+            file_types = ('Image Files (*.png;*.jpg;*.jpeg;*.gif;*.webp)', 'All files (*.*)')
+            result = self._window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types)
+            if result and len(result) > 0:
+                src_path = Path(result[0])
+                if src_path.exists():
+                    attachments_dir = ROOT.parent / "cases" / "attachments"
+                    attachments_dir.mkdir(parents=True, exist_ok=True)
+                    dest_path = attachments_dir / src_path.name
+                    import shutil
+                    shutil.copy(src_path, dest_path)
+                    rel_path = f"cases/attachments/{src_path.name}"
+                    self._emit("image_selected", {"path": rel_path, "filename": src_path.name})
+        except Exception as e:
+            print(f"[desktop] pick_image error: {e}")
+
+    def save_dropped_image(self, data_url: str, filename: str):
+        """Save base64 data URL image dropped or picked via web file input."""
+        try:
+            import base64
+            if "," in data_url:
+                data_url = data_url.split(",", 1)[1]
+            raw_bytes = base64.b64decode(data_url)
+            attachments_dir = ROOT.parent / "cases" / "attachments"
+            attachments_dir.mkdir(parents=True, exist_ok=True)
+            dest_path = attachments_dir / filename
+            dest_path.write_bytes(raw_bytes)
+            rel_path = f"cases/attachments/{filename}"
+            self._emit("image_selected", {"path": rel_path, "filename": filename})
+        except Exception as e:
+            print(f"[desktop] save_dropped_image error: {e}")
+
+    def submit_image(self, image_path: str, prompt: str):
+        """Analyze an attached image with prompt via JoeVoice multimodal AI."""
+        print(f"\n[desktop] Submitting image prompt: {prompt} (image: {image_path})")
+        threading.Thread(target=self._run_submit_image, args=(image_path, prompt), daemon=True).start()
+
+    def _run_submit_image(self, image_path: str, prompt: str):
         self._emit("joe_stream_start", {})
         def on_token(chunk: str):
             self._emit("joe_stream_chunk", {"chunk": chunk})
 
-        result = self._voice.chat(question, self._target, on_token=on_token)
+        full_prompt = prompt if prompt else "Analyze this image in detail and tell me what you observe from an OSINT investigator perspective."
+        result = self._voice.chat(full_prompt, self._target, on_token=on_token, image_path=image_path)
         if result.get("rate_limited"):
             self._emit("rate_limited", {})
 
@@ -605,81 +785,177 @@ class JoeAPI:
         return {"success": True, "status": "started"}
 
     def _bg_voice_loop(self):
+        """
+        Native high-responsiveness continuous VAD listener.
+        Reads 100ms PCM audio chunks via arecord/ffmpeg with stderr redirected to DEVNULL
+        (eliminating JACK/ALSA terminal noise).
+
+        Triggers INSTANT HUD movement (listening state) within 100ms of speech start,
+        detects silence after 0.4s, and transcribes speech using Google Speech Recognition.
+        """
         if not sr:
-            print("[desktop] Voice listener disabled: speech_recognition package not installed in environment.")
+            print("[desktop] Voice listener disabled: speech_recognition package not installed.")
             return
 
-        wav_path = "/tmp/joe_auto_voice.wav"
-        recognizer = sr.Recognizer()
-        recognizer.energy_threshold = 300
-        recognizer.dynamic_energy_threshold = True
-
-        rec_candidates = [
-            ["arecord", "-D", "plughw:1,0", "-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "2", wav_path],
-            ["arecord", "-D", "default", "-f", "S16_LE", "-r", "16000", "-c", "1", "-d", "2", wav_path],
-            ["ffmpeg", "-y", "-f", "alsa", "-i", "default", "-ar", "16000", "-ac", "1", "-t", "2", wav_path],
-            ["ffmpeg", "-y", "-f", "pulse", "-i", "default", "-ar", "16000", "-ac", "1", "-t", "2", wav_path]
+        candidates = [
+            ["arecord", "-D", "default", "-f", "S16_LE", "-r", "16000", "-c", "1", "-q", "-"],
+            ["arecord", "-D", "plughw:1,0", "-f", "S16_LE", "-r", "16000", "-c", "1", "-q", "-"],
+            ["ffmpeg", "-loglevel", "quiet", "-f", "alsa", "-i", "default", "-ar", "16000", "-ac", "1", "-f", "s16le", "-"],
+            ["ffmpeg", "-loglevel", "quiet", "-f", "pulse", "-i", "default", "-ar", "16000", "-ac", "1", "-f", "s16le", "-"]
         ]
 
-        # Probe candidate commands to find the single working command for this system
-        working_cmd = None
-        for cmd in rec_candidates:
-            if os.path.exists(wav_path):
-                try: os.remove(wav_path)
-                except Exception: pass
+        proc = None
+        for cmd in candidates:
             try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                proc.wait(timeout=3)
-                if os.path.exists(wav_path) and os.path.getsize(wav_path) > 1000:
-                    working_cmd = cmd
-                    print(f"[desktop] Audio capture device initialized: {' '.join(cmd[:4])}")
+                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                # Test read 100ms
+                test_bytes = p.stdout.read(3200)
+                if test_bytes and len(test_bytes) > 0:
+                    proc = p
                     break
+                else:
+                    p.terminate()
             except Exception:
-                pass
+                continue
 
-        if not working_cmd:
-            working_cmd = rec_candidates[0]
+        if not proc:
+            print("[desktop] Background voice listener: no usable native mic capture tool found.")
+            return
 
-        while getattr(self, '_bg_voice_active', False):
-            try:
-                if os.path.exists(wav_path):
-                    try: os.remove(wav_path)
-                    except Exception: pass
+        wake_window_expires = 0.0
+        ambient_energy = 150.0
+        is_speaking = False
+        speech_start_count = 0
+        silence_chunks = 0
+        pcm_buffer = []
 
-                proc = subprocess.Popen(working_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                try:
-                    proc.wait(timeout=3)
-                except Exception:
-                    proc.kill()
+        chunk_size = 3200  # 100ms @ 16kHz 16-bit mono
 
-                if not os.path.exists(wav_path) or os.path.getsize(wav_path) < 1000:
-                    time.sleep(0.1)
+        try:
+            while getattr(self, '_bg_voice_active', False) and proc.poll() is None:
+                raw_chunk = proc.stdout.read(chunk_size)
+                if not raw_chunk or len(raw_chunk) < chunk_size:
+                    time.sleep(0.05)
                     continue
 
-                with sr.AudioFile(wav_path) as source:
-                    audio_data = recognizer.record(source)
-                    text = recognizer.recognize_google(audio_data).strip()
+                # Calculate RMS energy of 100ms chunk
+                shorts = struct.unpack(f"<{len(raw_chunk)//2}h", raw_chunk)
+                if not shorts:
+                    continue
+                sum_sq = sum(s * s for s in shorts)
+                energy = (sum_sq / len(shorts)) ** 0.5
 
-                if text:
-                    print(f"[voice listener] Recognized: '{text}'")
-                    pattern = r'^(?:(?:hey|hi|hai|yo|hello)\s+)?(?:joe|jo|zho|joey)\b\s*,?\s*|\b(?:joe|jo|zho|joey)\b\s*,?\s*'
-                    match = re.search(pattern, text, re.IGNORECASE)
-                    if match:
-                        clean = text[match.end():].strip()
-                        # Wake word detected — immediately activate HUD listening mode
-                        self._emit("joe_wake_word_detected", {"raw": text, "clean": clean})
-                        if clean:
-                            # Command followed the wake word (e.g. "Joe search for target")
-                            self._emit("joe_voice_detected", {"text": clean, "raw": text})
-                            time.sleep(1.0)
+                # Threshold to filter breathing / room rustles (min 1000.0)
+                threshold = max(1000.0, ambient_energy * 3.0)
+
+                if energy > threshold:
+                    speech_start_count += 1
+                    silence_chunks = 0
+                    pcm_buffer.append(raw_chunk)
+
+                    # Require 2 consecutive chunks (>200ms) of real speech energy to start recording
+                    if speech_start_count >= 2 and not is_speaking:
+                        is_speaking = True
+                        print(f"[voice listener] Voice detected (Energy: {energy:.1f} > Threshold: {threshold:.1f}) -> HUD set to LISTENING...")
+                        self._emit("joe_speech_started", {})
+                else:
+                    speech_start_count = 0
+                    # Ambient background noise tracking
+                    ambient_energy = 0.95 * ambient_energy + 0.05 * energy
+                    if is_speaking:
+                        pcm_buffer.append(raw_chunk)
+                        silence_chunks += 1
+
+                        # 4 consecutive silence chunks = 0.4s silence -> speech completed!
+                        if silence_chunks >= 4:
+                            is_speaking = False
+                            silence_chunks = 0
+                            captured_pcm = b"".join(pcm_buffer)
+                            pcm_buffer = []
+
+                            duration_sec = len(captured_pcm) / 32000.0
+                            print(f"[voice listener] Speech completed (0.4s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
+
+                            if len(captured_pcm) >= 16000:
+                                threading.Thread(
+                                    target=self._process_captured_speech,
+                                    args=(captured_pcm,),
+                                    daemon=True
+                                ).start()
+                            else:
+                                self._emit("joe_speech_ended", {})
+        except Exception as e:
+            import traceback
+            print(f"[desktop] Background voice loop error: {e}")
+            traceback.print_exc()
+        finally:
+            if proc:
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=1.0)
+                except Exception:
+                    pass
+
+    def _process_captured_speech(self, pcm_bytes: bytes):
+        """Transcribe captured speech and trigger HUD / JoeVoice response."""
+        wav_path = f"/tmp/joe_speech_{int(time.time()*1000)}.wav"
+        try:
+            with wave.open(wav_path, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(16000)
+                wf.writeframes(pcm_bytes)
+
+            recognizer = sr.Recognizer()
+            with sr.AudioFile(wav_path) as source:
+                audio_data = recognizer.record(source)
+                text = recognizer.recognize_google(audio_data).strip()
+
+            if text:
+                print(f"[voice listener] Recognized text: '{text}'")
+                pattern = r'^(?:(?:hey|hi|hai|yo|hello|joke)\s+)?(?:joe|jo|joke|joh|zho|joey|jarvis|buddy|bro|dude|chow|choke|show)\b\s*,?\s*|\b(?:joe|jo|joke|joh|zho|joey|jarvis|buddy|bro|dude|chow|choke|show)\b\s*,?\s*'
+                match = re.search(pattern, text, re.IGNORECASE)
+                now = time.time()
+
+                if match:
+                    clean = text[match.end():].strip()
+                    print(f"[voice listener] Wake word match! Raw: '{text}', Clean command: '{clean}'")
+                    self._emit("joe_wake_word_detected", {"raw": text, "clean": clean})
+                    if clean:
+                        print(f"[voice listener] Sending voice command to Joe: '{clean}'")
+                        self._emit("joe_voice_detected", {"text": clean, "raw": text})
+                        self._wake_window_expires = now + 30.0
                     else:
-                        # Follow-up speech while already listening
-                        self._emit("joe_voice_detected", {"text": text, "raw": text})
-                        time.sleep(0.8)
-            except sr.UnknownValueError:
-                pass
-            except Exception as e:
-                time.sleep(0.2)
+                        print(f"[voice listener] Wake word only spoken ('{text}'). Opening 30s follow-up window...")
+                        self._wake_window_expires = now + 30.0
+                elif now < getattr(self, '_wake_window_expires', 0.0):
+                    print(f"[voice listener] Active wake window! Sending follow-up command to Joe: '{text}'")
+                    self._emit("joe_voice_detected", {"text": text, "raw": text})
+                    self._wake_window_expires = now + 30.0
+                else:
+                    print(f"[voice listener] No wake word detected in ambient audio: '{text}'")
+                    self._emit("joe_speech_ended", {})
+            else:
+                print("[voice listener] Audio transcribed to empty text.")
+                self._emit("joe_speech_ended", {})
+
+        except sr.UnknownValueError:
+            print("[voice listener] Audio was unintelligible.")
+            self._emit("joe_speech_ended", {})
+        except sr.RequestError as req_err:
+            print(f"[voice listener] Google Speech Recognition API error: {req_err}")
+            self._emit("joe_speech_ended", {})
+        except Exception as e:
+            import traceback
+            print(f"[voice listener] Processing error: {e}")
+            traceback.print_exc()
+            self._emit("joe_speech_ended", {})
+        finally:
+            if os.path.exists(wav_path):
+                try:
+                    os.remove(wav_path)
+                except Exception:
+                    pass
 
     def _emit(self, event: str, data: dict):
         if self._window:
@@ -715,7 +991,7 @@ class JoeDesktop:
 
         api = JoeAPI()
         window = webview.create_window(
-            title="Joe Goldberg",
+            title="Joe",
             url=str(HTML_PATH),
             js_api=api,
             width=1200,

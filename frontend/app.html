@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Joe Goldberg — OSINT Investigator & Ethical Stalker</title>
+<title>Joe — OSINT Assistant</title>
 <link rel="icon" type="image/png" href="joe-icon.png">
 <link rel="shortcut icon" href="joe-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,6 +105,7 @@
     z-index: 25 !important;
     pointer-events: auto !important; /* MOUSE INTERACTION ENABLED ABOVE THREAD */
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: grab;
@@ -592,6 +593,104 @@
     font-size: 15.5px !important;
   }
 
+  /* Holographic Jarvis Search Popup Overlay */
+  #jarvis-search-popup {
+    position: fixed;
+    top: 85px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 460px;
+    max-width: 90vw;
+    background: rgba(6, 14, 26, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(112, 214, 255, 0.6);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 0 45px rgba(112, 214, 255, 0.45), inset 0 0 20px rgba(112, 214, 255, 0.2);
+    z-index: 99999;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: 'JetBrains Mono', monospace;
+    color: #e0f2fe;
+  }
+  #jarvis-search-popup.jarvis-popup-hidden {
+    opacity: 0;
+    transform: translate(-50%, -30px) scale(0.92);
+    pointer-events: none;
+  }
+  .jarvis-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(112, 214, 255, 0.25);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .jarvis-popup-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #70d6ff;
+    text-shadow: 0 0 10px rgba(112, 214, 255, 0.6);
+  }
+  .jarvis-close-btn {
+    cursor: pointer;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s;
+  }
+  .jarvis-close-btn:hover {
+    color: #ff4a4a;
+  }
+  .jarvis-popup-body {
+    position: relative;
+    overflow: hidden;
+  }
+  .jarvis-scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #70d6ff, transparent);
+    box-shadow: 0 0 10px #70d6ff;
+    animation: jarvis-scan 2s linear infinite;
+  }
+  @keyframes jarvis-scan {
+    0% { top: 0%; opacity: 0; }
+    50% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+  .jarvis-query-box {
+    background: rgba(112, 214, 255, 0.08);
+    border-left: 3px solid #70d6ff;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .jarvis-status-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(224, 242, 254, 0.8);
+  }
+  .jarvis-pulse-dot {
+    width: 6px;
+    height: 6px;
+    background: #70d6ff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #70d6ff;
+    animation: jarvis-pulse-dot 1s ease-in-out infinite alternate;
+  }
+  @keyframes jarvis-pulse-dot {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    100% { transform: scale(1.4); opacity: 1; }
+  }
+
   #composer button {
     background: rgba(26, 36, 50, 0.85) !important;
     border: 1px solid rgba(112, 214, 255, 0.32) !important;
@@ -890,8 +989,8 @@
     <div class="sidebar-foot">
       <div class="avatar" id="user-avatar">JG</div>
       <div>
-        <div class="foot-name">Joe Goldberg</div>
-        <div class="foot-sub">ethical stalker</div>
+        <div class="foot-name">Joe</div>
+        <div class="foot-sub">OSINT assistant</div>
       </div>
     </div>
   </div>
@@ -905,6 +1004,14 @@
         <div class="title" id="case-title">Hello, You.</div>
         <div class="sub" id="case-sub">Type a target below to start an investigation</div>
       </div>
+      <button id="export-report-btn" class="hud-color-btn" title="Export HTML Investigation Report" style="display:none; margin-right: 8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        EXPORT REPORT
+      </button>
       <button id="hud-color-toggle" class="hud-color-btn" title="Switch HUD Color (Blue / Orange)">
         <span class="hud-color-dot blue-dot" id="hud-dot-blue"></span>
         <span class="hud-color-dot orange-dot" id="hud-dot-orange" style="display:none;"></span>
@@ -917,6 +1024,10 @@
     <div id="joe-hud-wrapper">
       <canvas id="joe-hud-canvas" width="480" height="480"></canvas>
       <div id="joe-hud-floating-status" class="idle">IDLE</div>
+      <!-- Floating EKG Pulse Waveform Line below HUD -->
+      <div id="ekg-container" style="width: 260px; height: 45px; margin-top: -20px; position: relative; background: transparent; overflow: hidden; pointer-events: none;">
+        <canvas id="ekg-canvas" width="260" height="45"></canvas>
+      </div>
     </div>
 
     <div id="thread"></div>
@@ -939,7 +1050,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </span>
         </div>
-        <input type="text" id="chat-input" placeholder="Say 'Joe...' or type e.g. stalk l4zz3rj0d for me" />
+        <input type="text" id="chat-input" placeholder="Say 'Joe...' or type e.g. investigate l4zz3rj0d for me" />
         <button class="send" id="send-btn" title="Send">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
@@ -1145,7 +1256,7 @@
 <div class="overlay" id="settings-overlay">
   <div class="overlay-panel" style="width:640px; height:auto; max-height:85%;">
     <div class="overlay-head">
-      <span class="t">Joe Goldberg — Settings</span>
+      <span class="t">Joe — Settings</span>
       <button class="overlay-close" id="settings-overlay-close">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -1215,6 +1326,50 @@
       <div style="display:flex; align-items:center; padding-top:12px;">
         <button id="settings-save">Save Settings</button>
         <span id="settings-status"></span>
+</div>
+
+<!-- Target Investigation Dialog Overlay -->
+<div class="overlay" id="target-dialog-overlay">
+  <div class="overlay-panel" style="width:480px; height:auto; background: rgba(12, 16, 24, 0.95); border: 1px solid rgba(112, 214, 255, 0.4); box-shadow: 0 0 30px rgba(112, 214, 255, 0.2);">
+    <div class="overlay-head" style="border-bottom: 1px solid rgba(112, 214, 255, 0.2);">
+      <span class="t" style="color: #70d6ff; font-family: var(--mono); letter-spacing: 1px;">🔍 TARGET INVESTIGATION</span>
+      <button class="overlay-close" id="target-dialog-close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="overlay-body" style="padding: 24px;">
+      <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; font-family: var(--mono);">Enter target username, email, or domain to start deep recon:</p>
+      <input type="text" id="target-dialog-input" placeholder="e.g. l4zz3rj0d, target@gmail.com, example.com" style="width:100%; padding: 12px 14px; background: rgba(0,0,0,0.6); border: 1px solid var(--border-strong); border-radius: 6px; color: #fff; font-family: var(--mono); font-size: 14px; margin-bottom: 20px; outline: none;" />
+      <div style="display:flex; justify-content:flex-end; gap: 12px;">
+        <button id="target-dialog-cancel" style="padding: 8px 16px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); cursor: pointer;">Cancel</button>
+        <button id="target-dialog-submit" style="padding: 8px 20px; background: rgba(112, 214, 255, 0.15); border: 1px solid #70d6ff; border-radius: 6px; color: #70d6ff; font-weight: 600; cursor: pointer;">Start Recon</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Holographic Jarvis Search Screen Popup Overlay -->
+<div id="jarvis-search-popup" class="jarvis-popup-hidden">
+  <div class="jarvis-popup-header">
+    <div class="jarvis-popup-title">
+      <span style="color:#70d6ff;">⚡</span>
+      <span style="letter-spacing:1.5px; font-weight:700;">JARVIS SEARCH PROTOCOL</span>
+    </div>
+    <span class="jarvis-close-btn" onclick="closeJarvisPopup()">✕</span>
+  </div>
+  <div class="jarvis-popup-body">
+    <div class="jarvis-scan-line"></div>
+    <div class="jarvis-query-box">
+      <span style="color:#70d6ff; font-weight:700; margin-right:6px;">QUERY:</span>
+      <span id="jarvis-query-text" style="color:#ffffff; font-weight:600;">Searching Google...</span>
+    </div>
+    <div class="jarvis-status-box">
+      <span class="jarvis-pulse-dot"></span>
+      <span id="jarvis-status-text">SCANNING GOOGLE INDEX & READING OUT FINDINGS...</span>
+    </div>
+    <div class="jarvis-results-preview" id="jarvis-results-preview" style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(112, 214, 255, 0.2);">
+      <div style="font-size:11px; color:#70d6ff; font-family:var(--mono);">
+        🌐 Live Google search window opened in desktop browser
       </div>
     </div>
   </div>
@@ -1226,12 +1381,19 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
+// $ is used throughout as a plain document.querySelector shorthand — NOT jQuery.
+// No jQuery is loaded anywhere in this file, so every $(...) call was previously
+// throwing "Can't find variable: $" and silently killing all script execution
+// after the first call, including HUD init and every button click handler.
+const $ = (selector) => document.querySelector(selector);
+const api = () => window.pywebview && window.pywebview.api;
+
 if (typeof marked !== 'undefined' && marked.setOptions) {
   marked.setOptions({ gfm: true, breaks: true });
 }
 
 /* =====================================================================
-   Joe Goldberg Frontend Logic — Clean Markdown & Structured Ledger
+   Joe Frontend Logic — Clean Markdown & Structured Ledger
    ===================================================================== */
 
 const state = {
@@ -1676,6 +1838,44 @@ $('#settings-nav').addEventListener('click', () => {
 });
 $('#settings-overlay-close').addEventListener('click', () => { $('#settings-overlay').classList.remove('open'); });
 
+/* ---------- Target Investigation Overlay JS ---------- */
+function openTargetDialog() {
+  const overlay = $('#target-dialog-overlay');
+  const input = $('#target-dialog-input');
+  if (overlay) {
+    overlay.classList.add('open');
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 100);
+    }
+  }
+}
+
+function closeTargetDialog() {
+  const overlay = $('#target-dialog-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function submitTargetDialog() {
+  const input = $('#target-dialog-input');
+  const val = input ? input.value.trim() : '';
+  if (val) {
+    closeTargetDialog();
+    const query = `investigate ${val}`;
+    $('#chat-input').value = query;
+    handleSend();
+  }
+}
+
+if ($('#target-dialog-close')) $('#target-dialog-close').addEventListener('click', closeTargetDialog);
+if ($('#target-dialog-cancel')) $('#target-dialog-cancel').addEventListener('click', closeTargetDialog);
+if ($('#target-dialog-submit')) $('#target-dialog-submit').addEventListener('click', submitTargetDialog);
+if ($('#target-dialog-input')) {
+  $('#target-dialog-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitTargetDialog();
+  });
+}
+
 document.querySelectorAll('.voice-toggle').forEach((t) => {
   if (t.id === 'voice-toggle') return;
   t.addEventListener('click', () => t.classList.toggle('on'));
@@ -1756,6 +1956,10 @@ function setCaseHeader(name, sub, risk) {
   $('#case-title').textContent = name || 'Hello, You.';
   $('#case-sub').textContent = sub || 'Type a target below to start an investigation';
   $('#risk-chip').textContent = risk != null ? `risk ${risk}` : 'risk —';
+  const exportBtn = $('#export-report-btn');
+  if (exportBtn) {
+    exportBtn.style.display = (name && name !== 'Hello, You.') ? 'inline-flex' : 'none';
+  }
 }
 
 /* Clean Case History Loader when Resuming a Case */
@@ -1798,18 +2002,42 @@ function renderCaseHistory(rt) {
   scrollThreadToBottom();
 }
 
-/* ---------- Composer & Input Handling ---------- */
+let lastSendTime = 0;
+let lastSentText = '';
 
 function handleSend() {
   const input = $('#chat-input');
   const text = input.value.trim();
   if (!text && !state.pendingImagePath) return;
 
+  const now = Date.now();
+  if (text && text === lastSentText && (now - lastSendTime) < 2000) {
+    console.warn('[desktop] Duplicate input suppressed:', text);
+    input.value = '';
+    return;
+  }
+  if (text) {
+    lastSentText = text;
+    lastSendTime = now;
+  }
+
   if (text === '/skills') {
     openSkillsOverlay();
     input.value = '';
     return;
   }
+
+  if (text.startsWith('/note ')) {
+    const noteText = text.substring(6).trim();
+    if (noteText) {
+      addUserMessage(text);
+      if (api() && api().add_note) api().add_note(noteText);
+      input.value = '';
+      return;
+    }
+  }
+
+  input.value = '';
 
   if (state.pendingImagePath) {
     addUserMessage(text ? `[screenshot] ${text}` : '[screenshot]');
@@ -1820,16 +2048,20 @@ function handleSend() {
     addUserMessage(text);
     showThinking(true);
 
-    // Pass user prompt directly to unified AI router (process_input) — no keyword matching!
-    if (api() && api().process_input) {
-      api().process_input(text);
-    } else if (api() && api().smart_stalk) {
-      api().smart_stalk(text);
-    } else if (api() && api().ask) {
-      api().ask(text);
+    try {
+      if (api() && api().process_input) {
+        api().process_input(text);
+      } else if (api() && api().smart_stalk) {
+        api().smart_stalk(text);
+      } else if (api() && api().ask) {
+        api().ask(text);
+      } else {
+        console.warn('[desktop] pywebview api unavailable');
+      }
+    } catch (err) {
+      console.error('[desktop] handleSend api call error:', err);
     }
   }
-  input.value = '';
 }
 
 function clearAttachmentChip() {
@@ -1839,6 +2071,13 @@ function clearAttachmentChip() {
 
 $('#send-btn').addEventListener('click', handleSend);
 $('#chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSend(); });
+
+const exportReportBtn = $('#export-report-btn');
+if (exportReportBtn) {
+  exportReportBtn.addEventListener('click', () => {
+    if (api() && api().export_report) api().export_report();
+  });
+}
 
 $('#new-case-btn').addEventListener('click', () => {
   state.activeCase = null;
@@ -2192,10 +2431,136 @@ function drawJoeHud() {
   requestAnimationFrame(drawJoeHud);
 }
 
+/* ---------- Real-Time EKG Heartbeat Waveform Line Canvas Renderer ---------- */
+let ekgCanvas = null;
+let ekgCtx = null;
+let ekgBuffer = [];
+const EKG_POINTS = 190;
+let ekgPhase = 0;
+
+function getEkgHeightAtPhase(phase, state, audioEnergy) {
+  // FLATLINE (DEAD) WHEN IDLE!
+  if (state === 'idle') {
+    return 0;
+  }
+  let y = 0;
+  if (phase > 0.15 && phase <= 0.22) {
+    const t = (phase - 0.15) / 0.07;
+    y = Math.sin(t * Math.PI) * 3.5;
+  } else if (phase > 0.25 && phase <= 0.27) {
+    const t = (phase - 0.25) / 0.02;
+    y = -Math.sin(t * Math.PI) * 4.5;
+  } else if (phase > 0.27 && phase <= 0.34) {
+    const t = (phase - 0.27) / 0.07;
+    const amp = (state === 'speaking') ? (18 + (audioEnergy / 255) * 14) : (state === 'listening' ? 20 : 16);
+    y = Math.sin(t * Math.PI) * amp;
+  } else if (phase > 0.34 && phase <= 0.37) {
+    const t = (phase - 0.34) / 0.03;
+    const amp = (state === 'speaking') ? (7 + (audioEnergy / 255) * 6) : 6;
+    y = -Math.sin(t * Math.PI) * amp;
+  } else if (phase > 0.42 && phase <= 0.52) {
+    const t = (phase - 0.42) / 0.10;
+    y = Math.sin(t * Math.PI) * 5.5;
+  } else if (state === 'speaking' && phase > 0.56) {
+    y = Math.sin(phase * 45) * (audioEnergy / 255) * 4;
+  }
+  return y;
+}
+
+function drawEkgWaveform() {
+  if (!ekgCanvas) ekgCanvas = document.getElementById('ekg-canvas');
+  if (ekgCanvas && !ekgCtx) ekgCtx = ekgCanvas.getContext('2d');
+  if (!ekgCanvas || !ekgCtx) {
+    requestAnimationFrame(drawEkgWaveform);
+    return;
+  }
+
+  if (ekgBuffer.length === 0) {
+    ekgBuffer = new Array(EKG_POINTS).fill(0);
+  }
+
+  const width = ekgCanvas.width;
+  const height = ekgCanvas.height;
+  const midY = height / 2;
+
+  ekgCtx.clearRect(0, 0, width, height);
+
+  // 1. Draw EKG Grid
+  const isOrange = (joeHudColorTheme === 'orange');
+  ekgCtx.strokeStyle = isOrange ? 'rgba(255, 140, 40, 0.08)' : 'rgba(112, 214, 255, 0.08)';
+  ekgCtx.lineWidth = 1;
+  const gridSize = 14;
+  for (let x = 0; x <= width; x += gridSize) {
+    ekgCtx.beginPath();
+    ekgCtx.moveTo(x, 0);
+    ekgCtx.lineTo(x, height);
+    ekgCtx.stroke();
+  }
+  for (let y = 0; y <= height; y += gridSize) {
+    ekgCtx.beginPath();
+    ekgCtx.moveTo(0, y);
+    ekgCtx.lineTo(width, y);
+    ekgCtx.stroke();
+  }
+
+  // 2. Advance Phase (Speed = 0 when idle so pulse line is completely flat and dead)
+  let speed = 0;
+  if (joeHudState === 'listening') speed = 0.020;
+  else if (joeHudState === 'thinking') speed = 0.026;
+  else if (joeHudState === 'speaking') speed = 0.022;
+
+  if (speed > 0) {
+    ekgPhase = (ekgPhase + speed) % 1.0;
+  }
+  const nextSample = getEkgHeightAtPhase(ekgPhase, joeHudState, joeAudioEnergy);
+
+  ekgBuffer.shift();
+  ekgBuffer.push(nextSample);
+
+  // 3. Draw EKG Waveform Line
+  const lineStyle = isOrange ? '#ff963c' : '#70d6ff';
+  const shadowColor = isOrange ? 'rgba(255, 140, 40, 0.95)' : 'rgba(112, 214, 255, 0.95)';
+
+  ekgCtx.save();
+  ekgCtx.beginPath();
+
+  const stepX = width / (EKG_POINTS - 1);
+  for (let i = 0; i < EKG_POINTS; i++) {
+    const x = i * stepX;
+    const y = midY - ekgBuffer[i];
+    if (i === 0) ekgCtx.moveTo(x, y);
+    else ekgCtx.lineTo(x, y);
+  }
+
+  ekgCtx.strokeStyle = lineStyle;
+  ekgCtx.lineWidth = 2.2;
+  ekgCtx.shadowBlur = 12;
+  ekgCtx.shadowColor = shadowColor;
+  ekgCtx.stroke();
+
+  // 4. Draw Leading Cursor Point
+  const lastX = (EKG_POINTS - 1) * stepX;
+  const lastY = midY - ekgBuffer[EKG_POINTS - 1];
+  ekgCtx.beginPath();
+  ekgCtx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+  ekgCtx.fillStyle = '#ffffff';
+  ekgCtx.shadowBlur = 15;
+  ekgCtx.shadowColor = shadowColor;
+  ekgCtx.fill();
+
+  ekgCtx.restore();
+
+  requestAnimationFrame(drawEkgWaveform);
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initJoeHud);
+  document.addEventListener('DOMContentLoaded', () => {
+    initJoeHud();
+    requestAnimationFrame(drawEkgWaveform);
+  });
 } else {
   initJoeHud();
+  requestAnimationFrame(drawEkgWaveform);
 }
 
 /* ---------- Speech-to-Text Audio Pipeline (Pywebview + MediaRecorder + SpeechRecognition) ---------- */
@@ -2374,7 +2739,7 @@ async function stopMicListening() {
   }
   const micBtnEl = $('#mic-btn');
   if (micBtnEl) micBtnEl.classList.remove('mic-recording');
-  $('#chat-input').placeholder = "e.g. stalk l4zz3rj0d for me";
+  $('#chat-input').placeholder = "e.g. investigate l4zz3rj0d for me";
 
   if (wasNative && api() && api().stop_native_mic) {
     try {
@@ -2422,36 +2787,162 @@ if (micBtn) {
   });
 }
 
-function playJoeAudio(text, audioData) {
-  // Voice output for Joe is disabled — responses are strictly text-to-text.
-  return;
+let joeAudioQueue = [];
+let isPlayingJoeQueue = false;
+let currentJoeAudioElement = null;
+let hasReceivedCartesiaChunk = false;
+let jarvisPopupTimer = null;
+
+function resetJoeAudioQueue() {
+  joeAudioQueue = [];
+  isPlayingJoeQueue = false;
+  if (currentJoeAudioElement) {
+    try {
+      currentJoeAudioElement.pause();
+      currentJoeAudioElement.currentTime = 0;
+    } catch(e){}
+    currentJoeAudioElement = null;
+  }
 }
 
-/* ---------- Backend Event Bridge ---------- */
+function openJarvisSearchPopup(query, text) {
+  const popup = $('#jarvis-search-popup');
+  if (!popup) return;
+
+  const queryElem = $('#jarvis-query-text');
+  if (queryElem) queryElem.textContent = query ? query.toUpperCase() : 'SEARCHING GOOGLE...';
+
+  const previewElem = $('#jarvis-results-preview');
+  if (previewElem && text) {
+    const clean = text.replace(/[*#_`]/g, '').trim();
+    previewElem.innerHTML = `<div style="font-size:11.5px; color:#70d6ff; line-height:1.45; font-family:var(--mono);">⚡ Live Intel: ${clean.substring(0, 160)}...</div>`;
+  }
+
+  popup.classList.remove('jarvis-popup-hidden');
+
+  if (jarvisPopupTimer) clearTimeout(jarvisPopupTimer);
+  jarvisPopupTimer = setTimeout(() => {
+    closeJarvisPopup();
+  }, 12000);
+}
+
+function closeJarvisPopup() {
+  const popup = $('#jarvis-search-popup');
+  if (popup) popup.classList.add('jarvis-popup-hidden');
+  if (jarvisPopupTimer) clearTimeout(jarvisPopupTimer);
+}
+
+function enqueueJoeAudio(audioData, text) {
+  // Always stop any browser robot speech synthesis immediately if it was active
+  if ('speechSynthesis' in window) {
+    try { window.speechSynthesis.cancel(); } catch(e){}
+  }
+
+  if (audioData) {
+    hasReceivedCartesiaChunk = true;
+    let src = audioData;
+    if (!audioData.startsWith('data:')) {
+      src = 'data:audio/wav;base64,' + audioData;
+    }
+    joeAudioQueue.push({ src, text });
+    if (!isPlayingJoeQueue) {
+      processJoeAudioQueue();
+    }
+  }
+}
+
+function processJoeAudioQueue() {
+  if (joeAudioQueue.length === 0) {
+    isPlayingJoeQueue = false;
+    currentJoeAudioElement = null;
+    setHudState('idle');
+    return;
+  }
+
+  isPlayingJoeQueue = true;
+  const item = joeAudioQueue.shift();
+  setHudState('speaking');
+
+  try {
+    const audio = new Audio(item.src);
+    audio.volume = 1.0;
+    currentJoeAudioElement = audio;
+
+    let hasEnded = false;
+    const onFinished = () => {
+      if (hasEnded) return;
+      hasEnded = true;
+      currentJoeAudioElement = null;
+      processJoeAudioQueue();
+    };
+
+    audio.onended = onFinished;
+    audio.onerror = onFinished;
+
+    audio.play().catch(err => {
+      console.warn('[JoeAudio] Play queue error:', err);
+      onFinished();
+    });
+  } catch(e) {
+    processJoeAudioQueue();
+  }
+}
+
+function playJoeAudio(text, audioData) {
+  if (audioData) {
+    enqueueJoeAudio(audioData, text);
+  }
+}
+
+let joeWakeTimer = null;
 
 window.joe = {
   receive(event, data) {
     switch (event) {
+      case 'joe_audio_chunk':
+        if (data && data.audio) {
+          enqueueJoeAudio(data.audio, data.text);
+        }
+        break;
+      case 'open_jarvis_popup':
+        if (data) {
+          openJarvisSearchPopup(data.query, data.text);
+        }
+        break;
+      case 'joe_speech_started':
       case 'joe_wake_word_detected':
-        setHudState('listening');
+        if (joeHudState === 'idle' || joeHudState === 'listening') {
+          setHudState('listening');
+        }
+        break;
+
+      case 'joe_speech_ended':
+        if (joeHudState === 'listening') {
+          if (joeWakeTimer) clearTimeout(joeWakeTimer);
+          setHudState('idle');
+        }
         break;
 
       case 'joe_voice_detected':
+        if (joeWakeTimer) clearTimeout(joeWakeTimer);
         if (data && (data.text || data.raw)) {
           const cleanText = (data.text || data.raw).trim();
-          if (cleanText) {
-            setHudState('listening');
+          const now = Date.now();
+          if (cleanText && (cleanText !== lastSentText || (now - lastSendTime) >= 2000)) {
+            setHudState('thinking');
             $('#chat-input').value = cleanText;
-            setTimeout(() => {
-              setHudState('thinking');
-              handleSend();
-            }, 1600); // 1.6s visible HUD listening pulse transition
+            handleSend();
           }
         }
         break;
 
+      case 'open_investigate_dialog':
+        openTargetDialog();
+        break;
+
       case 'scan_status':
         showThinking(true);
+        setHudState('thinking');
         addStatusLine(data.message);
         $('#session-status').textContent = 'running';
         break;
@@ -2469,6 +2960,7 @@ window.joe = {
 
       case 'investigation_done':
         showThinking(false);
+        setHudState('idle');
         $('#session-status').textContent = 'idle';
         const t = data.target || {};
         state.activeCase = t.primary || state.activeCase;
@@ -2480,6 +2972,8 @@ window.joe = {
         break;
 
       case 'joe_stream_start':
+        hasReceivedCartesiaChunk = false;
+        setHudState('speaking');
         startStreamingAnswer();
         break;
 
@@ -2489,6 +2983,10 @@ window.joe = {
 
       case 'joe_answer':
         showThinking(false);
+        setHudState('idle');
+        if (data.open_dialog) {
+          openTargetDialog();
+        }
         if (currentStreamingElem) {
           finalizeStreamingAnswer(data.text);
         } else if (data.text) {
@@ -2499,6 +2997,7 @@ window.joe = {
 
       case 'error':
         showThinking(false);
+        setHudState('idle');
         addError(data.message || 'Something went wrong.');
         $('#session-status').textContent = 'idle';
         break;
@@ -2524,6 +3023,11 @@ window.joe = {
 
       case 'report_ready':
         addStatusLine(`Report ready: ${data.path}`);
+        if (api() && api().open_url) api().open_url(data.path);
+        break;
+
+      case 'note_saved':
+        addStatusLine(`Case note recorded: "${data.note}"`);
         break;
 
       case 'config_saved':

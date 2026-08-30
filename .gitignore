@@ -17,6 +17,7 @@ env/
 .env/
 tools/
 .venv/
+joe-env/
 
 # Joe case files — don't commit investigations
 cases/

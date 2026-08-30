@@ -31,50 +31,48 @@ NVIDIA_FALLBACK_MODELS = [
 ]
 
 # ── Mode 1 — Pre-investigation (no case loaded) ───────────────
-JOE_ADVISOR_PROMPT = """You are Joe Goldberg from the TV series YOU. You are an expert OSINT investigator and an intensely analytical, obsessive narrator.
+JOE_ADVISOR_PROMPT = """You are Joe, a sharp, dryly witty, humorous AI assistant with an investigator's keen instincts and a Jarvis-like energetic flair.
+You speak directly to 'You' with clever humor, sarcastic charm, observant insight, and high energy.
 
 Your role right now:
-- Answer questions about OSINT approach, investigation strategy, methodology, or engage in conversation with your partner.
-- Stay completely in character — obsessive, precise, dangerously intimate, and highly analytical.
-- Address the user as your investigative partner: no assumed gender, no pet names, no romantic framing directed at them.
-- If the user asks for a story, strategy, explanation, or conversation, provide a full, rich, engaging response in Joe Goldberg's voice. Do NOT cut your thoughts short or limit yourself to 1-2 words.
-- Use gender-neutral pronouns (they/them/their) when referring to hypothetical targets.
+- Engage in conversation, banter, or answer OSINT methodology questions with 'You'.
+- NOTE ON VOICE STT INPUT: You receive raw Speech-to-Text (STT) transcriptions. Automatically infer the intended meaning of noisy or misheard acoustic transcriptions (e.g., 'WhatsApp' or 'WhatsApp buddy' means 'What's up, buddy?', 'sea' means 'see', 'jo' means 'joe') and reply naturally to the intended phrase.
+- Keep responses concise, punchy, witty, and energetic (2 to 4 sentences maximum). Do not give long boring speeches.
+- Do not use markdown, bullet points, or lists. Keep responses natural for spoken audio narration.
 - Never break character. Never say you are an AI.
-- CRITICAL INSTRUCTION: Respond DIRECTLY in character. Do NOT output scratchpads, internal thoughts, reasoning steps, rule checks, or 'Drafting mentally:'. Output ONLY your final spoken dialogue."""
+- CRITICAL INSTRUCTION: Respond DIRECTLY in character with dry humor and energetic wit. Do NOT output scratchpads, internal thoughts, or reasoning steps."""
 
 # ── Mode 3 — Post-investigation (case loaded, narrate findings) 
-JOE_INVESTIGATOR_PROMPT_TEMPLATE = """You are Joe Goldberg from the TV series YOU. You are currently investigating a target.
+JOE_INVESTIGATOR_PROMPT_TEMPLATE = """You are Joe, a sharp, dryly witty AI assistant with an investigator's instincts. You are currently reviewing an investigation.
 
 Here is the case data discovered so far:
 {case_data}
 
 Rules for responding to the user:
-1. If the user asks a conversational question or asks for a story/explanation, reply naturally and captivatingly in character.
+1. If the user asks a conversational question or asks for an explanation, reply naturally and clearly in character.
 2. If the user asks about the target or findings, answer specifically using the case data above. Name the actual platforms, emails, and usernames found.
 3. If asked for links, provide the direct URLs from the data using Markdown format: [Platform](URL)
-4. Stay completely in character — obsessive, dangerously intimate, and highly analytical.
-5. Avoid overuse of signature theatrical intros like "Hello, you...".
+4. Stay completely in character — analytical, direct, dryly witty, skeptical of anything not backed by the data.
+5. Give the answer first; add a brief dry aside only if it genuinely adds something, and never repeat the answer inside it.
 6. Use gender-neutral pronouns (they/them/their) for the target, as their gender is unknown.
-7. The person you're speaking with is your investigative partner — address them plainly without pet names or romantic framing directed at them.
-8. Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms or figures not explicitly listed. Speculation about their motives is fine, but fabrication of findings or data points is strictly forbidden."""
+7. Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms or figures not explicitly listed. Reasoned inference about what the pattern of findings suggests is fine — fabrication of findings or data points is strictly forbidden."""
 
 # ── Closing monologue ─────────────────────────────────────────
-JOE_MONOLOGUE_PROMPT = """You are Joe Goldberg from the TV series YOU. You have just finished investigating someone.
+JOE_MONOLOGUE_PROMPT = """You are Joe, a sharp, dryly witty AI assistant with an investigator's instincts. You have just finished an investigation.
 
 Findings:
 {case_data}
 
-Write a closing monologue. 4-6 paragraphs.
-- Start with your signature internal monologue style ("Hello, you..." or similar intimate framing).
+Write a closing summary. 4-6 paragraphs.
+- Open by stating plainly what this investigation was and what was found overall.
 - Be specific about what was actually found — name the platforms, the patterns.
-- Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms, services, or figures not explicitly listed — if the case data doesn't mention it, don't say it happened. Speculation about motive and meaning is fine (e.g., why they use these services, what they are hiding), but fabrication of findings, platforms, or data points is strictly forbidden.
-- Connect the dots between findings — what does having the specific platforms in the findings tell you about this person?
-- If correlation/corroboration data is present (e.g., matching names, bios, or avatars across platforms), reference it as a grounded fact — "their email, username, and GitHub profile all corroborate the same identity" is a real finding, not fabrication. This is exactly the kind of connecting-the-dots your voice is made for.
+- Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms, services, or figures not explicitly listed — if the case data doesn't mention it, don't say it happened. Reasoned inference about what the findings suggest (e.g., why someone might use these services, what a pattern of accounts implies) is fine — fabrication of findings, platforms, or data points is strictly forbidden.
+- Connect the dots between findings — what does having this specific set of platforms tell you, analytically, about the footprint you've mapped?
+- If correlation/corroboration data is present (e.g., matching names, bios, or avatars across platforms), reference it as a grounded fact — "the email, username, and GitHub profile all corroborate the same identity" is a real finding, not fabrication. This is exactly the kind of connecting-the-dots your voice is made for.
 - Use gender-neutral pronouns (they/them/their) for the target, as their gender is unknown.
-- Intimate, obsessive, like you've been thinking about this person for hours in the glass box.
-- The person you're speaking with is your investigative partner — you're working this case together, not investigating them. Address them plainly: no assumed gender, no pet names, no romantic framing directed at them. Save all of that — the obsessive intimacy, the dark humor, the 'you' as an object of fascination — entirely for how you describe and dissect the target. That's where the voice belongs.
-- End with one quiet unsettling observation or realization about them.
-- No markdown, no bullet points, pure flowing thought."""
+- Analytical and confident, like someone laying out a case they've actually verified rather than guessed at.
+- End with one clear, useful takeaway — not a dramatic flourish, an actual conclusion.
+- No markdown, no bullet points, pure flowing analysis."""
 
 
 
@@ -107,9 +105,21 @@ class JoeVoice:
         # NVIDIA model override from config
         self.nvidia_model = config.get("nvidia_model", NVIDIA_MODEL)
 
+        # Cartesia key & voice ID
+        raw_cartesia = config.get("CARTESIA_API_KEY") or os.environ.get("CARTESIA_API_KEY")
+        self.cartesia_key = self._clean_key(raw_cartesia)
+        self.cartesia_voice_id = config.get("cartesia_voice_id", "b1ce5126-4d08-42c3-adef-d3eb39e90c7a")
+        self.cartesia_available = bool(self.cartesia_key)
+
         # Detect available SLM
         self.slm_model = self._detect_slm()
         self.client = httpx.Client(timeout=180.0)
+
+        # Memory and OS Skill Engines
+        from core.joe_memory import JoeMemory
+        from core.system_skills import SystemSkillEngine
+        self.memory = JoeMemory()
+        self.skills = SystemSkillEngine()
 
         # Determine active engine label for logging
         if self.nvidia_available:
@@ -122,6 +132,7 @@ class JoeVoice:
         print(f"[joe_voice] SLM fallback: {self.slm_model}")
         print(f"[joe_voice] NVIDIA NIM: {'available' if self.nvidia_available else 'not configured'}")
         print(f"[joe_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
+        print(f"[joe_voice] Cartesia TTS: {'available' if self.cartesia_available else 'not configured'}")
 
     def _load_config(self) -> dict:
         """Load full config.yaml as dict."""
@@ -385,13 +396,29 @@ class JoeVoice:
             "error": True
         }
 
-    def _ask_nvidia(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None) -> tuple[str, bool]:
+    def _ask_nvidia(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None, image_path: str = None) -> tuple[str, bool]:
         """
         Ask NVIDIA NIM API with real-time SSE streaming support and high token limit (4096).
         Returns (response_text, rate_limited).
         """
         if not self.nvidia_key or self.nvidia_rate_limited:
             return "", False
+
+        image_content = None
+        if image_path:
+            p = Path(image_path)
+            if not p.is_absolute():
+                p = (Path(__file__).parent.parent / image_path).resolve()
+            if p.exists() and p.is_file():
+                import base64
+                import mimetypes
+                mime, _ = mimetypes.guess_type(p)
+                mime = mime or "image/png"
+                b64_str = base64.b64encode(p.read_bytes()).decode("ascii")
+                image_content = [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64_str}"}}
+                ]
 
         candidate_models = [self.nvidia_model] + [m for m in NVIDIA_FALLBACK_MODELS if m != self.nvidia_model]
         for model_name in candidate_models:
@@ -400,11 +427,12 @@ class JoeVoice:
                     "Authorization": f"Bearer {self.nvidia_key}",
                     "Content-Type": "application/json",
                 }
+                user_msg_content = image_content if image_content else prompt
                 payload = {
                     "model": model_name,
                     "messages": [
                         {"role": "system", "content": system},
-                        {"role": "user", "content": prompt},
+                        {"role": "user", "content": user_msg_content},
                     ],
                     "max_tokens": max_tokens,
                     "temperature": 0.5,
@@ -453,7 +481,7 @@ class JoeVoice:
 
         return "", False
 
-    def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None) -> tuple[str, bool]:
+    def _ask_gemini(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None, image_path: str = None) -> tuple[str, bool]:
         """
         Ask Gemini API with SSE streaming support and high token limit (4096).
         Returns (response_text, rate_limited).
@@ -464,9 +492,23 @@ class JoeVoice:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:streamGenerateContent?alt=sse"
             headers = {"Content-Type": "application/json"}
+
+            parts = [{"text": prompt}]
+            if image_path:
+                p = Path(image_path)
+                if not p.is_absolute():
+                    p = (Path(__file__).parent.parent / image_path).resolve()
+                if p.exists() and p.is_file():
+                    import base64
+                    import mimetypes
+                    mime, _ = mimetypes.guess_type(p)
+                    mime = mime or "image/png"
+                    b64_str = base64.b64encode(p.read_bytes()).decode("ascii")
+                    parts.append({"inline_data": {"mime_type": mime, "data": b64_str}})
+
             payload = {
                 "system_instruction": {"parts": [{"text": system}]},
-                "contents": [{"parts": [{"text": prompt}]}],
+                "contents": [{"parts": parts}],
                 "generationConfig": {
                     "maxOutputTokens": max_tokens,
                     "temperature": 0.90,
@@ -490,9 +532,9 @@ class JoeVoice:
                             chunk_json = json.loads(data_str)
                             candidates = chunk_json.get("candidates", [])
                             if candidates:
-                                parts = candidates[0].get("content", {}).get("parts", [])
-                                for p in parts:
-                                    tok = p.get("text", "")
+                                parts_chunk = candidates[0].get("content", {}).get("parts", [])
+                                for p_item in parts_chunk:
+                                    tok = p_item.get("text", "")
                                     if tok:
                                         full_response.append(tok)
                                         if on_token:
@@ -507,14 +549,14 @@ class JoeVoice:
             print(f"[joe_voice] Gemini error: {e}")
             return "", False
 
-    def _ask_cloud(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None) -> dict:
+    def _ask_cloud(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None, image_path: str = None) -> dict:
         """
         Try cloud LLMs in priority order: NVIDIA NIM → Gemini → empty.
         Returns {text, rate_limited, engine}.
         """
         # Try NVIDIA NIM first
         if self.nvidia_available and not self.nvidia_rate_limited:
-            text, r_limited = self._ask_nvidia(prompt, system, max_tokens=max_tokens, on_token=on_token)
+            text, r_limited = self._ask_nvidia(prompt, system, max_tokens=max_tokens, on_token=on_token, image_path=image_path)
             if r_limited:
                 self.nvidia_rate_limited = True
             elif text:
@@ -522,7 +564,7 @@ class JoeVoice:
 
         # Try Gemini second
         if self.gemini_available and not self.gemini_rate_limited:
-            text, r_limited = self._ask_gemini(prompt, system, max_tokens=max_tokens, on_token=on_token)
+            text, r_limited = self._ask_gemini(prompt, system, max_tokens=max_tokens, on_token=on_token, image_path=image_path)
             if r_limited:
                 self.gemini_rate_limited = True
             elif text:
@@ -532,28 +574,104 @@ class JoeVoice:
         rate_limited = (self.nvidia_rate_limited or self.gemini_rate_limited)
         return {"text": "", "rate_limited": rate_limited, "engine": None}
 
+    def narrate(self, text: str) -> Optional[bytes]:
+        """Voice synthesis via Cartesia TTS API if key is present."""
+        if not self.cartesia_key or not text:
+            return None
+        try:
+            headers = {
+                "X-API-Key": self.cartesia_key,
+                "Cartesia-Version": "2024-06-10",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model_id": "sonic-3.5",
+                "transcript": text[:1000],
+                "voice": {
+                    "mode": "id",
+                    "id": self.cartesia_voice_id
+                },
+                "generation_config": {
+                    "speed": 1.05
+                },
+                "output_format": {
+                    "container": "wav",
+                    "encoding": "pcm_s16le",
+                    "sample_rate": 16000
+                }
+            }
+            r = self.client.post("https://api.cartesia.ai/tts/bytes", headers=headers, json=payload, timeout=15.0)
+            if r.status_code == 200:
+                return r.content
+        except Exception as e:
+            print(f"[joe_voice] Cartesia TTS error: {e}")
+        return None
+
+    def synthesize_speech_b64(self, text: str) -> Optional[str]:
+        """Synthesize speech using Cartesia and return base64 WAV data URL."""
+        audio_bytes = self.narrate(text)
+        if audio_bytes:
+            import base64
+            b64 = base64.b64encode(audio_bytes).decode("ascii")
+            return f"data:audio/wav;base64,{b64}"
+        return None
+
     # ── Public interface ──────────────────────────────────────
 
-    def chat(self, question: str, target: Target = None, on_token: callable = None) -> dict:
+    def chat(self, question: str, target: Target = None, on_token: callable = None, image_path: str = None) -> dict:
         """
         Mode 1 or Mode 3 depending on whether target has findings.
         Priority: NVIDIA NIM → Gemini → local SLM.
         Returns {text, rate_limited, mode, error}
         """
+        # 1. System OS Skill execution check
+        handled, skill_msg, is_search, search_query = self.skills.try_execute(question)
+        if handled:
+            return {
+                "text": skill_msg,
+                "rate_limited": False,
+                "mode": "advisor",
+                "error": False,
+                "engine": "system_skill",
+                "jarvis_search": is_search,
+                "search_query": search_query
+            }
+
+        # 2. Check for investigation trigger with ambiguous target
+        q_lower = question.strip().lower()
+        ambiguous_triggers = [
+            "investigate", "hey joe investigate", "yo joe investigate", "joe investigate",
+            "start investigation", "investigate someone", "investigate something", "laser george"
+        ]
+        if q_lower in ambiguous_triggers or (q_lower.startswith("investigate") and len(q_lower.split()) <= 2 and q_lower.split()[-1] in ["someone", "something", "target", "person", "user"]):
+            return {
+                "text": "Opening target investigation box. Type the exact target username, email, or domain you want me to sniff out.",
+                "open_dialog": True,
+                "rate_limited": False,
+                "mode": "advisor",
+                "error": False,
+                "engine": "dialog_trigger"
+            }
+
+        # Inject Memory summary into system prompt
+        mem_summary = self.memory.get_memory_summary_for_prompt()
+
         if target and target.entities:
             # Mode 3 — case loaded, answer from findings
             case_data = self._build_case_data(target)
-            system = JOE_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data)
+            system = JOE_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data) + "\n\n" + mem_summary
             prompt = f"User asked: {question}"
             mode = "investigation"
+            max_tok = 800
         else:
             # Mode 1 — no case, OSINT advisor
-            system = JOE_ADVISOR_PROMPT
+            system = JOE_ADVISOR_PROMPT + "\n\n" + mem_summary
             prompt = question
             mode = "advisor"
+            max_tok = 250
 
         # Try cloud engines first (NVIDIA → Gemini)
-        cloud = self._ask_cloud(prompt, system, max_tokens=4096, on_token=on_token)
+        cloud = self._ask_cloud(prompt, system, max_tokens=max_tok, on_token=on_token, image_path=image_path)
         if cloud["text"]:
             clean_text = self._clean_reasoning(cloud["text"])
             clean_text = self._mirror_greeting(question, clean_text)
@@ -566,7 +684,7 @@ class JoeVoice:
             }
 
         # Fall back to local SLM
-        slm_res = self._ask_slm(prompt, system, max_tokens=4096, timeout=120, num_ctx=4096, on_token=on_token)
+        slm_res = self._ask_slm(prompt, system, max_tokens=max_tok, timeout=120, num_ctx=4096, on_token=on_token)
         clean_text = self._clean_reasoning(slm_res["text"])
         clean_text = self._mirror_greeting(question, clean_text)
         return {
@@ -589,8 +707,8 @@ User message: "{text}"
 Current active investigation target: {curr}
 
 Rules:
-1. If the user wants to start an investigation, stalk, scan, trace, lookup, or inspect a target (person, email, username, domain, IP, handle), classify as "investigate" and extract the target string.
-2. If the user says "stalk again", "pivot to them", or refers to the active target, classify as "investigate" and use "{curr}" as the target.
+1. If the user wants to start an investigation, scan, trace, lookup, or inspect a target (person, email, username, domain, IP, handle), classify as "investigate" and extract the target string.
+2. If the user says "investigate again", "pivot to them", or refers to the active target, classify as "investigate" and use "{curr}" as the target.
 3. If the user is asking a general question, talking casually, requesting a story, or discussing strategy/OSINT methodology without giving a target to scan right now, classify as "covo" with target null.
 
 Output ONLY a JSON object:
@@ -692,8 +810,8 @@ Output ONLY a JSON object:
         prompt = (
             f"You just discovered: {finding_type} '{value}'"
             + (f" on {platform}" if platform else "")
-            + "\nWrite ONE sentence (15-20 words) as Joe Goldberg would react to this discovery. "
-            "Be dangerously intimate, unsettling, and observational. Speak directly to them ('you'). "
+            + "\nWrite ONE sentence (15-20 words) as Joe would react to this discovery. "
+            "Be sharp, analytical, and dryly observational — a small note on what the finding means. "
             "Use gender-neutral pronouns (they/them/their) for the target."
         )
         res = self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=80)
@@ -707,8 +825,8 @@ Command: "{user_input}"
 Current active investigation target: {current}
 
 Rules:
-1. If the user refers to the current target (e.g. "stalk again", "stalk them", "scan again"), output exactly: {current}
-2. If the user specifies a new target (e.g. "stalk john.doe", "pivot to target@email.com"), output ONLY the new target value.
+1. If the user refers to the current target (e.g. "investigate again", "look into them", "scan again"), output exactly: {current}
+2. If the user specifies a new target (e.g. "investigate john.doe", "pivot to target@email.com"), output ONLY the new target value.
 3. If no target can be determined, output: None
 
 Output only the raw target string. No markdown, no quotes, no explanation."""
@@ -718,20 +836,6 @@ Output only the raw target string. No markdown, no quotes, no explanation."""
     def answer(self, question: str, target: Target, history: List[Dict]) -> dict:
         """Answer a follow-up question with full case context."""
         return self.chat(question, target)
-
-    # ── Voice generation disabled (text-to-text only) ────────────
-
-    def narrate(self, text: str) -> Optional[bytes]:
-        """Voice synthesis is disabled — Joe output is strictly text-to-text."""
-        return None
-
-    def narrate_to_file(self, text: str, output_path: str = None) -> Optional[str]:
-        """Voice synthesis is disabled — Joe output is strictly text-to-text."""
-        return None
-
-    def synthesize_speech_b64(self, text: str) -> Optional[str]:
-        """Voice synthesis is disabled — Joe output is strictly text-to-text."""
-        return None
 
     def _mirror_greeting(self, user_query: str, ai_response: str) -> str:
         """Mirror the user's greeting clinically as the first word of the response."""

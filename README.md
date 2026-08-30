@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="assets/joegui.png" alt="Joe Goldberg" width="100%"/>
+  <img src="assets/joegui.png" alt="Joe" width="100%"/>
 </p>
 
-<h1 align="center">JOE GOLDBERG : OSINT INVESTIGATOR</h1>
+<h1 align="center">JOE : OSINT INVESTIGATOR & ASSISTANT</h1>
 <p align="center">
-  <b>Autonomous OSINT Investigator & Ethical Stalker Workspace by Project Hellhound</b>
+  <b>Autonomous OSINT Investigator & AI Assistant by Project Hellhound</b>
   <br>
   <i>Target enumeration, identity pivoting, multi-source username scans, email intelligence, text-to-text monologue synthesis, interactive 2D/3D correlation topology graphs, microphone speech-to-text input, collapsible card UI, and zero-leak privacy — from initial handle to evidence report.</i>
 </p>
@@ -34,19 +34,19 @@
 
 > [!NOTE]
 > ### 👁️ Persona & Privacy Notice
-> **Joe Goldberg** operates as an autonomous OSINT stalker and investigator. He gathers open-source intelligence, connects target identity webs, and presents findings in his signature **internal monologue text**. All requests run locally or through encrypted API bridges with zero data leaving your machine without explicit permission.
+> **Joe** operates as an autonomous OSINT investigator and assistant. He gathers open-source intelligence, connects identity webs, and presents findings in his signature **dry, analytical narration**. All requests run locally or through encrypted API bridges with zero data leaving your machine without explicit permission.
 
 ---
 
 ## What Is This?
 
-**Joe Goldberg** is the autonomous OSINT investigation and ethical stalking framework developed by **Project Hellhound**. Built for security researchers, penetration testers, bug bounty hunters, and CTF practitioners, Joe Goldberg autonomously maps digital footprints, verifies identity handles, extracts email profiles, pulls domain infrastructure, captures EXIF geolocation metadata, visualizes entity networks, and synthesizes internal monologue observations in real time.
+**Joe** is the autonomous OSINT investigation and personal assistant framework developed by **Project Hellhound**. Built for security researchers, penetration testers, bug bounty hunters, and CTF practitioners, Joe autonomously maps digital footprints, verifies identity handles, extracts email profiles, pulls domain infrastructure, captures EXIF geolocation metadata, visualizes entity networks, and synthesizes analytical observations in real time.
 
 It features **persistent target memory and an automated case blackboard**—discovered handles, emails, domain DNS records, IP locations, Wayback snapshots, profile screenshots, and notes are automatically retained in isolated per-target workspaces (`~/.joe/cases/<target>/`) so investigations seamlessly resume across sessions.
 
 Works across three flexible interfaces:
 - **Interactive Terminal**: An interactive terminal environment with real-time monologue streaming, live progress feedback, and inline command execution (`joe --cli`).
-- **Headless CLI Runner**: Direct one-line command execution for automated scripts (`joe stalk <target>`).
+- **Headless CLI Runner**: Direct one-line command execution for automated scripts (`joe investigate <target>`).
 - **Desktop GUI Application**: A dedicated pywebview/fastapi desktop application featuring collapsible card modules, transparent eye API toggles, 2D/3D radial topology graphs, and microphone speech-to-text input with "Hey Joe" wake word detection (`joe`).
 
 ---
@@ -54,7 +54,7 @@ Works across three flexible interfaces:
 ## How It Works
 
 ```
-You ──> joe stalk <target> ──> Input Parser ──> Scope & Entity Resolver
+You ──> joe investigate <target> ──> Input Parser ──> Scope & Entity Resolver
                                      │                     │
                                      ▼                     ▼
                            Active OSINT Modules     Reconnaissance Toolchain
@@ -88,9 +88,34 @@ Autonomous intelligence gathering and multi-pass identity pivoting utilize fast 
 
 ---
 
+## 🎙️ Voice Intelligence & Cartesia API Setup
+
+Joe features real-time, low-latency conversational speech powered by **Cartesia Sonic 3.5 TTS** and dynamic **Voice Activity Detection (VAD)**.
+
+> [!IMPORTANT]
+> ### 🔊 Cartesia TTS Configuration
+> To enable Joe's voice output, obtain a free API key from [Cartesia.ai](https://cartesia.ai) and add it to your `config.yaml` or through the desktop GUI **Settings Card**:
+> ```yaml
+> voice:
+>   enabled: true
+>   engine: "cartesia"
+>   cartesia_key: "YOUR_CARTESIA_API_KEY"
+>   voice_id: "a0e99841-438c-4a64-b679-ae501e7d6091" # Custom Joe Goldberg Voice Model
+>   model_id: "sonic-3.5"
+>   speed: "fast"
+> ```
+
+### 🎧 Hands-Free Voice Listener & Wake Word
+- **Wake Word Detection**: Speak `"Hey Joe..."` or `"Joe..."` to activate ambient listening.
+- **Jarvis Search Protocol**: Speak `"Hey Joe, search Google for [query]"` to activate live DuckDuckGo web snippet extractions and trigger the holographic **Jarvis Search Overlay**.
+- **Voice Muting Guard**: Ambient speech listening is automatically muted while Joe is actively speaking to prevent self-triggering and audio collisions.
+- **Investigate Dialog Overlay**: Say `"Hey Joe, investigate..."` to pop up the interactive username entry dialog.
+
+---
+
 ## Installation & Setup
 
-Everything you need to install, configure AI backends, and run Joe Goldberg in one unified workflow.
+Everything you need to install, configure AI backends, and run Joe in one unified workflow.
 
 ### 1. Requirements & Prerequisites
 - **Operating System**: Linux (Ubuntu, Debian, Kali, Arch), macOS.
@@ -149,9 +174,9 @@ joe --cli
 ### 3. Headless Direct Command
 Run a direct target investigation:
 ```bash
-joe stalk target@email.com
-joe stalk johndoe_87
-joe stalk target.com
+joe investigate target@email.com
+joe investigate johndoe_87
+joe investigate target.com
 ```
 
 ---
@@ -164,7 +189,7 @@ All actions can be triggered via slash commands or natural language:
 
 | Command | Aliases | Description | Usage |
 | :--- | :--- | :--- | :--- |
-| `stalk` | `/stalk`, `investigate` | Run multi-pass OSINT sweep against a target | `stalk <target>` |
+| `investigate` | `/investigate`, `stalk` | Run multi-pass OSINT sweep against a target | `investigate <target>` |
 | `resume` | `/resume`, `load` | Open saved investigation case file | `resume <target>` |
 | `pivot` | `/pivot`, `focus` | Pivot investigation on a discovered handle or IP | `pivot <entity>` |
 | `cases` | `/cases`, `list` | List all archived investigation cases | `cases` |
@@ -177,7 +202,7 @@ All actions can be triggered via slash commands or natural language:
 
 ## The OSINT Arsenal
 
-Joe Goldberg coordinates specialized OSINT modules into a unified execution pipeline:
+Joe coordinates specialized OSINT modules into a unified execution pipeline:
 
 | Module | Category | Engine | Description |
 | :--- | :--- | :--- | :--- |
@@ -215,7 +240,7 @@ Joe Goldberg coordinates specialized OSINT modules into a unified execution pipe
 
 ## Desktop GUI App
 
-Joe Goldberg features a native desktop interface built with **pywebview** and **FastAPI**:
+Joe features a native desktop interface built with **pywebview** and **FastAPI**:
 
 ```bash
 joe
@@ -224,13 +249,13 @@ joe
 - **Collapsible Cards System**: Declutter your workspace by expanding or collapsing Settings, Evidence Ledgers, and Location Maps (`▼` / `▶`).
 - **Transparent Eye API Key Toggles**: Securely view or hide API keys (Gemini, NVIDIA NIM) with dynamic input masking (`👁`).
 - **Guaranteed Topology Graph**: 2D SVG radial network fallback + WebGL 3D relationship graph populated with active OSINT skill nodes.
-- **Speech-to-Text Mic Input**: Hands-free voice input button (`🎤`) with automatic "Hey Joe..." wake word recognition for instant target stalking.
+- **Speech-to-Text Mic Input**: Hands-free voice input button (`🎤`) with automatic "Hey Joe..." wake word recognition for instant hands-free investigation.
 
 ---
 
 ## Scope Policy & Legal Compliance
 
-Joe Goldberg is built strictly for **authorized penetration testing, bug bounty programs, CTF challenges, and legitimate security research**.
+Joe is built strictly for **authorized penetration testing, bug bounty programs, CTF challenges, and legitimate security research**.
 - Always obtain explicit authorization before investigating any target.
 - Users are solely responsible for ensuring compliance with all applicable local and international laws.
 

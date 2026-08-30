@@ -53,7 +53,7 @@ echo "  installing playwright chromium..."
 # ── Ollama Check (Optional — Local Fallback) ──────────────────
 echo ""
 echo "  ─────────────────────────────────────────────────────────"
-echo "  Joe Goldberg uses NVIDIA NIM or Gemini API for primary"
+echo "  Joe uses NVIDIA NIM or Gemini API for primary"
 echo "  inference. No local models are automatically downloaded."
 echo "  ─────────────────────────────────────────────────────────"
 echo ""
@@ -87,7 +87,7 @@ cat > ~/.local/share/applications/joe-goldberg.desktop << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Joe Goldberg
+Name=Joe
 GenericName=OSINT Investigator
 Comment=Autonomous OSINT Investigator — zero APIs, fully local
 Exec=$VENV_BIN/python3 $INSTALL_DIR/joe.py
@@ -96,7 +96,7 @@ Terminal=false
 Categories=Security;Network;
 Keywords=osint;recon;investigation;security;pentest;
 StartupNotify=true
-StartupWMClass=Joe Goldberg
+StartupWMClass=Joe
 EOF
 
 chmod +x ~/.local/share/applications/joe-goldberg.desktop
@@ -138,7 +138,7 @@ systemctl --user start ollama.service 2>/dev/null
 echo ""
 echo "  ✓ joe installed"
 echo "  ✓ system command registered — run: joe"
-echo "  ✓ desktop icon created — search 'Joe Goldberg' in your application menu"
+echo "  ✓ desktop icon created — search 'Joe' in your application menu"
 echo "  ✓ ollama configured to start automatically on login"
 echo ""
 echo "  ─────────────────────────────────────────────────────────"

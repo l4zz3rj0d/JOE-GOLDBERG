@@ -14,8 +14,8 @@ ollama_url: http://localhost:11434
 #
 # Or paste it here (less secure — make sure config.yaml is gitignored):
 nvidia_api_key: YOUR_NVIDIA_API_KEY_HERE
-nvidia_model: meta/llama-3.2-11b-vision-instruct
-
+nvidia_model: nvidia/nemotron-3-super-120b-a12b
+CARTESIA_API_KEY= your_cartesia_api_key
 # ── Gemini API (free tier, fast) ───────────────────────────────
 # Get your free key at: https://aistudio.google.com/apikey
 # Then set it as an environment variable (recommended):

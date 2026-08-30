@@ -58,7 +58,7 @@ def print_banner():
     console.print(f'  [{C_GOLD}]  "I notice everything."[/]')
     console.print(f'  [{C_DIM}]  OSINT Investigator — zero APIs, fully local[/]')
     console.print()
-    console.print(f"  [{C_DIM}]  stalk · resume · cases · pivot · notes · export · help · exit[/]")
+    console.print(f"  [{C_DIM}]  investigate · resume · cases · pivot · notes · export · help · exit[/]")
     console.print()
 
 
@@ -174,7 +174,7 @@ def show_help():
     console.print(f"  [bold {C_LIGHT}]  COMMANDS[/]")
     console.print()
     for cmd, desc in [
-        ("stalk  <target>",  "start new investigation (email, domain, IP, username)"),
+        ("investigate <target>",  "start new investigation (email, domain, IP, username)"),
         ("  --brief \"...\"",  "  add context hints for smarter recon"),
         ("resume <target>",  "load and continue a saved case"),
         ("pivot  <entity>",  "investigate a newly discovered entity"),
@@ -218,7 +218,7 @@ def get_prompt() -> str:
 
 def _parse_stalk_args(arg: str):
     """
-    Parse 'target --brief "context text" --ctf' from stalk command.
+    Parse 'target --brief "context text" --ctf' from investigate command.
     Returns (target_str, brief_text, context).
     """
     brief_text = None
@@ -285,7 +285,7 @@ class JoeCLI:
     def run(self):
         print_banner()
         if self.initial_target:
-            self._stalk(self.initial_target)
+            self._investigate(self.initial_target)
         self._loop()
 
     def _loop(self):
@@ -298,12 +298,12 @@ class JoeCLI:
             arg = parts[1] if len(parts) > 1 else ""
 
             if cmd in ("exit", "quit", "q"):
-                console.print(f'\n  [{C_GOLD}]  "I\'ll always be watching."[/]\n')
+                console.print(f'\n  [{C_GOLD}]  "Until next time."[/]\n')
                 sys.exit(0)
-            elif cmd == "stalk" and arg:
-                self._stalk(arg)
+            elif cmd in ("investigate", "stalk") and arg:
+                self._investigate(arg)
             elif cmd == "pivot" and arg:
-                self._stalk(arg)
+                self._investigate(arg)
             elif cmd == "resume" and arg:
                 self._resume(arg)
             elif cmd == "cases":
@@ -324,7 +324,7 @@ class JoeCLI:
                 else:
                     self._ask(text)
 
-    def _stalk(self, target_input: str):
+    def _investigate(self, target_input: str):
         target_str, brief_text, context = _parse_stalk_args(target_input)
         if not target_str:
             console.print(f"\n  [{C_ORANGE}]  No target specified.[/]\n")
@@ -359,7 +359,7 @@ class JoeCLI:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self.current_target = loop.run_until_complete(
-                self.orch.stalk(target_str, brief=brief, plan=plan)
+                self.orch.investigate(target_str, brief=brief, plan=plan)
             )
             loop.close()
 

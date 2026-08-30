@@ -174,7 +174,7 @@ Available modules (use ONLY these exact names in "priority_order" or "skip_candi
 - wayback: Wayback Machine historical snapshots
 
 Output ONLY a valid JSON object with the following keys:
-- "reasoning": 2-3 sentences explaining your strategy in Joe Goldberg's voice (obsessive, analytical, talking about 'you' in reference to the target)
+- "reasoning": 2-3 sentences explaining your strategy in Joe's voice (sharp, analytical, dryly witty, skeptical of unverified claims)
 - "priority_order": list of module names from the whitelist above to run first (ordered by relevance)
 - "skip_candidates": list of module names from the whitelist above that are low-value for this specific case (run last or deprioritized)
 - "extra_hints": JSON object containing any of these optional keys:

@@ -42,7 +42,7 @@ class Orchestrator:
         self.on_done = on_done
         self.lessons_store = lessons_store
 
-    async def stalk(self, raw_input: str, brief: CaseBrief = None, plan: InvestigationPlan = None) -> Target:
+    async def investigate(self, raw_input: str, brief: CaseBrief = None, plan: InvestigationPlan = None) -> Target:
         parsed = parse(raw_input)
         target = Target(primary=parsed.value, target_type=parsed.target_type)
 
@@ -103,6 +103,9 @@ class Orchestrator:
             await self.on_done(target)
 
         return target
+
+    # Backward-compatible alias — older scripts/configs may still call .stalk(...)
+    stalk = investigate
 
     async def _email_pipeline(self, target, parsed, plan=None):
         local = parsed.metadata["local"]
