@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# Path to reference audio clip extracted from monologue
 REFERENCE_WAV_PATH = Path(__file__).parent.parent / "assets" / "joe_reference.wav"
 
 
@@ -21,6 +20,7 @@ class LocalVoiceClone:
         self.reference_path = str(reference_path or REFERENCE_WAV_PATH)
         self.available = False
         self.model = None
+        self.conds = None
 
         self._init_local_engine()
 
@@ -31,18 +31,20 @@ class LocalVoiceClone:
             return
 
         try:
-            # Try Chatterbox TTS
+            import torch
             from chatterbox import ChatterboxTTS
-            print(f"[local_voice] Initializing Chatterbox local voice clone from: {self.reference_path}")
-            self.model = ChatterboxTTS(speaker_ref=self.reference_path)
+
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            print(f"[local_voice] Initializing ChatterboxTTS zero-shot voice model on {device}...")
+            self.model = ChatterboxTTS.from_pretrained(device=device)
+            self.conds = self.model.prepare_conditionals(self.reference_path)
             self.available = True
-            print("[local_voice] Chatterbox local voice clone ready!")
+            print(f"[local_voice] Chatterbox local voice clone ready! (Reference: {self.reference_path})")
             return
         except Exception as e:
             print(f"[local_voice] Chatterbox init notice: {e}")
 
         try:
-            # Fallback to soundfile / TTS / pyttsx3 / piper if installed
             import soundfile as sf
             self.available = True
             print(f"[local_voice] Local audio engine initialized with reference sample: {self.reference_path}")
@@ -55,13 +57,21 @@ class LocalVoiceClone:
             return None
 
         try:
-            if self.model:
-                audio_bytes = self.model.generate_speech(text)
-                return audio_bytes
+            if self.model and self.conds:
+                import soundfile as sf
+                wav_tensor = self.model.generate(text, conds=self.conds)
+                if hasattr(wav_tensor, 'cpu'):
+                    audio = wav_tensor.cpu().numpy().squeeze()
+                else:
+                    audio = wav_tensor
+
+                buf = io.BytesIO()
+                sf.write(buf, audio, 24000, format='WAV')
+                return buf.getvalue()
         except Exception as e:
             print(f"[local_voice] Chatterbox synthesis error: {e}")
 
-        # Basic local WAV generator fallback if TTS engine is loading
+        # Fallback to soundfile reference if model is uninitialized
         try:
             import soundfile as sf
             data, samplerate = sf.read(self.reference_path)
