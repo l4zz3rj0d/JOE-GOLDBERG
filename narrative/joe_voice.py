@@ -115,6 +115,10 @@ class JoeVoice:
         self.slm_model = self._detect_slm()
         self.client = httpx.Client(timeout=180.0)
 
+        # Local Zero-Shot Voice Clone (Penn Badgley Joe Goldberg monologue)
+        from core.local_voice_clone import LocalVoiceClone
+        self.local_clone = LocalVoiceClone()
+
         # Memory, Session Memory and OS Skill Engines
         from core.joe_memory import JoeMemory
         from core.system_skills import SystemSkillEngine
@@ -581,47 +585,55 @@ class JoeVoice:
         return {"text": "", "rate_limited": rate_limited, "engine": None}
 
     def narrate(self, text: str) -> Optional[bytes]:
-        """Voice synthesis via Cartesia TTS API if key is present."""
-        if not self.cartesia_key or not text:
+        """Voice synthesis via Cartesia TTS API with automatic fallback to local voice clone."""
+        if not text:
             return None
-        try:
-            headers = {
-                "X-API-Key": self.cartesia_key,
-                "Cartesia-Version": "2024-06-10",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model_id": "sonic-3.5",
-                "transcript": text[:1000],
-                "voice": {
-                    "mode": "id",
-                    "id": self.cartesia_voice_id
-                },
-                "generation_config": {
-                    "speed": 1.05
-                },
-                "output_format": {
-                    "container": "wav",
-                    "encoding": "pcm_s16le",
-                    "sample_rate": 16000
+        if self.cartesia_key:
+            try:
+                headers = {
+                    "X-API-Key": self.cartesia_key,
+                    "Cartesia-Version": "2024-06-10",
+                    "Content-Type": "application/json"
                 }
-            }
-            r = self.client.post("https://api.cartesia.ai/tts/bytes", headers=headers, json=payload, timeout=15.0)
-            if r.status_code == 200:
-                return r.content
-            else:
-                print(f"[joe_voice] Cartesia TTS rejected request: {r.status_code} — {r.text[:500]}")
-        except Exception as e:
-            print(f"[joe_voice] Cartesia TTS error: {e}")
+                payload = {
+                    "model_id": "sonic-3.5",
+                    "transcript": text[:1000],
+                    "voice": {
+                        "mode": "id",
+                        "id": self.cartesia_voice_id
+                    },
+                    "generation_config": {
+                        "speed": 1.05
+                    },
+                    "output_format": {
+                        "container": "wav",
+                        "encoding": "pcm_s16le",
+                        "sample_rate": 16000
+                    }
+                }
+                r = self.client.post("https://api.cartesia.ai/tts/bytes", headers=headers, json=payload, timeout=15.0)
+                if r.status_code == 200:
+                    return r.content
+                else:
+                    print(f"[joe_voice] Cartesia TTS rejected request: {r.status_code} — {r.text[:500]}")
+            except Exception as e:
+                print(f"[joe_voice] Cartesia TTS error: {e}")
+
+        # Local voice clone fallback using assets/joe_reference.wav
+        if hasattr(self, 'local_clone') and self.local_clone.available:
+            return self.local_clone.synthesize(text)
+
         return None
 
     def synthesize_speech_b64(self, text: str) -> Optional[str]:
-        """Synthesize speech using Cartesia and return base64 WAV data URL."""
+        """Synthesize speech using Cartesia / Local Voice Clone and return base64 WAV data URL."""
         audio_bytes = self.narrate(text)
         if audio_bytes:
             import base64
             b64 = base64.b64encode(audio_bytes).decode("ascii")
             return f"data:audio/wav;base64,{b64}"
+        if hasattr(self, 'local_clone') and self.local_clone.available:
+            return self.local_clone.synthesize_b64(text)
         return None
 
     # ── Public interface ──────────────────────────────────────
