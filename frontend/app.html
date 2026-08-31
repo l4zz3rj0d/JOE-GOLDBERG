@@ -1353,7 +1353,7 @@
 <!-- Live Sub-Conscious Stream & Voice Telemetry Subtitle Ribbon -->
 <div id="joe-hud-subtitles" class="joe-subtitles-hidden">
   <div class="joe-subtitles-tag" id="joe-subtitle-tag">LIVE TELEMETRY</div>
-  <div class="joe-subtitles-text" id="joe-subtitle-text">Listening... say "Hey Joe..."</div>
+  <div class="joe-subtitles-text" id="joe-subtitle-text">Listening... say "Hey Dean..."</div>
 </div>
 
 <!-- Visual Evidence Screenshot Drawer Overlay -->
@@ -2855,9 +2855,9 @@ async function startMicListening() {
           if (!fullText) return;
 
           let wasWake = false;
-          if (fullText.toLowerCase().includes('hey joe')) {
+          if (fullText.toLowerCase().includes('hey dean') || fullText.toLowerCase().includes('hey joe')) {
             wasWake = true;
-            fullText = fullText.replace(/hey joe,?/gi, '').trim();
+            fullText = fullText.replace(/hey (dean|joe),?/gi, '').trim();
           }
 
           if (fullText) $('#chat-input').value = fullText;
@@ -2884,7 +2884,7 @@ async function startMicListening() {
       setHudState('listening');
       const micBtnEl = $('#mic-btn');
       if (micBtnEl) micBtnEl.classList.add('mic-recording');
-      $('#chat-input').placeholder = "Listening... say 'Hey Joe...' or speak prompt...";
+      $('#chat-input').placeholder = "Listening... say 'Hey Dean...' or speak prompt...";
       return;
     } catch(err) {
       console.warn('[JoeSTT] WebSpeech start failed:', err);
@@ -3158,7 +3158,7 @@ window.joe = {
       case 'joe_speech_started':
       case 'joe_wake_word_detected':
         resetJoeAudioQueue();
-        showSubtitles('HEY JOE (WAKE DETECTED) — Listening...', 'VOICE STT');
+        showSubtitles('HEY DEAN (WAKE DETECTED) — Listening...', 'VOICE STT');
         if (joeHudState === 'idle' || joeHudState === 'listening' || joeHudState === 'speaking') {
           setHudState('listening');
         }

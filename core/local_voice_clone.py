@@ -57,9 +57,9 @@ class LocalVoiceClone:
             return None
 
         try:
-            if self.model and self.conds:
+            if self.model:
                 import soundfile as sf
-                wav_tensor = self.model.generate(text, conds=self.conds)
+                wav_tensor = self.model.generate(text, audio_prompt_path=self.reference_path)
                 if hasattr(wav_tensor, 'cpu'):
                     audio = wav_tensor.cpu().numpy().squeeze()
                 else:
