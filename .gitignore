@@ -53,6 +53,8 @@ api_keys*
 assets/*_sample_*.wav
 generate_joe_sample.py
 test_chatterbox_clone.py
+listen_joe_voice.py
+joe_voice_sample.wav
 
 # PyInstaller
 *.spec
