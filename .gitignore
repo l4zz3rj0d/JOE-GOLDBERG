@@ -49,6 +49,11 @@ config.yaml
 *.pem
 api_keys*
 
+# Temporary voice samples & scratch scripts
+assets/*_sample_*.wav
+generate_joe_sample.py
+test_chatterbox_clone.py
+
 # PyInstaller
 *.spec
 dist/
@@ -58,7 +63,6 @@ build/
 *.bin
 *.gguf
 *.ggml
-```
 
 cases/
 config.yaml
