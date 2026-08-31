@@ -1,4 +1,4 @@
-# Joe Goldberg — configuration
+# Soldier Boy — configuration
 # Copy this file to config.yaml and fill in your values
 # NEVER commit config.yaml — it contains secrets
 
@@ -27,7 +27,7 @@ gemini_api_key: YOUR_GEMINI_API_KEY_HERE
 
 assets_dir: assets
 cases_dir: cases
-joe_image: joe.jpeg
+soldierboy_image: soldierboy-icon.png
 
 tools:
   sherlock: true

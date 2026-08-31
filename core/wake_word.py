@@ -58,9 +58,12 @@ class WakeWordEngine:
         # 1. Check custom ONNX model path or default openWakeWord models
         target_model = model_path
         if not target_model:
+            custom_soldier_path = Path(__file__).parent.parent / "data" / "models" / "hey_soldier.onnx"
             custom_dean_path = Path(__file__).parent.parent / "data" / "models" / "hey_dean.onnx"
             custom_joe_path = Path(__file__).parent.parent / "data" / "models" / "hey_joe.onnx"
-            if custom_dean_path.exists():
+            if custom_soldier_path.exists():
+                target_model = str(custom_soldier_path)
+            elif custom_dean_path.exists():
                 target_model = str(custom_dean_path)
             elif custom_joe_path.exists():
                 target_model = str(custom_joe_path)
@@ -70,10 +73,10 @@ class WakeWordEngine:
             from openwakeword.model import Model
             if target_model and os.path.exists(target_model):
                 print(f"[wake_word] Loading custom openWakeWord model: {target_model}")
-                self._model = Model(wakeword_models=[target_model], inference_framework="onnx")
+                self._model = Model(wakeword_model_paths=[target_model])
             else:
-                print("[wake_word] Custom wake word ONNX model not found; using openWakeWord base ONNX engine for 'Hey Dean'.")
-                self._model = Model(inference_framework="onnx")
+                print("[wake_word] Custom wake word ONNX model not found; using openWakeWord base ONNX engine for 'Hey Soldier'.")
+                self._model = Model()
         except Exception as e:
             print(f"[wake_word] Notice: openwakeword module not loaded ({e}).")
 
@@ -136,7 +139,7 @@ class WakeWordEngine:
         sum_squares = sum(s * s for s in shorts)
         return math.sqrt(sum_squares / count)
 
-    def trigger_wake_event(self, trigger_phrase: str = "Hey Dean"):
+    def trigger_wake_event(self, trigger_phrase: str = "Hey Soldier"):
         """Programmatically trigger a wake detection event (e.g. from STT regex fallback)."""
         now = time.time()
         self.is_window_active = True
@@ -169,7 +172,7 @@ class WakeWordEngine:
             return
 
         import numpy as np
-        print("[wake_word] Continuous openWakeWord background listener active ('Hey Dean').")
+        print("[wake_word] Continuous openWakeWord background listener active ('Hey Soldier').")
 
         while self.running:
             try:
@@ -184,8 +187,8 @@ class WakeWordEngine:
                     prediction = self._model.predict(audio_int16)
                     for model_name, score in prediction.items():
                         if score >= self.threshold:
-                            print(f"[wake_word] 'Hey Dean' detected via openWakeWord! Score: {score:.3f}")
-                            self.trigger_wake_event("Hey Dean")
+                            print(f"[wake_word] 'Hey Soldier' detected via openWakeWord! Score: {score:.3f}")
+                            self.trigger_wake_event("Hey Soldier")
                             # Reset model prediction buffer to prevent double triggers
                             self._model.reset()
                             break

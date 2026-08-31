@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/joegui.png" alt="Joe" width="100%"/>
+  <img src="assets/soldier-banner.png" alt="Soldier Boy" width="100%"/>
 </p>
 
-<h1 align="center">JOE : OSINT INVESTIGATOR & ASSISTANT</h1>
+<h1 align="center">SOLDIER BOY : AUTONOMOUS PERSONAL & OSINT ASSISTANT</h1>
 <p align="center">
-  <b>Autonomous OSINT Investigator & AI Assistant by Project Hellhound</b>
+  <b>Autonomous Personal AI Assistant by Project Hellhound</b>
   <br>
-  <i>Target enumeration, identity pivoting, multi-source username scans, email intelligence, text-to-text monologue synthesis, interactive 2D/3D correlation topology graphs, microphone speech-to-text input, collapsible card UI, and zero-leak privacy — from initial handle to evidence report.</i>
+  <i>Your all-in-one local personal assistant & OSINT intelligence powerhouse. From daily workflow automation, live web search, system task execution, and offline voice interaction to target enumeration, identity pivoting, multi-source username scans, email intelligence, and 2D/3D topology graphs.</i>
 </p>
 
 <p align="center">
@@ -14,18 +14,18 @@
   <a href="#installation--setup">Installation & Setup</a> ·
   <a href="#ai-model-routing">AI Routing</a> ·
   <a href="#commands">Commands</a> ·
-  <a href="#the-osint-arsenal">Arsenal</a> ·
-  <a href="#what-it-finds">What It Finds</a> ·
+  <a href="#capabilities--arsenal">Capabilities</a> ·
+  <a href="#wake-word--voice">Voice & Wake Word</a> ·
   <a href="#desktop-gui-app">Desktop GUI</a> ·
   <a href="#license">License</a>
 </p>
 
 <p align="center">
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-blue?style=flat-square&logo=python&logoColor=white" alt="Python Version"/></a>
-  <a href="https://github.com/project-hellhound-org/JOE-GOLDBERG/releases"><img src="https://img.shields.io/badge/Release-v2.0.0-red?style=flat-square" alt="Release Version"/></a>
+  <a href="https://github.com/project-hellhound-org/SOLDIER-BOY/releases"><img src="https://img.shields.io/badge/Release-v2.0.0-red?style=flat-square" alt="Release Version"/></a>
   <img src="https://img.shields.io/badge/AI--Powered-Ollama%20%7C%20NVIDIA%20NIM%20%7C%20Gemini-red?style=flat-square" alt="AI Support"/>
-  <img src="https://img.shields.io/badge/Input-Speech--to--Text%20%7C%20Mic-orange?style=flat-square" alt="User Speech Input"/>
-  <img src="https://img.shields.io/badge/Recon-Sherlock%20%7C%20Maigret%20%7C%20Holehe%20%7C%20DNS%20%7C%20Wayback%20%7C%20EXIF-red?style=flat-square" alt="Recon Toolchain"/>
+  <img src="https://img.shields.io/badge/Wake%20Word-Hey%20Soldier%20(openWakeWord)-orange?style=flat-square" alt="Wake Word"/>
+  <img src="https://img.shields.io/badge/Voice-Chatterbox%20Local%20%7C%20Cartesia-brightgreen?style=flat-square" alt="Voice Synthesis"/>
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey?style=flat-square" alt="Platform"/>
   <img src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square" alt="License"/>
 </p>
@@ -33,107 +33,105 @@
 ---
 
 > [!NOTE]
-> ### 👁️ Persona & Privacy Notice
-> **Joe** operates as an autonomous OSINT investigator and assistant. He gathers open-source intelligence, connects identity webs, and presents findings in his signature **dry, analytical narration**. All requests run locally or through encrypted API bridges with zero data leaving your machine without explicit permission.
+> ### 🛡️ Persona & Privacy Notice
+> **Soldier Boy** operates as your direct, autonomous personal assistant and security investigator. He manages daily queries, web research, system automation, and open-source intelligence gathering with an **unfiltered, commanding, and pragmatic tone**. All operations run locally or through encrypted API bridges with zero data leaving your machine without explicit permission.
 
 ---
 
 ## What Is This?
 
-**Joe** is the autonomous OSINT investigation and personal assistant framework developed by **Project Hellhound**. Built for security researchers, penetration testers, bug bounty hunters, and CTF practitioners, Joe autonomously maps digital footprints, verifies identity handles, extracts email profiles, pulls domain infrastructure, captures EXIF geolocation metadata, visualizes entity networks, and synthesizes analytical observations in real time.
+**Soldier Boy** is the next-generation autonomous personal AI assistant and OSINT intelligence framework developed by **Project Hellhound**. Transitioned from a pure reconnaissance tool into an **all-in-one personal assistant**, Soldier Boy handles everything—from everyday task automation, live web dorking, and system query resolution to deep target investigations, username cross-referencing, email metadata parsing, and network topology graphing.
 
-It features **persistent target memory and an automated case blackboard**—discovered handles, emails, domain DNS records, IP locations, Wayback snapshots, profile screenshots, and notes are automatically retained in isolated per-target workspaces (`~/.joe/cases/<target>/`) so investigations seamlessly resume across sessions.
+It features **persistent memory and an automated case blackboard**—all personal tasks, research logs, discovered handles, email profiles, DNS records, IP locations, Wayback snapshots, and evidence notes are retained in isolated workspaces (`~/.soldierboy/cases/<target>/`) so your assistant workflows seamlessly resume across sessions.
 
-Works across three flexible interfaces:
-- **Interactive Terminal**: An interactive terminal environment with real-time monologue streaming, live progress feedback, and inline command execution (`joe --cli`).
-- **Headless CLI Runner**: Direct one-line command execution for automated scripts (`joe investigate <target>`).
-- **Desktop GUI Application**: A dedicated pywebview/fastapi desktop application featuring collapsible card modules, transparent eye API toggles, 2D/3D radial topology graphs, and microphone speech-to-text input with "Hey Joe" wake word detection (`joe`).
+Operate across three flexible interfaces:
+- **Desktop GUI Application**: A dedicated PyWebView/FastAPI desktop interface featuring collapsible card modules, transparent eye API key toggles, 2D/3D radial topology graphs, and hands-free microphone input with trained `"Hey Soldier"` wake word detection (`soldierboy`).
+- **Interactive Terminal**: An interactive terminal environment with real-time monologue streaming, live progress feedback, and inline command execution (`soldierboy --cli`).
+- **Headless CLI Runner**: Direct one-line command execution for automated scripts and headless task triggers (`soldierboy investigate <target>`).
 
 ---
 
 ## How It Works
 
 ```
-You ──> joe investigate <target> ──> Input Parser ──> Scope & Entity Resolver
-                                     │                     │
-                                     ▼                     ▼
-                           Active OSINT Modules     Reconnaissance Toolchain
-                           ├─ Sherlock & Maigret   (Sherlock, Maigret, Holehe)
-                           ├─ Holehe & Gravatar    (WHOIS, DNS, Wayback, EXIF)
-                           ├─ GitHub & Mentions    (BreachDirectory, AbuseIPDB)
-                           └─ GeoIP & Wayback      
-                                     │
-                                     ▼ (Populates Non-Prunable Case Blackboard)
-                           Narrator Engine <── NLP Stage-Direction Filter
-                                     │            (Strict Text-to-Text / Ollama / NIM)
-                                     ▼
-                           /export (Submission-Ready HTML Case Report)
+You ──> soldierboy ("Hey Soldier...") ──> Intent & Task Parser ──> Executive Assistant Core
+                                                 │                           │
+                                                 ▼                           ▼
+                                      Personal Workflow Engine    OSINT & Recon Toolchain
+                                      ├─ Live Web Research        ├─ Sherlock & Maigret
+                                      ├─ System Automation        ├─ Holehe & Gravatar
+                                      ├─ Local Voice Synthesis    ├─ GitHub & Breach Check
+                                      └─ Case Memory Blackboard   └─ EXIF, WHOIS & DNS
+                                                 │
+                                                 ▼ (Populates Persistent Blackboard)
+                                      Soldier Boy Voice Engine <── Grounding Guard
+                                                 │                 (Chatterbox / Cartesia)
+                                                 ▼
+                                      /export (Submission-Ready HTML Case & Task Reports)
 ```
 
+- **All-in-One Personal Capabilities**: Ask general questions, perform live web extractions, summarize complex documents, run system audits, or launch target investigations.
 - **Collapsible Card System**: Settings, ledgers, and maps render in responsive card components with collapsible header toggles (`▼` / `▶`) and real-time state badges.
 - **Eye Toggle Security**: API key fields (Gemini, NVIDIA NIM) feature transparent eye buttons (`👁`) for password visibility control.
-- **User Speech-to-Text Mic Input**: Hands-free voice typing via microphone icon (`🎤`) with automatic "Hey Joe..." wake phrase detection.
-- **Guaranteed Graph Topology**: 2D SVG radial network fallback + 3D WebGL graph populating target connections alongside active OSINT skill nodes.
+- **Hands-Free Speech Input**: Voice typing via microphone (`🎤`) paired with a custom-trained `hey_soldier.onnx` openWakeWord engine.
+- **Interactive Topology Graphs**: 2D SVG radial network fallback + 3D WebGL graph populating entity connections alongside active skill nodes.
 
 ---
 
 ## AI Model Routing & Recommended Providers
 
-Autonomous intelligence gathering and multi-pass identity pivoting utilize fast SLMs and frontier LLMs for intent parsing and monologue synthesis.
+Autonomous intelligence gathering and personal assistant reasoning utilize fast SLMs and frontier LLMs for intent parsing and monologue synthesis.
 
 > [!TIP]
 > ### 💡 Recommended AI Engines
 > - **NVIDIA NIM (Strongly Recommended for Cloud)**: Use **NVIDIA NIM** (`meta/llama-3.3-70b-instruct` or `nvidia/nemotron-3-super-120b-a12b`). It is **instant, ultra-fast**, and provides generous free API credits for frontier-class 70B–120B reasoning at zero cost.
-> - **Local Qwen (Strongly Recommended for Local & Offline)**: Run **Qwen** (`qwen2.5:3b` or `qwen2.5:7b` / `qwen2.5:14b`) locally via Ollama. Delivers exceptional local reasoning, structured output adherence, and 100% privacy with zero data leaving your machine.
+> - **Local Qwen (Strongly Recommended for Offline)**: Run **Qwen** (`qwen2.5:7b` or `qwen2.5:14b`) locally via Ollama. Delivers exceptional local reasoning, structured output adherence, and 100% offline privacy with zero data leaving your machine.
 
 ---
 
-## 🎙️ Voice Intelligence & Cartesia API Setup
+## 🎙️ Voice Intelligence & Wake Word Engine
 
-Joe features real-time, low-latency conversational speech powered by **Cartesia Sonic 3.5 TTS** and dynamic **Voice Activity Detection (VAD)**.
+Soldier Boy features real-time, low-latency conversational speech powered by **Chatterbox TTS** (100% offline zero-shot voice clone) and **Cartesia Sonic 3.5**.
+
+### 🎧 Trained "Hey Soldier" Wake Word Model
+- **Genuine openWakeWord Engine**: Uses a production-grade `hey_soldier.onnx` neural classifier trained on real synthesized speech datasets and openWakeWord feature embeddings.
+- **Zero-False-Accept Discrimination**: Validated on real audio clips to achieve a 1.0 peak score on spoken `"Hey Soldier"` while maintaining 0.00 false accepts on non-target background speech.
+- **Jarvis Search Protocol**: Speak `"Hey Soldier, search Google for [query]"` to activate live web extractions and trigger the holographic search overlay.
+- **Muting Guard**: Ambient speech listening is automatically muted while Soldier Boy is speaking to prevent self-triggering audio loops.
 
 > [!IMPORTANT]
-> ### 🔊 Cartesia TTS Configuration
-> To enable Joe's voice output, obtain a free API key from [Cartesia.ai](https://cartesia.ai) and add it to your `config.yaml` or through the desktop GUI **Settings Card**:
+> ### 🔊 Cartesia Cloud Voice Setup (Optional Fallback)
+> To use Cartesia cloud voice fallback alongside Chatterbox local synthesis, add your key in `config.yaml` or through the desktop GUI **Settings Card**:
 > ```yaml
 > voice:
 >   enabled: true
 >   engine: "cartesia"
 >   cartesia_key: "YOUR_CARTESIA_API_KEY"
->   voice_id: "a0e99841-438c-4a64-b679-ae501e7d6091" # Custom Joe Goldberg Voice Model
+>   voice_id: "a0e99841-438c-4a64-b679-ae501e7d6091"
 >   model_id: "sonic-3.5"
 >   speed: "fast"
 > ```
-
-### 🎧 Hands-Free Voice Listener & Wake Word
-- **Wake Word Detection**: Speak `"Hey Joe..."` or `"Joe..."` to activate ambient listening.
-- **Jarvis Search Protocol**: Speak `"Hey Joe, search Google for [query]"` to activate live DuckDuckGo web snippet extractions and trigger the holographic **Jarvis Search Overlay**.
-- **Voice Muting Guard**: Ambient speech listening is automatically muted while Joe is actively speaking to prevent self-triggering and audio collisions.
-- **Investigate Dialog Overlay**: Say `"Hey Joe, investigate..."` to pop up the interactive username entry dialog.
 
 ---
 
 ## Installation & Setup
 
-Everything you need to install, configure AI backends, and run Joe in one unified workflow.
-
 ### 1. Requirements & Prerequisites
 - **Operating System**: Linux (Ubuntu, Debian, Kali, Arch), macOS.
 - **Python**: Version 3.10 or higher.
-- **Git & Curl**: Required for installation and updates.
-- **Ollama**: (Installed automatically for local SLM fallback).
+- **Dependencies**: `ffmpeg`, `espeak-ng` (optional for local voice dataset generation).
 
 ### 2. Fast Deploy
 
 #### Option A: One-Line Remote Installer
 ```bash
-curl -fsSL https://raw.githubusercontent.com/project-hellhound-org/JOE-GOLDBERG/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/project-hellhound-org/SOLDIER-BOY/main/install.sh | bash
 ```
 
 #### Option B: Standard Git Clone
 ```bash
-git clone https://github.com/project-hellhound-org/JOE-GOLDBERG.git
-cd JOE-GOLDBERG
+git clone https://github.com/project-hellhound-org/SOLDIER-BOY.git
+cd SOLDIER-BOY
 
 # Initialize config from template
 cp config.yaml.example config.yaml
@@ -149,11 +147,11 @@ source ~/.bashrc   # or source ~/.zshrc
 ```
 
 The automated installer will:
-- Set up an isolated Python environment.
+- Set up an isolated Python environment (`soldier-env`).
 - Initialize `config.yaml` from template configuration.
-- Install OSINT tools (Sherlock, Maigret, Holehe, etc.).
-- Mount the desktop application dependencies (`pywebview`).
-- Create global `joe` command integration.
+- Install OSINT and personal assistant toolchains (`sherlock`, `maigret`, `holehe`, `chatterbox-tts`, `openwakeword`).
+- Mount desktop application dependencies (`pywebview`).
+- Register global `soldierboy` command integration.
 
 ---
 
@@ -162,21 +160,21 @@ The automated installer will:
 ### 1. Native Desktop GUI App
 Launch the desktop application with collapsible cards and interactive 2D/3D topology graph:
 ```bash
-joe
+soldierboy
 ```
 
 ### 2. Interactive Terminal
 Launch the interactive CLI interface:
 ```bash
-joe --cli
+soldierboy --cli
 ```
 
 ### 3. Headless Direct Command
-Run a direct target investigation:
+Run a direct target investigation or assistant command:
 ```bash
-joe investigate target@email.com
-joe investigate johndoe_87
-joe investigate target.com
+soldierboy investigate target@email.com
+soldierboy investigate johndoe_87
+soldierboy investigate target.com
 ```
 
 ---
@@ -190,73 +188,43 @@ All actions can be triggered via slash commands or natural language:
 | Command | Aliases | Description | Usage |
 | :--- | :--- | :--- | :--- |
 | `investigate` | `/investigate`, `stalk` | Run multi-pass OSINT sweep against a target | `investigate <target>` |
-| `resume` | `/resume`, `load` | Open saved investigation case file | `resume <target>` |
+| `resume` | `/resume`, `load` | Open saved investigation case or task log | `resume <target>` |
 | `pivot` | `/pivot`, `focus` | Pivot investigation on a discovered handle or IP | `pivot <entity>` |
-| `cases` | `/cases`, `list` | List all archived investigation cases | `cases` |
-| `notes` | `/notes`, `add` | Append investigative note to active case | `notes <text>` |
-| `export` | `/export`, `report` | Generate offline HTML investigation report | `export` |
+| `cases` | `/cases`, `list` | List all archived cases and saved sessions | `cases` |
+| `notes` | `/notes`, `add` | Append investigative note or task reminder | `notes <text>` |
+| `export` | `/export`, `report` | Generate offline HTML investigation & task report | `export` |
 | `help` | `/?`, `info` | Display command guide and available modules | `help` |
 | `exit` | `quit` | Exit workspace | `exit` |
 
 ---
 
-## The OSINT Arsenal
+## Capabilities & Arsenal
 
-Joe coordinates specialized OSINT modules into a unified execution pipeline:
+Soldier Boy combines personal assistant capabilities with specialized OSINT tools:
 
-| Module | Category | Engine | Description |
-| :--- | :--- | :--- | :--- |
-| `sherlock` | Username Enumeration | Sherlock Engine | Multi-source account discovery across 300+ platforms. |
-| `maigret` | Deep Identity | Maigret Engine | Advanced profile harvesting and metadata extraction. |
-| `holehe` | Email Intelligence | Holehe Engine | Checks registration status across 120+ web services. |
-| `gravatar` | Profile & Avatar | Gravatar API | Public profile image, display name, and bio extraction. |
-| `github_recon` | Code Intel | GitHub API / Scraper | Repository search, commit history, and README profile parsing. |
-| `dns_whois` | Domain Recon | WHOIS & DNS Resolver | Pulls A, AAAA, MX, TXT, CNAME records, and WHOIS registration. |
-| `wayback` | History Snapshots | Wayback Machine API | Discovers archived URLs and historical domain snapshots. |
-| `exif_geo` | Image Metadata | ExifTool Engine | Extracts GPS coordinates and camera metadata from image files. |
-| `breach_directory` | Leak Inspection | BreachDirectory API | Checks exposed data breaches and compromised field types. |
-| `abuse_ipdb` | IP Reputation | AbuseIPDB Scraper | Evaluates IP threat score, ISP, and proxy/VPN status. |
-| `dork_fallback` | Search Dorking | Google Dork Engine | Automated search dorking fallback for untracked targets. |
-| `grounding_auditor` | Anti-Hallucination | Verification Engine | Validates narration statements against verified entity data. |
-| `2d_3d_graph` | Network Topology | D3 / Three.js Engine | Guaranteed 2D SVG radial fallback + 3D WebGL relationship graph. |
-| `eye_toggle_security`| UI Security | HTML5 / JS Gate | Transparent eye buttons (`👁`) for secure API key visibility control. |
-| `collapsible_cards` | UI Architecture | Responsive CSS Grid | Collapsible card modules with header badges and chevron toggles (`▼`). |
-
----
-
-## What It Finds
-
-### 1. Digital Footprint & Identity Mapping
-- **Usernames**: 300+ platform scans (`sherlock`, `maigret`), identity pivoting across handles, and profile picture extraction.
-- **Email Intelligence**: Account registration status (`holehe`), Gravatar profiles, and email-to-username linkage.
-- **Code & Social Mentions**: GitHub commits, repositories, README profiles, and paste site mentions (`psbdmp`).
-
-### 2. Infrastructure & Historical Assets
-- **Domain & IP Footprints**: DNS records, WHOIS data, IP Geolocation, proxy/VPN detection, and AbuseIPDB scoring.
-- **Archived History**: Historical Wayback Machine snapshots and endpoint discovery.
-- **Media Intel**: EXIF metadata and embedded GPS coordinates.
-
----
-
-## Desktop GUI App
-
-Joe features a native desktop interface built with **pywebview** and **FastAPI**:
-
-```bash
-joe
-```
-
-- **Collapsible Cards System**: Declutter your workspace by expanding or collapsing Settings, Evidence Ledgers, and Location Maps (`▼` / `▶`).
-- **Transparent Eye API Key Toggles**: Securely view or hide API keys (Gemini, NVIDIA NIM) with dynamic input masking (`👁`).
-- **Guaranteed Topology Graph**: 2D SVG radial network fallback + WebGL 3D relationship graph populated with active OSINT skill nodes.
-- **Speech-to-Text Mic Input**: Hands-free voice input button (`🎤`) with automatic "Hey Joe..." wake word recognition for instant hands-free investigation.
+| Module | Category | Description |
+| :--- | :--- | :--- |
+| `personal_assistant` | Workflow Core | General Q&A, system commands, document analysis, and daily task management. |
+| `wake_word_engine` | Voice Trigger | Production openWakeWord `hey_soldier.onnx` classifier for background activation. |
+| `local_voice_clone` | Audio Engine | Zero-shot local voice synthesis powered by Chatterbox TTS. |
+| `sherlock` | Username Scan | Multi-source account discovery across 300+ platforms. |
+| `maigret` | Deep Identity | Advanced profile harvesting and metadata extraction. |
+| `holehe` | Email Intelligence | Checks registration status across 120+ web services. |
+| `gravatar` | Profile & Avatar | Public profile image, display name, and bio extraction. |
+| `github_recon` | Code Intel | Repository search, commit history, and README profile parsing. |
+| `dns_whois` | Domain Recon | Pulls A, AAAA, MX, TXT, CNAME records, and WHOIS registration. |
+| `wayback` | History Snapshots | Discovers archived URLs and historical domain snapshots. |
+| `exif_geo` | Image Metadata | Extracts GPS coordinates and camera metadata from image files. |
+| `breach_directory` | Leak Inspection | Checks exposed data breaches and compromised field types. |
+| `abuse_ipdb` | IP Reputation | Evaluates IP threat score, ISP, and proxy/VPN status. |
+| `2d_3d_graph` | Network Topology | Guaranteed 2D SVG radial fallback + 3D WebGL relationship graph. |
 
 ---
 
 ## Scope Policy & Legal Compliance
 
-Joe is built strictly for **authorized penetration testing, bug bounty programs, CTF challenges, and legitimate security research**.
-- Always obtain explicit authorization before investigating any target.
+Soldier Boy is built for **personal productivity, authorized penetration testing, bug bounty programs, CTF challenges, and legitimate security research**.
+- Always obtain explicit authorization before investigating external targets.
 - Users are solely responsible for ensuring compliance with all applicable local and international laws.
 
 ---
@@ -277,5 +245,5 @@ This project is licensed under the [GNU General Public License v3 (GPLv3)](LICEN
 
 <div align="center">
   <br/>
-  <sub>Built with obsession. Like Joe would.</sub>
+  <sub>Built with power and precision. The Soldier Boy way.</sub>
 </div>

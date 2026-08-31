@@ -14,8 +14,8 @@ import httpx
 from dataclasses import dataclass, field
 from typing import Dict
 
-# Reuse Ollama constants from joe_voice — don't duplicate the HTTP client
-from narrative.joe_voice import OLLAMA_URL, SLM_MODEL
+# Reuse Ollama constants from soldierboy_voice — don't duplicate the HTTP client
+from narrative.soldierboy_voice import OLLAMA_URL, SLM_MODEL
 
 
 @dataclass

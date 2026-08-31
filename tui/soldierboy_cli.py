@@ -11,7 +11,7 @@ from rich.console import Console
 from core.orchestrator import Orchestrator
 from core.target_model import Target, Entity
 from core.case_brief import CaseBrief, parse_brief_with_slm, plan_investigation
-from narrative.joe_voice import JoeVoice
+from narrative.soldierboy_voice import SoldierBoyVoice
 from narrative.session_memory import SessionMemory
 from memory.lessons_store import LessonsStore
 
@@ -267,11 +267,11 @@ def _parse_fp_command(text: str):
     return None, None
 
 
-class JoeCLI:
+class SoldierBoyCLI:
     def __init__(self, initial_target: str = None):
         self.initial_target = initial_target
         self.current_target: Target = None
-        self.voice = JoeVoice()
+        self.voice = SoldierBoyVoice()
         self.memory = SessionMemory()
         self.lessons_store = LessonsStore()
         self.last_entity: Entity = None  # Track last finding for fp command
@@ -444,4 +444,4 @@ class JoeCLI:
 
 
 def run(initial_target: str = None):
-    JoeCLI(initial_target=initial_target).run()
+    SoldierBoyCLI(initial_target=initial_target).run()

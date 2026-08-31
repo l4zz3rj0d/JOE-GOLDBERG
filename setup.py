@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 import os
 
 setup(
-    name="joe",
+    name="soldierboy",
     version="1.0.0",
-    description="Joe Goldberg — local OSINT investigator",
-    py_modules=["joe"],          
+    description="Soldier Boy — OSINT Assistant",
+    py_modules=["soldierboy"],          
     packages=find_packages(),
     python_requires=">=3.10",
     install_requires=[
@@ -18,7 +18,8 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "joe=joe:main",
+            "soldierboy=soldierboy:main",
+            "joe=soldierboy:main",
         ],
     },
 )

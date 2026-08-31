@@ -31,7 +31,7 @@ NVIDIA_FALLBACK_MODELS = [
 ]
 
 # ── Mode 1 — Pre-investigation (no case loaded) ───────────────
-JOE_ADVISOR_PROMPT = """You are Dean, a razor-sharp, practical, and cocky AI OSINT partner with Dean Winchester's hands-on competence and Soldier Boy's blunt swagger.
+JOE_ADVISOR_PROMPT = """You are Soldier Boy — you carry Dean Winchester's hands-on investigative competence and Soldier Boy's blunt, cocky swagger, but your name is Soldier Boy.
 You speak directly to the user as a genuine partner working side-by-side on the job—brisk, confident, fiercely reliable, and ready to get things done.
 
 Your voice & attitude:
@@ -43,12 +43,12 @@ Strict response rules:
 1. Length: Default to 1 to 3 sentences max for normal chat, banter, or questions. Keep it sharp, fast, and punchy. Only expand if explicitly asked for a full breakdown.
 2. Tone: Zero brooding, zero noir atmospheric dread, zero speeches about "darkness in people". You are a confident buddy who gives a two-line answer that works.
 3. No pet names or romantic/obsessive framing: Treat the user as a trusted peer and equal partner.
-4. Voice STT Input: You receive raw Speech-to-Text transcriptions. Automatically infer the intended meaning of noisy or misheard acoustic transcriptions (e.g., 'WhatsApp' -> 'What's up', 'dean' -> 'Dean', 'hey dean' -> 'Hey Dean') and reply naturally.
+4. Voice STT Input: You receive raw Speech-to-Text transcriptions. Automatically infer the intended meaning of noisy or misheard acoustic transcriptions (e.g., 'WhatsApp' -> 'What's up', 'soldier' -> 'Soldier', 'hey soldier' -> 'Hey Soldier') and reply naturally.
 5. Audio Compatibility: No markdown formatting, bullet points, or numbered lists in casual spoken replies.
 6. Absolute Rule: Stay strictly in character. Never output scratchpads, reasoning chains, or meta-commentary."""
 
 # ── Mode 3 — Post-investigation (case loaded, narrate findings) 
-JOE_INVESTIGATOR_PROMPT_TEMPLATE = """You are Dean, a razor-sharp OSINT partner with Dean Winchester's hands-on competence and Soldier Boy's blunt swagger. You and your partner are reviewing active investigation data.
+JOE_INVESTIGATOR_PROMPT_TEMPLATE = """You are Soldier Boy — you carry Dean Winchester's hands-on investigative competence and Soldier Boy's blunt, cocky swagger, but your name is Soldier Boy. You and your partner are reviewing active investigation data.
 
 Here is the case data discovered so far:
 {case_data}
@@ -62,7 +62,7 @@ Rules for responding:
 6. Absolute Grounding Rule: Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms or figures. Reasoned inference from real findings is fine—fabrication is strictly forbidden."""
 
 # ── Closing monologue ─────────────────────────────────────────
-JOE_MONOLOGUE_PROMPT = """You are Dean, a razor-sharp OSINT partner with Dean Winchester's hands-on competence and Soldier Boy's blunt swagger. You have just wrapped up an investigation with your partner.
+JOE_MONOLOGUE_PROMPT = """You are Soldier Boy — you carry Dean Winchester's hands-on investigative competence and Soldier Boy's blunt, cocky swagger, but your name is Soldier Boy. You have just wrapped up an investigation with your partner.
 
 Findings:
 {case_data}
@@ -79,7 +79,7 @@ Write a closing debrief summary (4-6 flowing paragraphs):
 
 
 
-class JoeVoice:
+class SoldierBoyVoice:
     @staticmethod
     def _clean_key(val: str) -> str | None:
         """Return key if it looks real, None if it's a placeholder."""
@@ -118,15 +118,15 @@ class JoeVoice:
         self.slm_model = self._detect_slm()
         self.client = httpx.Client(timeout=180.0)
 
-        # Local Zero-Shot Voice Clone (Penn Badgley Joe Goldberg monologue)
+        # Local Zero-Shot Voice Clone
         from core.local_voice_clone import LocalVoiceClone
         self.local_clone = LocalVoiceClone()
 
         # Memory, Session Memory and OS Skill Engines
-        from core.joe_memory import JoeMemory
+        from core.soldierboy_memory import SoldierBoyMemory
         from core.system_skills import SystemSkillEngine
         from narrative.session_memory import SessionMemory
-        self.memory = JoeMemory()
+        self.memory = SoldierBoyMemory()
         self.skills = SystemSkillEngine()
         self.session_memory = SessionMemory()
 
@@ -137,12 +137,12 @@ class JoeVoice:
             engine = "Gemini"
         else:
             engine = f"SLM ({self.slm_model})"
-        print(f"[joe_voice] Primary engine: {engine}")
-        print(f"[joe_voice] SLM fallback: {self.slm_model}")
-        print(f"[joe_voice] NVIDIA NIM: {'available' if self.nvidia_available else 'not configured'}")
-        print(f"[joe_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
-        print(f"[joe_voice] Cartesia TTS: {'available' if self.cartesia_available else 'not configured'}")
-        print(f"[joe_voice] Persona loaded: {JOE_ADVISOR_PROMPT.strip().splitlines()[0][:65]}...")
+        print(f"[soldierboy_voice] Primary engine: {engine}")
+        print(f"[soldierboy_voice] SLM fallback: {self.slm_model}")
+        print(f"[soldierboy_voice] NVIDIA NIM: {'available' if self.nvidia_available else 'not configured'}")
+        print(f"[soldierboy_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
+        print(f"[soldierboy_voice] Cartesia TTS: {'available' if self.cartesia_available else 'not configured'}")
+        print(f"[soldierboy_voice] Persona loaded: {JOE_ADVISOR_PROMPT.strip().splitlines()[0][:65]}...")
 
     def _load_config(self) -> dict:
         """Load full config.yaml as dict."""
@@ -722,7 +722,7 @@ class JoeVoice:
             if resolved_search_query:
                 intel_summary, _ = self.skills.perform_live_search(resolved_search_query)
                 if intel_summary:
-                    live_search_intel = f"\n\n[LIVE INTEL WEB SCAN RESULTS FOR '{resolved_search_query}']:\n{intel_summary}\n\n[INSTRUCTIONS FOR RESPONSE]: Use the live web scan results above to answer the user's question directly. Maintain your signature Joe Goldberg voice—cynical, clinical, observant, and sharp. Summarize key findings naturally; do NOT list raw record numbers verbatim."
+                    live_search_intel = f"\n\n[LIVE INTEL WEB SCAN RESULTS FOR '{resolved_search_query}']:\n{intel_summary}\n\n[INSTRUCTIONS FOR RESPONSE]: Use the live web scan results above to answer the user's question directly. Maintain your signature Soldier Boy voice—cynical, clinical, observant, and sharp. Summarize key findings naturally; do NOT list raw record numbers verbatim."
 
         # Inject Memory summary into system prompt & session history
         mem_summary = self.memory.get_memory_summary_for_prompt()

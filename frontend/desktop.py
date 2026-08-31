@@ -37,7 +37,7 @@ from core.orchestrator import Orchestrator
 from core.target_model import Target
 from core.case_brief import CaseBrief, parse_brief_with_slm
 from core.wake_word import WakeWordEngine
-from narrative.joe_voice import JoeVoice
+from narrative.soldierboy_voice import SoldierBoyVoice
 from narrative.session_memory import SessionMemory
 from memory.lessons_store import LessonsStore
 
@@ -52,12 +52,12 @@ _CONTEXT_SIGNALS = re.compile(
 )
 
 
-class JoeAPI:
+class SoldierBoyAPI:
     def __init__(self):
         self._window = None
         self._target: Target = None
         self._memory = SessionMemory()
-        self._voice = JoeVoice()
+        self._voice = SoldierBoyVoice()
         self._lessons_store = LessonsStore()
         self._orch = None
         self._stalk_loop = None
@@ -234,7 +234,7 @@ class JoeAPI:
             with open(CONFIG_PATH, "w") as f:
                 yaml.dump(existing, f, default_flow_style=False, sort_keys=False)
 
-            self._voice = JoeVoice()
+            self._voice = SoldierBoyVoice()
 
             engine = "SLM"
             if self._voice.nvidia_available:
@@ -985,7 +985,7 @@ class JoeAPI:
 
             if text:
                 print(f"[voice listener] Recognized text: '{text}'")
-                pattern = r'^(?:(?:hey|hi|hai|yo|hello|joke)\s+)?(?:joe|jo|joke|joh|zho|joey|jarvis|buddy|bro|dude|chow|choke|show)\b\s*,?\s*|\b(?:joe|jo|joke|joh|zho|joey|jarvis|buddy|bro|dude|chow|choke|show)\b\s*,?\s*'
+                pattern = r'^(?:(?:hey|hi|hai|yo|hello)\s+)?(?:soldier|soldja|soldierboy|solger|solja)\b\s*,?\s*|\b(?:soldier|soldja|soldierboy|solger|solja)\b\s*,?\s*'
                 match = re.search(pattern, text, re.IGNORECASE)
                 now = time.time()
 
@@ -994,14 +994,14 @@ class JoeAPI:
                     print(f"[voice listener] Wake word match! Raw: '{text}', Clean command: '{clean}'")
                     self._emit("joe_wake_word_detected", {"raw": text, "clean": clean})
                     if clean:
-                        print(f"[voice listener] Sending voice command to Joe: '{clean}'")
+                        print(f"[voice listener] Sending voice command to Soldier Boy: '{clean}'")
                         self._emit("joe_voice_detected", {"text": clean, "raw": text})
                         self._wake_window_expires = now + 30.0
                     else:
                         print(f"[voice listener] Wake word only spoken ('{text}'). Opening 30s follow-up window...")
                         self._wake_window_expires = now + 30.0
                 elif now < getattr(self, '_wake_window_expires', 0.0):
-                    print(f"[voice listener] Active wake window! Sending follow-up command to Joe: '{text}'")
+                    print(f"[voice listener] Active wake window! Sending follow-up command to Soldier Boy: '{text}'")
                     self._emit("joe_voice_detected", {"text": text, "raw": text})
                     self._wake_window_expires = now + 30.0
                 else:
@@ -1019,7 +1019,7 @@ class JoeAPI:
             self._emit("joe_speech_ended", {})
         except Exception as e:
             import traceback
-            print(f"[voice listener] Processing error: {e}")
+            print(f"[desktop] Processing error: {e}")
             traceback.print_exc()
             self._emit("joe_speech_ended", {})
         finally:
@@ -1038,22 +1038,19 @@ class JoeAPI:
                 print(f"[desktop] JS evaluate error for {event}: {e}")
 
 
-class JoeDesktop:
+class SoldierBoyDesktop:
     def launch(self):
         import shutil
-        src_icon = ROOT.parent / "assets" / "joe-icon.png"
-        dst_icon = ROOT / "joe-icon.png"
-        if src_icon.exists() and not dst_icon.exists():
+
+        # Copy icons and artwork assets to frontend execution directory
+        src_icon = ROOT.parent / "assets" / "soldierboy-icon.png"
+        dst_icon = ROOT / "soldierboy-icon.png"
+        if src_icon.exists():
             shutil.copy(src_icon, dst_icon)
 
-        src = ROOT.parent / "assets" / "joe.jpeg"
-        dst = ROOT / "joe.jpeg"
-        if src.exists() and not dst.exists():
-            shutil.copy(src, dst)
-
-        src_back = ROOT.parent / "assets" / "joegui.png"
-        dst_back = ROOT / "joegui.png"
-        if src_back.exists() and not dst_back.exists():
+        src_back = ROOT.parent / "assets" / "soldierboygui.png"
+        dst_back = ROOT / "soldierboygui.png"
+        if src_back.exists():
             shutil.copy(src_back, dst_back)
 
         src_geo = ROOT.parent / "assets" / "world_outline.jpg"
@@ -1061,16 +1058,32 @@ class JoeDesktop:
         if src_geo.exists() and not dst_geo.exists():
             shutil.copy(src_geo, dst_geo)
 
-        api = JoeAPI()
-        window = webview.create_window(
-            title="Joe",
-            url=str(HTML_PATH),
-            js_api=api,
-            width=1200,
-            height=780,
-            min_size=(900, 600),
-            background_color="#120e0b",
-        )
+        # Wire GTK desktop app window icon for Linux taskbar/dock/alt-tab
+        if dst_icon.exists():
+            try:
+                import gi
+                gi.require_version("Gtk", "3.0")
+                from gi.repository import Gtk, GdkPixbuf
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(dst_icon))
+                Gtk.Window.set_default_icon(pixbuf)
+                print(f"[desktop] Bound GTK window & taskbar icon: {dst_icon}")
+            except Exception as e:
+                print(f"[desktop] GTK icon notice: {e}")
+
+        api = SoldierBoyAPI()
+        window_kwargs = {
+            "title": "Soldier Boy",
+            "url": str(HTML_PATH),
+            "js_api": api,
+            "width": 1200,
+            "height": 780,
+            "min_size": (900, 600),
+            "background_color": "#120e0b",
+        }
+        if dst_icon.exists():
+            window_kwargs["icon"] = str(dst_icon)
+
+        window = webview.create_window(**window_kwargs)
 
         api.set_window(window)
         api.start_background_voice_listener()

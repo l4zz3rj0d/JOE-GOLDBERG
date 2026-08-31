@@ -2,11 +2,15 @@ import os
 import json
 import time
 
-MEMORY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "joe_memory.json")
+MEMORY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "soldierboy_memory.json")
+LEGACY_MEMORY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "joe_memory.json")
 
-class JoeMemory:
+class SoldierBoyMemory:
     def __init__(self, filepath=MEMORY_FILE_PATH):
-        self.filepath = filepath
+        if not os.path.exists(filepath) and os.path.exists(LEGACY_MEMORY_FILE_PATH):
+            self.filepath = LEGACY_MEMORY_FILE_PATH
+        else:
+            self.filepath = filepath
         self._ensure_file()
 
     def _ensure_file(self):
@@ -15,7 +19,7 @@ class JoeMemory:
             initial = {
                 "user_speech_patterns": [
                     "User prefers concise, witty, energetic voice responses.",
-                    "STT mishears 'Joe' as 'joke', 'joh', 'zho', 'jarvis', 'chow', 'show'."
+                    "STT mishears 'Dean' or 'Soldier' as 'joke', 'joh', 'zho', 'jarvis', 'chow', 'show'."
                 ],
                 "failures_and_lessons": [
                     "Speech recognition of target usernames is error-prone; trigger target dialog modal when intent is 'investigate' without clean target."
@@ -42,7 +46,7 @@ class JoeMemory:
             with open(self.filepath, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"[JoeMemory] Error loading memory: {e}")
+            print(f"[SoldierBoyMemory] Error loading memory: {e}")
             return {}
 
     def log_speech_pattern(self, note: str):
@@ -95,4 +99,4 @@ class JoeMemory:
             with open(self.filepath, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"[JoeMemory] Error saving memory: {e}")
+            print(f"[SoldierBoyMemory] Error saving memory: {e}")

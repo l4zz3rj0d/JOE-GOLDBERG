@@ -12,12 +12,34 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-REFERENCE_WAV_PATH = Path(__file__).parent.parent / "assets" / "joe_reference.wav"
+DOWNLOADS_DIR = Path.home() / "Downloads"
+DOWNLOADS_REF_WAV = DOWNLOADS_DIR / "soldierboy_reference.wav"
+REFERENCE_WAV_PATH = Path(__file__).parent.parent / "assets" / "soldierboy_reference.wav"
+LEGACY_REFERENCE_WAV_PATH = Path(__file__).parent.parent / "assets" / "joe_reference.wav"
 
 
 class LocalVoiceClone:
     def __init__(self, reference_path: Optional[str] = None):
-        self.reference_path = str(reference_path or REFERENCE_WAV_PATH)
+        downloads_voice = None
+        if DOWNLOADS_REF_WAV.exists():
+            downloads_voice = str(DOWNLOADS_REF_WAV)
+        elif DOWNLOADS_DIR.exists():
+            for ext in ["*.wav", "*.mp3", "*.m4a"]:
+                for f in DOWNLOADS_DIR.glob(ext):
+                    if "soldier" in f.name.lower() or "the boys" in f.name.lower():
+                        downloads_voice = str(f)
+                        break
+                if downloads_voice:
+                    break
+
+        if reference_path:
+            self.reference_path = str(reference_path)
+        elif downloads_voice:
+            self.reference_path = downloads_voice
+        elif REFERENCE_WAV_PATH.exists():
+            self.reference_path = str(REFERENCE_WAV_PATH)
+        else:
+            self.reference_path = str(LEGACY_REFERENCE_WAV_PATH)
         self.available = False
         self.model = None
         self.conds = None

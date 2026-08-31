@@ -18,6 +18,7 @@ env/
 tools/
 .venv/
 joe-env/
+soldier-env/
 
 # Joe case files — don't commit investigations
 cases/
@@ -81,5 +82,6 @@ api_keys*
 # Backup files & temporary local data
 *.zip
 data/
+!data/models/hey_soldier.onnx
 memory/
 scratch/

@@ -35,21 +35,21 @@ def boot_checks():
 
 
 def launch_cli(initial_target: str = None):
-    from tui.joe_cli import run
+    from tui.soldierboy_cli import run
     run(initial_target=initial_target)
 
 
 def launch_desktop():
     try:
         import webview
-        from frontend.desktop import JoeDesktop
-        JoeDesktop().launch()
+        from frontend.desktop import SoldierBoyDesktop
+        SoldierBoyDesktop().launch()
     except ImportError as e:
-        print(f"[joe] Desktop unavailable: {e}")
+        print(f"[soldierboy] Desktop unavailable: {e}")
         print("      Falling back to CLI...\n")
         launch_cli()
     except Exception as e:
-        print(f"[joe] Desktop error: {e}")
+        print(f"[soldierboy] Desktop error: {e}")
         print("      Falling back to CLI...\n")
         launch_cli()
 
@@ -63,8 +63,8 @@ def main():
     elif args and args[0] in ("investigate", "stalk") and len(args) > 1:
         launch_cli(initial_target=args[1])
     elif args and args[0] == "resume" and len(args) > 1:
-        from tui.joe_cli import JoeCLI
-        cli = JoeCLI()
+        from tui.soldierboy_cli import SoldierBoyCLI
+        cli = SoldierBoyCLI()
         cli._resume(args[1])
         cli._loop()
     elif args and args[0] in ("-h", "--help"):

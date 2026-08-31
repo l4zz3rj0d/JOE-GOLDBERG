@@ -4,13 +4,13 @@ import shutil
 import subprocess
 import urllib.parse
 import webbrowser
-from core.joe_memory import JoeMemory
+from core.soldierboy_memory import SoldierBoyMemory
 
 SKILLS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "skills")
 
 class SystemSkillEngine:
     def __init__(self):
-        self.memory = JoeMemory()
+        self.memory = SoldierBoyMemory()
         os.makedirs(SKILLS_DIR, exist_ok=True)
 
     def perform_live_search(self, query: str) -> tuple[str, list[dict]]:
