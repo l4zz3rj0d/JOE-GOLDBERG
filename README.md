@@ -25,7 +25,7 @@
   <a href="https://github.com/project-hellhound-org/SOLDIER-BOY/releases"><img src="https://img.shields.io/badge/Release-v2.0.0-red?style=flat-square" alt="Release Version"/></a>
   <img src="https://img.shields.io/badge/AI--Powered-Ollama%20%7C%20NVIDIA%20NIM%20%7C%20Gemini-red?style=flat-square" alt="AI Support"/>
   <img src="https://img.shields.io/badge/Wake%20Word-Hey%20Soldier%20(openWakeWord)-orange?style=flat-square" alt="Wake Word"/>
-  <img src="https://img.shields.io/badge/Voice-Chatterbox%20Local%20Clone-brightgreen?style=flat-square" alt="Voice Synthesis"/>
+  <img src="https://img.shields.io/badge/Voice-Fish%20Audio%20%7C%20Local%20Clone-brightgreen?style=flat-square" alt="Voice Synthesis"/>
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey?style=flat-square" alt="Platform"/>
   <img src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square" alt="License"/>
 </p>
@@ -65,14 +65,14 @@ You ──> soldierboy ("Hey Soldier...") ──> Intent & Task Parser ──> E
                                                  │
                                                  ▼ (Populates Persistent Blackboard)
                                       Soldier Boy Voice Engine <── Grounding Guard
-                                                 │                 (Chatterbox Zero-Shot)
+                                                 │                 (Fish Audio / Local)
                                                  ▼
                                       /export (Submission-Ready HTML Case & Task Reports)
 ```
 
 - **All-in-One Personal Capabilities**: Ask general questions, perform live web extractions, summarize complex documents, run system audits, or launch target investigations.
 - **Collapsible Card System**: Settings, ledgers, and maps render in responsive card components with collapsible header toggles (`▼` / `▶`) and real-time state badges.
-- **Eye Toggle Security**: API key fields (Gemini, NVIDIA NIM) feature transparent eye buttons (`👁`) for password visibility control.
+- **Eye Toggle Security**: API key fields (Gemini, NVIDIA NIM, Fish Audio) feature transparent eye buttons (`👁`) for password visibility control.
 - **Hands-Free Speech Input**: Voice typing via microphone (`🎤`) paired with a custom-trained `hey_soldier.onnx` openWakeWord engine.
 - **Interactive Topology Graphs**: 2D SVG radial network fallback + 3D WebGL graph populating entity connections alongside active skill nodes.
 
@@ -91,7 +91,7 @@ Autonomous intelligence gathering and personal assistant reasoning utilize fast 
 
 ## 🎙️ Voice Intelligence & Wake Word Engine
 
-Soldier Boy features real-time, low-latency conversational speech powered by 100% offline zero-shot voice cloning (**Chatterbox TTS** & reference audio fingerprinting).
+Soldier Boy features high-fidelity, low-latency conversational speech powered by **Fish Audio** (Voice ID: `e81ae965a9a94ed69ff05eed7e7a57c7`) with automatic zero-shot local fallback (**Chatterbox TTS**).
 
 ### 🎧 Trained "Hey Soldier" Wake Word Model
 - **Genuine openWakeWord Engine**: Uses a production-grade `hey_soldier.onnx` neural classifier trained on real synthesized speech datasets and openWakeWord feature embeddings.

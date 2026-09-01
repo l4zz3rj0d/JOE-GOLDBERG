@@ -1431,18 +1431,32 @@
         </div>
       </div>
 
-      <!-- Card 2: Voice Synthesis (Local Voice Engine) -->
+      <!-- Card 2: Voice Synthesis (Fish Audio TTS) -->
       <div class="collapsible-card settings-card">
         <div class="collapsible-card-header" onclick="toggleCardCollapse(this)">
           <div class="collapsible-card-title">
             <span>🎙️</span>
-            <span>Local Zero-Shot Voice Engine</span>
+            <span>Fish Audio Voice Engine</span>
           </div>
-          <div class="collapsible-card-badge">Offline Clone</div>
+          <div class="collapsible-card-badge">s2.1-pro</div>
           <div class="collapsible-card-chevron">▼</div>
         </div>
         <div class="collapsible-card-body">
-          <div class="settings-hint">100% local zero-shot speech synthesis powered by reference sample (assets/soldierboy_reference.wav). Zero API keys required.</div>
+          <div class="settings-row">
+            <label>Fish Audio API Key</label>
+            <div class="key-input-wrap">
+              <input type="password" id="cfg-fish-key" placeholder="sk-fish-..." />
+              <button type="button" class="eye-btn" onclick="togglePasswordVisibility('cfg-fish-key', this)" title="Show/Hide API Key">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="settings-hint">High-fidelity cloud speech synthesis key (fish.audio). Fallbacks automatically to offline local clone.</div>
+          <div class="settings-row"><label>Fish Audio Voice ID</label><input type="text" id="cfg-fish-voice" placeholder="e81ae965a9a94ed69ff05eed7e7a57c7" /></div>
+          <div class="settings-hint">Soldier Boy voice reference UUID.</div>
         </div>
       </div>
 
@@ -2111,6 +2125,8 @@ function applyConfigToForm(cfg) {
   if (cfg.ollama_url) $('#cfg-ollama-url').value = cfg.ollama_url;
   $('#cfg-gemini-key').value = clean(cfg.gemini_api_key);
   $('#cfg-nvidia-key').value = clean(cfg.nvidia_api_key);
+  if ($('#cfg-fish-key')) $('#cfg-fish-key').value = clean(cfg.fish_audio_api_key);
+  if ($('#cfg-fish-voice')) $('#cfg-fish-voice').value = cfg.fish_audio_voice_id || 'e81ae965a9a94ed69ff05eed7e7a57c7';
   if (cfg.tools) {
     Object.keys(cfg.tools).forEach((k) => {
       const el = document.querySelector(`.voice-toggle[data-tool="${k}"]`);
@@ -2129,6 +2145,8 @@ $('#settings-save').addEventListener('click', () => {
     ollama_url: $('#cfg-ollama-url').value,
     gemini_api_key: $('#cfg-gemini-key').value,
     nvidia_api_key: $('#cfg-nvidia-key').value,
+    fish_audio_api_key: $('#cfg-fish-key') ? $('#cfg-fish-key').value : '',
+    fish_audio_voice_id: $('#cfg-fish-voice') ? $('#cfg-fish-voice').value : 'e81ae965a9a94ed69ff05eed7e7a57c7',
     tools: tools,
   };
   if (api() && api().save_config) {

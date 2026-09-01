@@ -194,6 +194,8 @@ class SoldierBoyAPI:
                     "gemini_api_key": clean("gemini_api_key"),
                     "nvidia_api_key": clean("nvidia_api_key"),
                     "nvidia_model": config.get("nvidia_model", "nvidia/nemotron-3-super-120b-a12b"),
+                    "fish_audio_api_key": clean("fish_audio_api_key"),
+                    "fish_audio_voice_id": config.get("fish_audio_voice_id", "e81ae965a9a94ed69ff05eed7e7a57c7"),
                     "tools": config.get("tools", {}),
                 }
         except Exception as e:
@@ -218,6 +220,8 @@ class SoldierBoyAPI:
                 "gemini_api_key": "gemini_api_key",
                 "nvidia_api_key": "nvidia_api_key",
                 "nvidia_model": "nvidia_model",
+                "fish_audio_api_key": "fish_audio_api_key",
+                "fish_audio_voice_id": "fish_audio_voice_id",
             }
             for ui_key, yaml_key in field_map.items():
                 if ui_key in cfg:

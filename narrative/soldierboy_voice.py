@@ -112,6 +112,16 @@ class SoldierBoyVoice:
         self.slm_model = self._detect_slm()
         self.client = httpx.Client(timeout=180.0)
 
+        # Fish Audio Configuration
+        self.fish_audio_key = (
+            os.environ.get("FISH_AUDIO_API_KEY")
+            or config.get("fish_audio_api_key", "")
+        )
+        if self.fish_audio_key in ("YOUR_FISH_AUDIO_API_KEY_HERE", "NONE", "null"):
+            self.fish_audio_key = ""
+        self.fish_audio_voice_id = config.get("fish_audio_voice_id", "e81ae965a9a94ed69ff05eed7e7a57c7")
+        self.fish_audio_available = bool(self.fish_audio_key)
+
         # Local Zero-Shot Voice Clone
         from core.local_voice_clone import LocalVoiceClone
         self.local_clone = LocalVoiceClone()
@@ -135,6 +145,7 @@ class SoldierBoyVoice:
         print(f"[soldierboy_voice] SLM fallback: {self.slm_model}")
         print(f"[soldierboy_voice] NVIDIA NIM: {'available' if self.nvidia_available else 'not configured'}")
         print(f"[soldierboy_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
+        print(f"[soldierboy_voice] Fish Audio TTS: {'available (Voice ID: ' + self.fish_audio_voice_id + ')' if self.fish_audio_available else 'not configured'}")
         print(f"[soldierboy_voice] Persona loaded: {JOE_ADVISOR_PROMPT.strip().splitlines()[0][:65]}...")
 
     def _load_config(self) -> dict:
@@ -581,16 +592,61 @@ class SoldierBoyVoice:
         rate_limited = (self.nvidia_rate_limited or self.gemini_rate_limited)
         return {"text": "", "rate_limited": rate_limited, "engine": None}
 
+    def _synthesize_fish_audio(self, text: str) -> Optional[bytes]:
+        """Synthesize speech via Fish Audio API using reference voice ID."""
+        if not self.fish_audio_available or not text or not text.strip():
+            return None
+
+        url = "https://api.fish.audio/v1/tts"
+        headers = {
+            "Authorization": f"Bearer {self.fish_audio_key}",
+            "Content-Type": "application/json",
+            "model": "s2.1-pro-free"
+        }
+        payload = {
+            "text": text.strip(),
+            "reference_id": self.fish_audio_voice_id,
+            "format": "mp3"
+        }
+
+        try:
+            r = self.client.post(url, json=payload, headers=headers, timeout=12.0)
+            if r.status_code == 200 and r.content:
+                return r.content
+            print(f"[soldierboy_voice] Fish Audio API status {r.status_code}: {r.text[:150]}")
+        except Exception as e:
+            print(f"[soldierboy_voice] Fish Audio API error: {e}")
+        return None
+
     def narrate(self, text: str) -> Optional[bytes]:
-        """Voice synthesis via local zero-shot voice clone engine."""
+        """Voice synthesis via Fish Audio API with zero-shot local fallback."""
         if not text:
             return None
+
+        # 1. Try Fish Audio cloud synthesis first
+        if self.fish_audio_available:
+            audio = self._synthesize_fish_audio(text)
+            if audio:
+                return audio
+
+        # 2. Fallback to Local Voice Clone
         if hasattr(self, 'local_clone'):
             return self.local_clone.synthesize(text)
         return None
 
     def synthesize_speech_b64(self, text: str) -> Optional[str]:
-        """Synthesize speech using Local Voice Clone and return base64 WAV data URL."""
+        """Synthesize speech and return base64 audio data URL."""
+        if not text:
+            return None
+
+        # 1. Try Fish Audio cloud synthesis first
+        if self.fish_audio_available:
+            audio_bytes = self._synthesize_fish_audio(text)
+            if audio_bytes:
+                b64 = base64.b64encode(audio_bytes).decode("ascii")
+                return f"data:audio/mp3;base64,{b64}"
+
+        # 2. Fallback to Local Voice Clone
         if hasattr(self, 'local_clone'):
             return self.local_clone.synthesize_b64(text)
         return None

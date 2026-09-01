@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Soldier Boy Voice Sample Synthesizer & Audio Player.
-Generates speech audio using 100% local zero-shot voice clone engine (assets/soldierboy_reference.wav).
+Generates speech audio using Fish Audio API (Voice ID: e81ae965a9a94ed69ff05eed7e7a57c7)
+with 100% local zero-shot fallback (assets/soldierboy_reference.wav).
 """
 import sys
 import subprocess
@@ -37,19 +38,20 @@ def main():
     audio_bytes = voice_engine.narrate(sample_text)
 
     if not audio_bytes:
-        print("[!] Failed to generate audio. Check assets/soldierboy_reference.wav.")
+        print("[!] Failed to generate audio. Check Fish Audio API key or assets/soldierboy_reference.wav.")
         return
 
-    output_wav = PROJECT_ROOT / "soldierboy_voice_sample.wav"
-    output_wav.write_bytes(audio_bytes)
+    ext = "mp3" if audio_bytes.startswith(b'\xff\xfb') or audio_bytes.startswith(b'ID3') else "wav"
+    output_file = PROJECT_ROOT / f"soldierboy_voice_sample.{ext}"
+    output_file.write_bytes(audio_bytes)
     print(f"[✓] Audio generated successfully! ({len(audio_bytes)} bytes)")
-    print(f"[✓] Saved WAV file to: {output_wav}\n")
+    print(f"[✓] Saved audio file to: {output_file}\n")
 
     print("[*] Playing audio...")
     players = [
-        ["aplay", "-q", str(output_wav)],
-        ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", str(output_wav)],
-        ["vlc", "--intf", "dummy", "--play-and-exit", str(output_wav)]
+        ["aplay", "-q", str(output_file)],
+        ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", str(output_file)],
+        ["vlc", "--intf", "dummy", "--play-and-exit", str(output_file)]
     ]
 
     played = False
@@ -65,7 +67,7 @@ def main():
     if played:
         print("[✓] Playback finished!")
     else:
-        print(f"[!] Audio player binary finished or not available. You can manually listen to: {output_wav}")
+        print(f"[!] Audio player binary finished or not available. You can manually listen to: {output_file}")
 
     print("\nTip: Pass custom text to synthesize your own line:")
     print("  python3 listen_joe_voice.py \"Hello there. What are you up to today?\"\n")
