@@ -49,13 +49,12 @@
     transition: background 0.3s ease, color 0.3s ease;
   }
 
-  /* Clear Joe Wallpaper & Glassy Overlay */
   #bg-layer {
     position: fixed; inset: 0; z-index: 0;
-    background-image: url('soldierboygui.png');
+    background-image: url('soldier-banner.png');
     background-size: cover; background-position: center;
     filter: brightness(0.68) contrast(1.15) saturate(0.9);
-    transition: filter 0.35s ease, opacity 0.35s ease;
+    transition: background-image 0.5s ease, filter 0.35s ease, opacity 0.35s ease;
   }
   #bg-overlay {
     position: fixed; inset: 0; z-index: 1;
@@ -1104,11 +1103,6 @@
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
         EXPORT REPORT
-      </button>
-      <button id="hud-color-toggle" class="hud-color-btn" title="Switch HUD Color (Blue / Orange)">
-        <span class="hud-color-dot blue-dot" id="hud-dot-blue"></span>
-        <span class="hud-color-dot orange-dot" id="hud-dot-orange" style="display:none;"></span>
-        <span id="hud-color-label">BLUE HUD</span>
       </button>
       <div class="risk-chip" id="risk-chip">risk —</div>
     </div>
@@ -2396,7 +2390,7 @@ let joeAudioEnergy = 0;
 let audioContext = null;
 let audioAnalyser = null;
 let audioDataArray = null;
-let joeHudColorTheme = safeGetStorage('joe_hud_color', 'blue'); // 'blue' | 'orange'
+let joeHudColorTheme = 'orange';
 
 const stars = [];
 const NUM_STARS = 240;
@@ -2404,7 +2398,7 @@ let targetRotX = 0;
 let targetRotY = 0;
 let rotX = 0;
 let rotY = 0;
-let currentAutoAngle = 0; // Dynamic rotation angle increment
+let currentAutoAngle = 0;
 let isDraggingHud = false;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -2412,35 +2406,23 @@ let baseRotX = 0;
 let baseRotY = 0;
 
 function setHudColorTheme(colorTheme) {
-  joeHudColorTheme = colorTheme === 'orange' ? 'orange' : 'blue';
+  joeHudColorTheme = (colorTheme === 'red' || colorTheme === 'crimson') ? 'red' : 'orange';
   safeSetStorage('joe_hud_color', joeHudColorTheme);
 
-  const toggleBtn = document.getElementById('hud-color-toggle');
-  const label = document.getElementById('hud-color-label');
-  const blueDot = document.getElementById('hud-dot-blue');
-  const orangeDot = document.getElementById('hud-dot-orange');
-
-  if (toggleBtn) {
-    toggleBtn.classList.toggle('theme-orange', joeHudColorTheme === 'orange');
-  }
-  if (label) {
-    label.textContent = joeHudColorTheme === 'orange' ? 'ORANGE HUD' : 'BLUE HUD';
-  }
-  if (blueDot && orangeDot) {
-    blueDot.style.display = joeHudColorTheme === 'orange' ? 'none' : 'inline-block';
-    orangeDot.style.display = joeHudColorTheme === 'orange' ? 'inline-block' : 'none';
+  const bgLayer = document.getElementById('bg-layer');
+  if (bgLayer) {
+    if (joeHudColorTheme === 'red') {
+      bgLayer.style.backgroundImage = "url('soldierboygui.png')";
+    } else {
+      bgLayer.style.backgroundImage = "url('soldier-banner.png')";
+    }
   }
 
   if (!joeCanvas) joeCanvas = document.getElementById('joe-hud-canvas');
   if (joeCanvas) {
-    const accentColor = joeHudColorTheme === 'orange' ? '#ff8c28' : '#70d6ff';
+    const accentColor = joeHudColorTheme === 'red' ? '#ff2a2a' : '#ff8c28';
     joeCanvas.style.filter = `drop-shadow(0 0 40px ${accentColor})`;
   }
-}
-
-function toggleHudColorTheme() {
-  const nextTheme = joeHudColorTheme === 'blue' ? 'orange' : 'blue';
-  setHudColorTheme(nextTheme);
 }
 
 function initStarUniverse() {
@@ -3212,10 +3194,12 @@ window.soldierboy = window.joe = {
         break;
 
       case 'open_investigate_dialog':
+        setHudColorTheme('red');
         openTargetDialog();
         break;
 
       case 'scan_status':
+        setHudColorTheme('red');
         showThinking(true);
         setHudState('thinking');
         addStatusLine(data.message);
@@ -3237,6 +3221,7 @@ window.soldierboy = window.joe = {
       case 'investigation_done':
         showThinking(false);
         setHudState('idle');
+        setHudColorTheme('orange');
         $('#session-status').textContent = 'idle';
         const t = data.target || {};
         state.activeCase = t.primary || state.activeCase;
@@ -3263,6 +3248,11 @@ window.soldierboy = window.joe = {
       case 'joe_answer':
         showThinking(false);
         setHudState('idle');
+        if (data && (data.mode === 'monologue' || data.mode === 'investigator')) {
+          setHudColorTheme('red');
+        } else {
+          setHudColorTheme('orange');
+        }
         if (data.open_dialog) {
           openTargetDialog();
         }
