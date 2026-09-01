@@ -43,13 +43,32 @@ class LocalVoiceClone:
         self.available = False
         self.model = None
         self.conds = None
+        self._initialized = False
 
-        self._init_local_engine()
+    def _get_available_ram_mb(self) -> int:
+        """Check available system RAM in megabytes to prevent OOM crash."""
+        try:
+            with open("/proc/meminfo", "r") as f:
+                for line in f:
+                    if "MemAvailable:" in line:
+                        return int(line.split()[1]) // 1024
+        except Exception:
+            pass
+        return 2048
 
     def _init_local_engine(self):
-        """Initialize local zero-shot voice cloning model."""
+        """Initialize local zero-shot voice cloning model lazily and safely."""
+        if self._initialized:
+            return
+        self._initialized = True
+
         if not os.path.exists(self.reference_path):
             print(f"[local_voice] Reference audio clip not found at: {self.reference_path}")
+            return
+
+        avail_ram = self._get_available_ram_mb()
+        if avail_ram < 1000:
+            print(f"[local_voice] Low system RAM ({avail_ram}MB available). Skipping ChatterboxTTS heavy neural load to prevent system OOM crash.")
             return
 
         try:
@@ -77,6 +96,9 @@ class LocalVoiceClone:
         """Synthesize text into WAV bytes using local voice clone prompt."""
         if not text or not os.path.exists(self.reference_path):
             return None
+
+        if not self._initialized:
+            self._init_local_engine()
 
         try:
             if self.model:
