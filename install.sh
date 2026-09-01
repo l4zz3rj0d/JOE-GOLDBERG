@@ -2,7 +2,7 @@
 set -e
 
 echo ""
-echo "  installing joe goldberg..."
+echo "  installing soldier boy..."
 echo ""
 
 # ── Python Environment ────────────────────────────────────────
@@ -65,7 +65,10 @@ else
 fi
 
 # ── System & User Commands ─────────────────────────────────────
-echo "  registering soldierboy and joe command wrappers..."
+echo "  registering soldierboy command wrapper..."
+
+# Clean up legacy joe wrappers if present
+rm -f ~/.local/bin/joe 2>/dev/null || true
 
 mkdir -p ~/.local/bin
 cat > ~/.local/bin/soldierboy << WRAPPER
@@ -76,9 +79,9 @@ exec $VENV_BIN/python3 $INSTALL_DIR/soldierboy.py "\$@"
 WRAPPER
 
 chmod +x ~/.local/bin/soldierboy
-ln -sf ~/.local/bin/soldierboy ~/.local/bin/joe
 
 if command -v sudo &>/dev/null && [ -w /usr/local/bin ]; then
+    sudo rm -f /usr/local/bin/joe 2>/dev/null || true
     sudo bash -c "cat > /usr/local/bin/soldierboy << 'WRAPPER'
 #!/bin/bash
 source $VENV_ACTIVATE
@@ -86,7 +89,6 @@ cd $INSTALL_DIR
 exec $VENV_BIN/python3 $INSTALL_DIR/soldierboy.py \"\$@\"
 WRAPPER"
     sudo chmod +x /usr/local/bin/soldierboy
-    sudo ln -sf /usr/local/bin/soldierboy /usr/local/bin/joe
 fi
 
 # ── Desktop entry ─────────────────────────────────────────────
@@ -190,6 +192,6 @@ esac
 
 echo ""
 echo "  To make narration work from the desktop icon too, also set:"
-echo "  sudo nano /usr/local/bin/joe"
+echo "  sudo nano /usr/local/bin/soldierboy"
 echo "  Add: export GEMINI_API_KEY=\"your_key_here\" (below the shebang)"
 echo ""
