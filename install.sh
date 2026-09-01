@@ -64,18 +64,30 @@ else
     echo "  ollama not installed (Cloud APIs will be used for LLM features)"
 fi
 
-# ── System command ────────────────────────────────────────────
-echo "  registering soldierboy as system command..."
+# ── System & User Commands ─────────────────────────────────────
+echo "  registering soldierboy and joe command wrappers..."
 
-sudo bash -c "cat > /usr/local/bin/soldierboy << 'WRAPPER'
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/soldierboy << WRAPPER
 #!/bin/bash
 source $VENV_ACTIVATE
 cd $INSTALL_DIR
-python $INSTALL_DIR/soldierboy.py \"\$@\"
-WRAPPER"
+exec $VENV_BIN/python3 $INSTALL_DIR/soldierboy.py "\$@"
+WRAPPER
 
-sudo chmod +x /usr/local/bin/soldierboy
-sudo ln -sf /usr/local/bin/soldierboy /usr/local/bin/joe
+chmod +x ~/.local/bin/soldierboy
+ln -sf ~/.local/bin/soldierboy ~/.local/bin/joe
+
+if command -v sudo &>/dev/null && [ -w /usr/local/bin ]; then
+    sudo bash -c "cat > /usr/local/bin/soldierboy << 'WRAPPER'
+#!/bin/bash
+source $VENV_ACTIVATE
+cd $INSTALL_DIR
+exec $VENV_BIN/python3 $INSTALL_DIR/soldierboy.py \"\$@\"
+WRAPPER"
+    sudo chmod +x /usr/local/bin/soldierboy
+    sudo ln -sf /usr/local/bin/soldierboy /usr/local/bin/joe
+fi
 
 # ── Desktop entry ─────────────────────────────────────────────
 echo "  creating desktop entry..."
