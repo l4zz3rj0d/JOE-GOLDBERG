@@ -18,8 +18,9 @@ class SoldierBoyMemory:
         if not os.path.exists(self.filepath):
             initial = {
                 "user_speech_patterns": [
-                    "User prefers concise, witty, energetic voice responses.",
-                    "STT mishears 'Dean' or 'Soldier' as 'joke', 'joh', 'zho', 'jarvis', 'chow', 'show'."
+                    "User prefers concise, witty, energetic, swearing voice responses.",
+                    "The user/operator is NOT Dean. Refer to the user as 'bruh', 'buddy', or 'partner'.",
+                    "STT mishears 'Soldier' as 'joke', 'joh', 'zho', 'jarvis', 'chow', 'show', 'suraj'."
                 ],
                 "failures_and_lessons": [
                     "Speech recognition of target usernames is error-prone; trigger target dialog modal when intent is 'investigate' without clean target."

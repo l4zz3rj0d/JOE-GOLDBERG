@@ -20,6 +20,46 @@ from typing import Callable, Optional, Dict, Any
 # Ensure project root is in path
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
+def _patch_openwakeword_providers():
+    """Align openwakeword ONNX providers with actual available system providers to avoid CUDA fallback warnings."""
+    try:
+        import onnxruntime as ort
+        import openwakeword.utils
+        avail_providers = ort.get_available_providers()
+
+        orig_init = openwakeword.utils.AudioFeatures.__init__
+        def safe_audio_features_init(self, melspec_onnx_model_path=None, embedding_onnx_model_path=None, sr=16000, ncpu=1):
+            if melspec_onnx_model_path is None:
+                melspec_onnx_model_path = openwakeword.utils.os.path.join(
+                    openwakeword.utils.pathlib.Path(openwakeword.utils.__file__).parent.resolve(),
+                    "resources", "models", "melspectrogram.onnx"
+                )
+            if embedding_onnx_model_path is None:
+                embedding_onnx_model_path = openwakeword.utils.os.path.join(
+                    openwakeword.utils.pathlib.Path(openwakeword.utils.__file__).parent.resolve(),
+                    "resources", "models", "embedding_model.onnx"
+                )
+
+            sessionOptions = ort.SessionOptions()
+            sessionOptions.inter_op_num_threads = ncpu
+            sessionOptions.intra_op_num_threads = ncpu
+            self.melspec_model = ort.InferenceSession(melspec_onnx_model_path, sess_options=sessionOptions, providers=avail_providers)
+            self.embedding_model = ort.InferenceSession(embedding_onnx_model_path, sess_options=sessionOptions, providers=avail_providers)
+            self.onnx_execution_provider = self.melspec_model.get_providers()[0]
+
+            self.raw_data_buffer = openwakeword.utils.deque(maxlen=sr*10)
+            self.melspectrogram_buffer = openwakeword.utils.np.ones((76, 32))
+            self.melspectrogram_max_len = 10*97
+            self.accumulated_samples = 0
+            self.feature_buffer = self._get_embeddings(openwakeword.utils.np.zeros(160000).astype(openwakeword.utils.np.int16))
+            self.feature_buffer_max_len = 120
+
+        openwakeword.utils.AudioFeatures.__init__ = safe_audio_features_init
+    except Exception:
+        pass
+
+_patch_openwakeword_providers()
+
 class WakeWordEngine:
     def __init__(
         self,

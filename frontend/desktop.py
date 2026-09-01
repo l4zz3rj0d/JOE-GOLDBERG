@@ -64,6 +64,8 @@ class SoldierBoyAPI:
         self._stalk_task = None
         self._last_entity = None  # Track for false-positive command
         self._wake_window_expires = 0.0
+        self._recent_agent_responses = []
+        self._tts_playback_until = 0.0
 
         # openWakeWord Engine & VAD Command Window
         self._wake_engine = WakeWordEngine(
@@ -446,6 +448,12 @@ class SoldierBoyAPI:
         if not self._voice:
             return
         try:
+            if sentence and len(sentence.strip()) > 2:
+                self._recent_agent_responses.append(sentence.strip())
+                if len(self._recent_agent_responses) > 20:
+                    self._recent_agent_responses.pop(0)
+                self._tts_playback_until = time.time() + max(3.5, len(sentence) * 0.08)
+
             audio_b64 = self._voice.synthesize_speech_b64(sentence)
             if audio_b64:
                 self._emit("soldierboy_audio_chunk", {"audio": audio_b64, "text": sentence})
@@ -466,6 +474,12 @@ class SoldierBoyAPI:
                     break
                 try:
                     sentence = item
+                    if sentence and len(sentence.strip()) > 2:
+                        self._recent_agent_responses.append(sentence.strip())
+                        if len(self._recent_agent_responses) > 20:
+                            self._recent_agent_responses.pop(0)
+                        self._tts_playback_until = time.time() + max(3.5, len(sentence) * 0.08)
+
                     audio_b64 = self._voice.synthesize_speech_b64(sentence)
                     if audio_b64:
                         self._emit("soldierboy_audio_chunk", {"audio": audio_b64, "text": sentence})
@@ -908,6 +922,15 @@ class SoldierBoyAPI:
 
         try:
             while getattr(self, '_bg_voice_active', False) and proc.poll() is None:
+                # 0. If TTS playback is actively outputting speech through speakers, pause mic recording to prevent echo feedback loop
+                if time.time() < getattr(self, '_tts_playback_until', 0.0):
+                    pcm_buffer.clear()
+                    is_speaking = False
+                    silence_chunks = 0
+                    speech_start_count = 0
+                    time.sleep(0.08)
+                    continue
+
                 raw_chunk = proc.stdout.read(chunk_size)
                 if not raw_chunk or len(raw_chunk) < chunk_size:
                     time.sleep(0.05)
@@ -941,15 +964,15 @@ class SoldierBoyAPI:
                         pcm_buffer.append(raw_chunk)
                         silence_chunks += 1
 
-                        # 12 consecutive silence chunks = 1.2s silence -> speech completed naturally!
-                        if silence_chunks >= 12:
+                        # 15 consecutive silence chunks = 1.5s silence -> speech completed naturally without cutting off
+                        if silence_chunks >= 15:
                             is_speaking = False
                             silence_chunks = 0
                             captured_pcm = b"".join(pcm_buffer)
                             pcm_buffer = []
 
                             duration_sec = len(captured_pcm) / 32000.0
-                            print(f"[voice listener] Speech completed (1.2s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
+                            print(f"[voice listener] Speech completed (1.5s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
 
                             if len(captured_pcm) >= 32000:
                                 threading.Thread(
@@ -973,6 +996,12 @@ class SoldierBoyAPI:
 
     def _process_captured_speech(self, pcm_bytes: bytes):
         """Transcribe captured speech and trigger HUD / SoldierBoyVoice response."""
+        # 1. Ignore audio captured while TTS was playing back
+        if time.time() < getattr(self, '_tts_playback_until', 0.0):
+            print("[voice listener] Captured audio ignored: TTS audio was active during recording.")
+            self._emit("soldierboy_speech_ended", {})
+            return
+
         wav_path = f"/tmp/soldierboy_speech_{int(time.time()*1000)}.wav"
         try:
             with wave.open(wav_path, 'wb') as wf:
@@ -988,7 +1017,30 @@ class SoldierBoyAPI:
 
             if text:
                 print(f"[voice listener] Recognized text: '{text}'")
-                
+
+                # 2. Filter out self-echo (mic picking up Soldier Boy's own voice)
+                rec_clean = re.sub(r'[^\w\s]', '', text.lower()).strip()
+                is_self_echo = False
+                for past_resp in getattr(self, '_recent_agent_responses', []):
+                    past_clean = re.sub(r'[^\w\s]', '', past_resp.lower()).strip()
+                    if not past_clean or not rec_clean:
+                        continue
+                    if rec_clean in past_clean or past_clean in rec_clean:
+                        is_self_echo = True
+                        break
+                    rec_words = set(rec_clean.split())
+                    past_words = set(past_clean.split())
+                    if rec_words and past_words:
+                        overlap = len(rec_words & past_words) / len(rec_words)
+                        if overlap > 0.6 and len(rec_words) >= 3:
+                            is_self_echo = True
+                            break
+
+                if is_self_echo:
+                    print(f"[voice listener] Self-echo suppressed (recognized text matches Soldier Boy response): '{text}'")
+                    self._emit("soldierboy_speech_ended", {})
+                    return
+
                 # Check for explicit Stop commands first
                 stop_pattern = r'\b(?:stop|shut\s*up|be\s*quiet|quiet|hush|silence|cancel)\b'
                 if re.search(stop_pattern, text, re.IGNORECASE):

@@ -2829,12 +2829,28 @@ async function startMicListening() {
         speechRecognizer.lang = 'en-US';
 
         speechRecognizer.onresult = (event) => {
+          // If TTS is currently playing audio through speakers, ignore STT to prevent feedback loop
+          if (isPlayingJoeQueue || currentJoeAudioElement || Date.now() < ttsPlaybackEndTime) {
+            console.log('[JoeSTT] Muted during active TTS playback (self-echo suppression)');
+            return;
+          }
+
           let fullText = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             fullText += event.results[i][0].transcript;
           }
           fullText = fullText.trim();
           if (!fullText) return;
+
+          // Self-echo check: Suppress transcript if it matches recent Soldier Boy speech
+          const cleanRec = fullText.toLowerCase().replace(/[^\w\s]/g, '').trim();
+          for (const pastText of recentAgentTexts) {
+            const cleanPast = pastText.toLowerCase().replace(/[^\w\s]/g, '').trim();
+            if (cleanPast && (cleanPast.includes(cleanRec) || cleanRec.includes(cleanPast))) {
+              console.log('[JoeSTT] Self-echo transcript suppressed:', fullText);
+              return;
+            }
+          }
 
           let wasWake = false;
           if (fullText.toLowerCase().includes('hey soldier') || fullText.toLowerCase().includes('soldier')) {
@@ -3012,6 +3028,8 @@ let isPlayingJoeQueue = false;
 let currentJoeAudioElement = null;
 let hasReceivedAudioChunk = false;
 let jarvisPopupTimer = null;
+let recentAgentTexts = [];
+let ttsPlaybackEndTime = 0;
 
 function resetJoeAudioQueue() {
   joeAudioQueue = [];
@@ -3060,6 +3078,11 @@ function enqueueJoeAudio(audioData, text) {
 
   if (audioData) {
     hasReceivedAudioChunk = true;
+    if (text && text.trim()) {
+      recentAgentTexts.push(text.trim());
+      if (recentAgentTexts.length > 20) recentAgentTexts.shift();
+      ttsPlaybackEndTime = Date.now() + Math.max(3500, text.length * 90);
+    }
     let src = audioData;
     if (!audioData.startsWith('data:')) {
       src = 'data:audio/wav;base64,' + audioData;

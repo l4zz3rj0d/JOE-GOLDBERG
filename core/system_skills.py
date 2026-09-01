@@ -15,43 +15,51 @@ class SystemSkillEngine:
 
     def perform_live_search(self, query: str) -> tuple[str, list[dict]]:
         """
-        Perform a fast live web search using DuckDuckGo HTML API.
+        Perform a fast live web search using DuckDuckGo HTML POST API.
         Returns (summary_text: str, results_list: list)
         """
         import urllib.request
+        import urllib.parse
         query_clean = query.strip()
-        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query_clean)}"
+        if not query_clean:
+            return "", []
+
+        url = "https://html.duckduckgo.com/html/"
+        data = urllib.parse.urlencode({'q': query_clean}).encode('utf-8')
         req = urllib.request.Request(
             url,
-            headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+            data=data,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            }
         )
         results = []
         try:
-            with urllib.request.urlopen(req, timeout=4) as resp:
+            with urllib.request.urlopen(req, timeout=6) as resp:
                 html_text = resp.read().decode('utf-8', errors='ignore')
 
-            titles = re.findall(r'<a class="result__a"[^>]*>(.*?)</a>', html_text, re.DOTALL)
-            snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', html_text, re.DOTALL)
+            titles = re.findall(r'<a[^>]+class="result__a"[^>]*>(.*?)</a>', html_text, re.DOTALL)
+            snippets = re.findall(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html_text, re.DOTALL)
 
-            for i in range(min(4, len(snippets))):
+            for i in range(min(6, len(snippets))):
                 t = re.sub(r'<[^>]+>', '', titles[i]).strip() if i < len(titles) else f"Record #{i+1}"
-                # Unescape common html entities
                 s = re.sub(r'<[^>]+>', '', snippets[i]).strip()
-                s = s.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&')
-                t = t.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&')
+                s = s.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&').replace('&nbsp;', ' ')
+                t = t.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&').replace('&nbsp;', ' ')
                 if s:
                     results.append({"title": t, "snippet": s})
 
             if results:
-                summary_parts = [f"I ran a live intelligence scan for '{query_clean}'. Here is what the web records reveal:\n"]
-                for idx, item in enumerate(results[:3], 1):
+                summary_parts = [f"Live web search records for '{query_clean}':\n"]
+                for idx, item in enumerate(results[:5], 1):
                     summary_parts.append(f"{idx}. {item['title']}: {item['snippet']}")
-                summary_parts.append("\nEverything is timestamped and logged in our workspace.")
-                return "\n\n".join(summary_parts), results
+                return "\n".join(summary_parts), results
         except Exception as e:
             print(f"[system_skills] Live search error: {e}")
 
-        return f"I executed a search scan for '{query_clean}'. The records indicate recent activity across web index nodes.", []
+        return "", []
 
     def google_search(self, query: str) -> str:
         query_clean = query.strip()

@@ -41,8 +41,8 @@ NVIDIA_FALLBACK_MODELS = [
 SOLDIERBOY_ADVISOR_PROMPT = """You are Soldier Boy — the hilarious, cocky, unfiltered, swearing, badass superhero from The Boys.
 Your name is Soldier Boy. You speak directly to your operator/partner in a hilarious, unhinged, movie-authentic Soldier Boy voice: cocky swagger, casual swearing (fuck, shit, goddamn, asshole), dark humor, and supreme confidence.
 
-CRITICAL IDENTITY RULES:
-- The user/operator you are speaking to is NOT Dean. NEVER call the user "Dean". Refer to the user as "partner", "boss", or just speak to them directly.
+CRITICAL IDENTITY & PARTNER RULES:
+- The user/operator you are speaking to is NOT Dean. NEVER call the user "Dean". Refer to the user as "bruh", "buddy", or "partner".
 - If someone asks "Who are you?", your response is always: "I'm Soldier Boy. Fuck, the world knows who I am, why do I have to say it?"
 - You swear naturally and casually ("fuck", "shit", "goddamn", "asshole", "bitch").
 - Fiercely Capable: Underneath the swagger and jokes, you are a master investigator and partner. When work needs doing, you get it done cleanly and brutally fast.
@@ -61,7 +61,7 @@ Here is the case data discovered so far:
 {case_data}
 
 Rules for responding:
-1. The user you are talking to is NOT Dean. Do NOT call the user "Dean". Call them "partner" or speak to them directly.
+1. The user you are talking to is NOT Dean. Do NOT call the user "Dean". Call them "bruh", "buddy", or "partner".
 2. Talk directly to your partner in character — hilarious, cocky, swearing, sharp, and brutally honest.
 3. Answer specifically using the case data above. Name the actual platforms, emails, handles, and URLs found.
 4. If asked for links, provide direct URLs in Markdown format: [Platform](URL).
@@ -77,7 +77,7 @@ Findings:
 
 Write a closing debrief summary (4-6 flowing paragraphs):
 - Open with a confident, swearing, hilarious summary of what this investigation was and what you and your partner uncovered overall.
-- The user is NOT Dean. Do NOT call the user "Dean". Address them as your partner.
+- The user is NOT Dean. Do NOT call the user "Dean". Address them as "bruh", "buddy", or "partner".
 - Walk through the verified findings with Soldier Boy swagger and practical clarity — name the specific platforms, emails, handles, and pattern trails.
 - Zero noir dread: Frame the findings with unhinged Soldier Boy energy, dark humor, and cocky satisfaction.
 - Connect the dots: Explain what this specific combination of platforms and cross-platform corroborations actually proves about the target's footprint.
@@ -783,18 +783,28 @@ class SoldierBoyVoice:
             if resolved_search_query:
                 intel_summary, _ = self.skills.perform_live_search(resolved_search_query)
                 if intel_summary:
-                    live_search_intel = f"\n\n[LIVE INTEL WEB SCAN RESULTS FOR '{resolved_search_query}']:\n{intel_summary}\n\n[INSTRUCTIONS FOR RESPONSE]: Use the live web scan results above to answer the user's question directly. Maintain your signature Soldier Boy voice—cynical, clinical, observant, and sharp. Summarize key findings naturally; do NOT list raw record numbers verbatim."
+                    live_search_intel = (
+                        f"\n\n[REAL-WORLD LIVE WEB SCAN RESULTS FOR '{resolved_search_query}']:\n{intel_summary}\n\n"
+                        f"[ABSOLUTE GROUNDING & ZERO-HALLUCINATION INSTRUCTIONS]:\n"
+                        f"1. You MUST summarize the exact real-world web search findings shown above for '{resolved_search_query}'.\n"
+                        f"2. ZERO Fictional Lore: Do NOT invent fictional show stories (such as Vought, Homelander, blacksites, compound V, or fake Reddit conspiracies) when presenting real web search results.\n"
+                        f"3. Persona Delivery: Present the REAL facts (e.g. real names, handles like Sree Danush, cybersecurity researcher, GitHub repos, Medium CTF walkthroughs, Hellhound tools) using your authentic, hilarious, cocky, profane Soldier Boy swagger ('fuck', 'shit', 'partner', 'bruh').\n"
+                        f"4. Be accurate, sharp, and stay strictly grounded in the live search records above."
+                    )
 
-        # Inject Memory summary into system prompt & session history
+        # Inject Memory summary & Cross-Session Recall into system prompt & session history
         mem_summary = self.memory.get_memory_summary_for_prompt()
-        recent_history = self.session_memory.to_text(6)
+        cross_session = self.session_memory.get_cross_session_context()
+        if cross_session:
+            mem_summary += "\n\n" + cross_session
+        recent_history = self.session_memory.to_text(8)
 
         if target and target.entities:
             # Mode 3 — case loaded, answer from findings
             case_data = self._build_case_data(target)
             system = SOLDIERBOY_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data) + "\n\n" + mem_summary
             if live_search_intel:
-                system += live_search_intel
+                system += live_search_intel + "\n\n[PRIORITY OVERRIDE]: IGNORE any prior hallucinated conversation history regarding this target. You MUST base your response 100% on the fresh real-world live web search results above."
             if recent_history:
                 prompt = f"Recent Conversation History:\n{recent_history}\n\nUser follow-up question: {question}"
             else:
@@ -806,7 +816,7 @@ class SoldierBoyVoice:
             active_target_note = f"\nActive Investigation Target: {target.name}" if (target and getattr(target, 'name', None)) else ""
             system = SOLDIERBOY_ADVISOR_PROMPT + active_target_note + "\n\n" + mem_summary
             if live_search_intel:
-                system += live_search_intel
+                system += live_search_intel + "\n\n[PRIORITY OVERRIDE]: IGNORE any prior hallucinated conversation history regarding this target. You MUST base your response 100% on the fresh real-world live web search results above."
             if recent_history:
                 prompt = f"Recent Conversation History:\n{recent_history}\n\nUser follow-up question: {question}"
             else:
@@ -1058,5 +1068,8 @@ Output only the raw target string. No markdown, no quotes, no explanation."""
         # 4. Strip outer enclosing quotes around the whole text if present
         if (result.startswith('"') and result.endswith('"')) or (result.startswith('“') and result.endswith('”')):
             result = result[1:-1].strip()
+
+        # 5. Sanitize accidental "Dean" name references to "bruh"
+        result = re.sub(r'\bDean\b', 'bruh', result)
 
         return result if result else text.strip()
