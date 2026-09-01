@@ -1080,8 +1080,6 @@ class SoldierBoyDesktop:
             "min_size": (900, 600),
             "background_color": "#120e0b",
         }
-        if dst_icon.exists():
-            window_kwargs["icon"] = str(dst_icon)
 
         window = webview.create_window(**window_kwargs)
 
