@@ -108,12 +108,6 @@ class SoldierBoyVoice:
         # NVIDIA model override from config
         self.nvidia_model = config.get("nvidia_model", NVIDIA_MODEL)
 
-        # Cartesia key & voice ID
-        raw_cartesia = config.get("CARTESIA_API_KEY") or os.environ.get("CARTESIA_API_KEY")
-        self.cartesia_key = self._clean_key(raw_cartesia)
-        self.cartesia_voice_id = config.get("cartesia_voice_id", "b1ce5126-4d08-42c3-adef-d3eb39e90c7a")
-        self.cartesia_available = bool(self.cartesia_key)
-
         # Detect available SLM
         self.slm_model = self._detect_slm()
         self.client = httpx.Client(timeout=180.0)
@@ -141,7 +135,6 @@ class SoldierBoyVoice:
         print(f"[soldierboy_voice] SLM fallback: {self.slm_model}")
         print(f"[soldierboy_voice] NVIDIA NIM: {'available' if self.nvidia_available else 'not configured'}")
         print(f"[soldierboy_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
-        print(f"[soldierboy_voice] Cartesia TTS: {'available' if self.cartesia_available else 'not configured'}")
         print(f"[soldierboy_voice] Persona loaded: {JOE_ADVISOR_PROMPT.strip().splitlines()[0][:65]}...")
 
     def _load_config(self) -> dict:
@@ -589,54 +582,16 @@ class SoldierBoyVoice:
         return {"text": "", "rate_limited": rate_limited, "engine": None}
 
     def narrate(self, text: str) -> Optional[bytes]:
-        """Voice synthesis via Cartesia TTS API with automatic fallback to local voice clone."""
+        """Voice synthesis via local zero-shot voice clone engine."""
         if not text:
             return None
-        if self.cartesia_key:
-            try:
-                headers = {
-                    "X-API-Key": self.cartesia_key,
-                    "Cartesia-Version": "2024-06-10",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "model_id": "sonic-3.5",
-                    "transcript": text[:1000],
-                    "voice": {
-                        "mode": "id",
-                        "id": self.cartesia_voice_id
-                    },
-                    "generation_config": {
-                        "speed": 1.05
-                    },
-                    "output_format": {
-                        "container": "wav",
-                        "encoding": "pcm_s16le",
-                        "sample_rate": 16000
-                    }
-                }
-                r = self.client.post("https://api.cartesia.ai/tts/bytes", headers=headers, json=payload, timeout=15.0)
-                if r.status_code == 200:
-                    return r.content
-                else:
-                    print(f"[joe_voice] Cartesia TTS rejected request: {r.status_code} — {r.text[:500]}")
-            except Exception as e:
-                print(f"[joe_voice] Cartesia TTS error: {e}")
-
-        # Local voice clone fallback using assets/joe_reference.wav
-        if hasattr(self, 'local_clone') and self.local_clone.available:
+        if hasattr(self, 'local_clone'):
             return self.local_clone.synthesize(text)
-
         return None
 
     def synthesize_speech_b64(self, text: str) -> Optional[str]:
-        """Synthesize speech using Cartesia / Local Voice Clone and return base64 WAV data URL."""
-        audio_bytes = self.narrate(text)
-        if audio_bytes:
-            import base64
-            b64 = base64.b64encode(audio_bytes).decode("ascii")
-            return f"data:audio/wav;base64,{b64}"
-        if hasattr(self, 'local_clone') and self.local_clone.available:
+        """Synthesize speech using Local Voice Clone and return base64 WAV data URL."""
+        if hasattr(self, 'local_clone'):
             return self.local_clone.synthesize_b64(text)
         return None
 

@@ -194,8 +194,6 @@ class SoldierBoyAPI:
                     "gemini_api_key": clean("gemini_api_key"),
                     "nvidia_api_key": clean("nvidia_api_key"),
                     "nvidia_model": config.get("nvidia_model", "nvidia/nemotron-3-super-120b-a12b"),
-                    "cartesia_api_key": clean("CARTESIA_API_KEY"),
-                    "cartesia_voice_id": config.get("cartesia_voice_id", "b1ce5126-4d08-42c3-adef-d3eb39e90c7a"),
                     "tools": config.get("tools", {}),
                 }
         except Exception as e:
@@ -220,8 +218,6 @@ class SoldierBoyAPI:
                 "gemini_api_key": "gemini_api_key",
                 "nvidia_api_key": "nvidia_api_key",
                 "nvidia_model": "nvidia_model",
-                "cartesia_api_key": "CARTESIA_API_KEY",
-                "cartesia_voice_id": "cartesia_voice_id",
             }
             for ui_key, yaml_key in field_map.items():
                 if ui_key in cfg:
@@ -441,7 +437,7 @@ class SoldierBoyAPI:
             self._stalk_loop.call_soon_threadsafe(self._stalk_task.cancel)
 
     def _synthesize_and_emit_sentence(self, sentence: str):
-        if not self._voice or not self._voice.cartesia_available:
+        if not self._voice:
             return
         try:
             audio_b64 = self._voice.synthesize_speech_b64(sentence)
@@ -473,7 +469,7 @@ class SoldierBoyAPI:
                     tts_queue.task_done()
 
         worker_thread = None
-        if self._voice and self._voice.cartesia_available:
+        if self._voice:
             worker_thread = threading.Thread(target=tts_worker, daemon=True)
             worker_thread.start()
 
@@ -481,7 +477,7 @@ class SoldierBoyAPI:
             nonlocal sentence_buffer, sent_count
             self._emit("joe_stream_chunk", {"chunk": chunk})
 
-            if self._voice and self._voice.cartesia_available:
+            if self._voice:
                 sentence_buffer += chunk
                 # Abbreviation-aware sentence boundary regex: ignores Mr., Dr., vs., e.g., i.e. and decimal numbers 3.5, 10.0
                 m = re.search(r'((?:(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|eg|ie|Inc|Ltd|St))\x2e(?!\d)|[.!?\n])+)', sentence_buffer)
@@ -497,14 +493,14 @@ class SoldierBoyAPI:
             self._emit("rate_limited", {})
 
         # Flush any remaining sentence buffer
-        if sentence_buffer.strip() and self._voice and self._voice.cartesia_available:
+        if sentence_buffer.strip() and self._voice:
             frag = sentence_buffer.strip()
             if len(frag) > 2:
                 sent_count += 1
                 tts_queue.put(frag)
 
         # System skill / non-streamed response TTS & text streaming fallback: if no streaming chunks were generated,
-        # simulate word-by-word text streaming on screen AND enqueue clean spoken sentences for Cartesia!
+        # simulate word-by-word text streaming on screen AND enqueue clean spoken sentences for local voice engine!
         if sent_count == 0 and result.get("text"):
             raw_text = result["text"]
             # 1. Simulate streaming text on screen word-by-word
@@ -515,7 +511,7 @@ class SoldierBoyAPI:
                 time.sleep(0.015)  # 15ms smooth word typing effect
 
             # 2. Extract clean printable sentences for speech synthesis
-            if self._voice and self._voice.cartesia_available:
+            if self._voice:
                 clean_lines = []
                 for line in raw_text.splitlines():
                     line_s = line.strip()

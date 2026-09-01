@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Joe Goldberg Voice Sample Synthesizer & Audio Player.
-Generates speech audio using Cartesia API (if configured in config.yaml)
-or 100% local zero-shot voice clone engine (assets/joe_reference.wav).
+Soldier Boy Voice Sample Synthesizer & Audio Player.
+Generates speech audio using 100% local zero-shot voice clone engine (assets/soldierboy_reference.wav).
 """
 import sys
 import subprocess
@@ -38,7 +37,7 @@ def main():
     audio_bytes = voice_engine.narrate(sample_text)
 
     if not audio_bytes:
-        print("[!] Failed to generate audio. Check your Cartesia API key or assets/soldierboy_reference.wav.")
+        print("[!] Failed to generate audio. Check assets/soldierboy_reference.wav.")
         return
 
     output_wav = PROJECT_ROOT / "soldierboy_voice_sample.wav"

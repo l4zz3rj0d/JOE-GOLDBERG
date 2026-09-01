@@ -1431,32 +1431,18 @@
         </div>
       </div>
 
-      <!-- Card 2: Voice Synthesis (Cartesia TTS) -->
+      <!-- Card 2: Voice Synthesis (Local Voice Engine) -->
       <div class="collapsible-card settings-card">
         <div class="collapsible-card-header" onclick="toggleCardCollapse(this)">
           <div class="collapsible-card-title">
             <span>🎙️</span>
-            <span>Cartesia TTS Voice Engine</span>
+            <span>Local Zero-Shot Voice Engine</span>
           </div>
-          <div class="collapsible-card-badge">Sonic 3.5</div>
+          <div class="collapsible-card-badge">Offline Clone</div>
           <div class="collapsible-card-chevron">▼</div>
         </div>
         <div class="collapsible-card-body">
-          <div class="settings-row">
-            <label>Cartesia API Key</label>
-            <div class="key-input-wrap">
-              <input type="password" id="cfg-cartesia-key" placeholder="sk_car_..." />
-              <button type="button" class="eye-btn" onclick="togglePasswordVisibility('cfg-cartesia-key', this)" title="Show/Hide API Key">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="pointer-events:none;">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="settings-hint">Ultra-low latency speech synthesis key (play.cartesia.ai).</div>
-          <div class="settings-row"><label>Cartesia Voice ID</label><input type="text" id="cfg-cartesia-voice" placeholder="b1ce5126-4d08-42c3-adef-d3eb39e90c7a" /></div>
-          <div class="settings-hint">Voice persona embedding UUID for Joe.</div>
+          <div class="settings-hint">100% local zero-shot speech synthesis powered by reference sample (assets/soldierboy_reference.wav). Zero API keys required.</div>
         </div>
       </div>
 
@@ -2125,8 +2111,6 @@ function applyConfigToForm(cfg) {
   if (cfg.ollama_url) $('#cfg-ollama-url').value = cfg.ollama_url;
   $('#cfg-gemini-key').value = clean(cfg.gemini_api_key);
   $('#cfg-nvidia-key').value = clean(cfg.nvidia_api_key);
-  if ($('#cfg-cartesia-key')) $('#cfg-cartesia-key').value = clean(cfg.cartesia_api_key);
-  if ($('#cfg-cartesia-voice')) $('#cfg-cartesia-voice').value = cfg.cartesia_voice_id || '';
   if (cfg.tools) {
     Object.keys(cfg.tools).forEach((k) => {
       const el = document.querySelector(`.voice-toggle[data-tool="${k}"]`);
@@ -2145,8 +2129,6 @@ $('#settings-save').addEventListener('click', () => {
     ollama_url: $('#cfg-ollama-url').value,
     gemini_api_key: $('#cfg-gemini-key').value,
     nvidia_api_key: $('#cfg-nvidia-key').value,
-    cartesia_api_key: $('#cfg-cartesia-key') ? $('#cfg-cartesia-key').value : '',
-    cartesia_voice_id: $('#cfg-cartesia-voice') ? $('#cfg-cartesia-voice').value : '',
     tools: tools,
   };
   if (api() && api().save_config) {
@@ -3028,7 +3010,7 @@ if (micBtn) {
 let joeAudioQueue = [];
 let isPlayingJoeQueue = false;
 let currentJoeAudioElement = null;
-let hasReceivedCartesiaChunk = false;
+let hasReceivedAudioChunk = false;
 let jarvisPopupTimer = null;
 
 function resetJoeAudioQueue() {
@@ -3077,7 +3059,7 @@ function enqueueJoeAudio(audioData, text) {
   }
 
   if (audioData) {
-    hasReceivedCartesiaChunk = true;
+    hasReceivedAudioChunk = true;
     let src = audioData;
     if (!audioData.startsWith('data:')) {
       src = 'data:audio/wav;base64,' + audioData;
@@ -3231,7 +3213,7 @@ window.joe = {
         break;
 
       case 'joe_stream_start':
-        hasReceivedCartesiaChunk = false;
+        hasReceivedAudioChunk = false;
         setHudState('speaking');
         startStreamingAnswer();
         break;

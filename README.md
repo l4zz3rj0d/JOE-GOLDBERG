@@ -25,7 +25,7 @@
   <a href="https://github.com/project-hellhound-org/SOLDIER-BOY/releases"><img src="https://img.shields.io/badge/Release-v2.0.0-red?style=flat-square" alt="Release Version"/></a>
   <img src="https://img.shields.io/badge/AI--Powered-Ollama%20%7C%20NVIDIA%20NIM%20%7C%20Gemini-red?style=flat-square" alt="AI Support"/>
   <img src="https://img.shields.io/badge/Wake%20Word-Hey%20Soldier%20(openWakeWord)-orange?style=flat-square" alt="Wake Word"/>
-  <img src="https://img.shields.io/badge/Voice-Chatterbox%20Local%20%7C%20Cartesia-brightgreen?style=flat-square" alt="Voice Synthesis"/>
+  <img src="https://img.shields.io/badge/Voice-Chatterbox%20Local%20Clone-brightgreen?style=flat-square" alt="Voice Synthesis"/>
   <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey?style=flat-square" alt="Platform"/>
   <img src="https://img.shields.io/badge/License-GPLv3-blue?style=flat-square" alt="License"/>
 </p>
@@ -65,7 +65,7 @@ You ──> soldierboy ("Hey Soldier...") ──> Intent & Task Parser ──> E
                                                  │
                                                  ▼ (Populates Persistent Blackboard)
                                       Soldier Boy Voice Engine <── Grounding Guard
-                                                 │                 (Chatterbox / Cartesia)
+                                                 │                 (Chatterbox Zero-Shot)
                                                  ▼
                                       /export (Submission-Ready HTML Case & Task Reports)
 ```
@@ -91,26 +91,13 @@ Autonomous intelligence gathering and personal assistant reasoning utilize fast 
 
 ## 🎙️ Voice Intelligence & Wake Word Engine
 
-Soldier Boy features real-time, low-latency conversational speech powered by **Chatterbox TTS** (100% offline zero-shot voice clone) and **Cartesia Sonic 3.5**.
+Soldier Boy features real-time, low-latency conversational speech powered by 100% offline zero-shot voice cloning (**Chatterbox TTS** & reference audio fingerprinting).
 
 ### 🎧 Trained "Hey Soldier" Wake Word Model
 - **Genuine openWakeWord Engine**: Uses a production-grade `hey_soldier.onnx` neural classifier trained on real synthesized speech datasets and openWakeWord feature embeddings.
 - **Zero-False-Accept Discrimination**: Validated on real audio clips to achieve a 1.0 peak score on spoken `"Hey Soldier"` while maintaining 0.00 false accepts on non-target background speech.
 - **Jarvis Search Protocol**: Speak `"Hey Soldier, search Google for [query]"` to activate live web extractions and trigger the holographic search overlay.
 - **Muting Guard**: Ambient speech listening is automatically muted while Soldier Boy is speaking to prevent self-triggering audio loops.
-
-> [!IMPORTANT]
-> ### 🔊 Cartesia Cloud Voice Setup (Optional Fallback)
-> To use Cartesia cloud voice fallback alongside Chatterbox local synthesis, add your key in `config.yaml` or through the desktop GUI **Settings Card**:
-> ```yaml
-> voice:
->   enabled: true
->   engine: "cartesia"
->   cartesia_key: "YOUR_CARTESIA_API_KEY"
->   voice_id: "a0e99841-438c-4a64-b679-ae501e7d6091"
->   model_id: "sonic-3.5"
->   speed: "fast"
-> ```
 
 ---
 
