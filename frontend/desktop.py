@@ -78,12 +78,12 @@ class SoldierBoyAPI:
         print(f"[desktop] openWakeWord triggered ('{phrase}'). Opening STT command capture window.")
         now = time.time()
         self._wake_window_expires = now + 30.0
-        self._emit("joe_wake_word_detected", {"raw": phrase, "clean": ""})
+        self._emit("soldierboy_wake_word_detected", {"raw": phrase, "clean": ""})
 
     def _on_vad_speech_ended(self):
         print("[desktop] VAD detected post-speech silence. Closing STT command window early.")
         self._wake_window_expires = 0.0
-        self._emit("joe_vad_speech_end", {})
+        self._emit("soldierboy_vad_speech_end", {})
 
     def set_window(self, window):
         self._window = window
@@ -157,13 +157,13 @@ class SoldierBoyAPI:
         )
 
         if success:
-            self._emit("joe_answer", {
+            self._emit("soldierboy_answer", {
                 "text": f"Lesson learned about {platform}. I won't make that mistake again.",
                 "rate_limited": False,
                 "mode": "investigation" if self._target else "advisor",
             })
         else:
-            self._emit("joe_answer", {
+            self._emit("soldierboy_answer", {
                 "text": "I can't store lessons right now — memory modules aren't installed.",
                 "rate_limited": False,
                 "mode": "advisor",
@@ -257,7 +257,9 @@ class SoldierBoyAPI:
         evidence_items = []
         try:
             case_slug = self._target.primary.replace("@", "_").replace(".", "_")
-            evidence_dir = Path.home() / ".joe" / "cases" / case_slug / "evidence"
+            evidence_dir = Path.home() / ".soldierboy" / "cases" / case_slug / "evidence"
+            if not evidence_dir.exists():
+                evidence_dir = Path.home() / ".joe" / "cases" / case_slug / "evidence"
             if evidence_dir.exists():
                 for p in evidence_dir.glob("*.png"):
                     evidence_items.append({
@@ -446,12 +448,12 @@ class SoldierBoyAPI:
         try:
             audio_b64 = self._voice.synthesize_speech_b64(sentence)
             if audio_b64:
-                self._emit("joe_audio_chunk", {"audio": audio_b64, "text": sentence})
+                self._emit("soldierboy_audio_chunk", {"audio": audio_b64, "text": sentence})
         except Exception as e:
             print(f"[desktop] Sentence TTS streaming error: {e}")
 
     def _run_ask(self, question: str):
-        self._emit("joe_stream_start", {})
+        self._emit("soldierboy_stream_start", {})
         sentence_buffer = ""
         tts_queue = queue.Queue()
         sent_count = 0
@@ -466,7 +468,7 @@ class SoldierBoyAPI:
                     sentence = item
                     audio_b64 = self._voice.synthesize_speech_b64(sentence)
                     if audio_b64:
-                        self._emit("joe_audio_chunk", {"audio": audio_b64, "text": sentence})
+                        self._emit("soldierboy_audio_chunk", {"audio": audio_b64, "text": sentence})
                 except Exception as e:
                     print(f"[desktop] Sentence TTS streaming error: {e}")
                 finally:
@@ -479,18 +481,19 @@ class SoldierBoyAPI:
 
         def on_token(chunk: str):
             nonlocal sentence_buffer, sent_count
-            self._emit("joe_stream_chunk", {"chunk": chunk})
+            self._emit("soldierboy_stream_chunk", {"chunk": chunk})
 
             if self._voice:
                 sentence_buffer += chunk
-                # Abbreviation-aware sentence boundary regex: ignores Mr., Dr., vs., e.g., i.e. and decimal numbers 3.5, 10.0
-                m = re.search(r'((?:(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|eg|ie|Inc|Ltd|St))\x2e(?!\d)|[.!?\n])+)', sentence_buffer)
+                # Python 3.14 safe sentence boundary matching
+                m = re.search(r'([.!?\n]+)', sentence_buffer)
                 if m:
                     sentence = sentence_buffer[:m.end()].strip()
                     sentence_buffer = sentence_buffer[m.end():]
                     if len(sentence) > 3:
                         sent_count += 1
-                        tts_queue.put(sentence)
+                        clean_sentence = re.sub(r'(\w+)_(\w+)', r'\1 \2', sentence).replace('_', ' ')
+                        tts_queue.put(clean_sentence)
 
         result = self._voice.chat(question, self._target, on_token=on_token)
         if result.get("rate_limited"):
@@ -511,7 +514,7 @@ class SoldierBoyAPI:
             words = raw_text.split(' ')
             for i, w in enumerate(words):
                 token = w + (" " if i < len(words) - 1 else "")
-                self._emit("joe_stream_chunk", {"chunk": token})
+                self._emit("soldierboy_stream_chunk", {"chunk": token})
                 time.sleep(0.015)  # 15ms smooth word typing effect
 
             # 2. Extract clean printable sentences for speech synthesis
@@ -542,11 +545,11 @@ class SoldierBoyAPI:
                 _, warnings = verify_grounding(result["text"], self._target)
                 if warnings:
                     print(f"[desktop] Grounding audit warning for active case {self._target.primary}: {warnings}")
-                    self._emit("joe_grounding_warning", {"warnings": warnings, "target": self._target.primary})
+                    self._emit("soldierboy_grounding_warning", {"warnings": warnings, "target": self._target.primary})
             except Exception as e:
                 print(f"[desktop] Post-hoc grounding check audit notice: {e}")
 
-        self._emit("joe_answer", {
+        self._emit("soldierboy_answer", {
             "text": result["text"],
             "audio": None,
             "rate_limited": result.get("rate_limited", False),
@@ -568,19 +571,19 @@ class SoldierBoyAPI:
         """Export current investigation target findings to a standalone HTML report."""
         if not self._target:
             msg = "No active investigation case loaded to export."
-            self._emit("joe_answer", {"text": msg, "mode": "advisor"})
+            self._emit("soldierboy_answer", {"text": msg, "mode": "advisor"})
             return msg
         try:
             from exporters.html_report import generate
             report_path = generate(self._target)
             msg = f"HTML investigation report generated successfully at: {report_path}"
             print(f"[desktop] {msg}")
-            self._emit("joe_answer", {"text": f"Report exported for {self._target.primary}. Saved to: {report_path}", "mode": "investigation"})
+            self._emit("soldierboy_answer", {"text": f"Report exported for {self._target.primary}. Saved to: {report_path}", "mode": "investigation"})
             return str(report_path)
         except Exception as e:
             err_msg = f"Failed to export report: {e}"
             print(f"[desktop] {err_msg}")
-            self._emit("joe_answer", {"text": err_msg, "mode": "advisor"})
+            self._emit("soldierboy_answer", {"text": err_msg, "mode": "advisor"})
             return err_msg
 
     def pick_image(self):
@@ -620,21 +623,21 @@ class SoldierBoyAPI:
             print(f"[desktop] save_dropped_image error: {e}")
 
     def submit_image(self, image_path: str, prompt: str):
-        """Analyze an attached image with prompt via JoeVoice multimodal AI."""
+        """Analyze an attached image with prompt via SoldierBoyVoice multimodal AI."""
         print(f"\n[desktop] Submitting image prompt: {prompt} (image: {image_path})")
         threading.Thread(target=self._run_submit_image, args=(image_path, prompt), daemon=True).start()
 
     def _run_submit_image(self, image_path: str, prompt: str):
-        self._emit("joe_stream_start", {})
+        self._emit("soldierboy_stream_start", {})
         def on_token(chunk: str):
-            self._emit("joe_stream_chunk", {"chunk": chunk})
+            self._emit("soldierboy_stream_chunk", {"chunk": chunk})
 
         full_prompt = prompt if prompt else "Analyze this image in detail and tell me what you observe from an OSINT investigator perspective."
         result = self._voice.chat(full_prompt, self._target, on_token=on_token, image_path=image_path)
         if result.get("rate_limited"):
             self._emit("rate_limited", {})
 
-        self._emit("joe_answer", {
+        self._emit("soldierboy_answer", {
             "text": result["text"],
             "audio": None,
             "rate_limited": result.get("rate_limited", False),
@@ -681,9 +684,9 @@ class SoldierBoyAPI:
             text = "Investigation aborted. You pulled me away. But I remember what we found so far."
             used_gemini = False
         else:
-            self._emit("joe_stream_start", {})
+            self._emit("soldierboy_stream_start", {})
             def on_token(chunk: str):
-                self._emit("joe_stream_chunk", {"chunk": chunk})
+                self._emit("soldierboy_stream_chunk", {"chunk": chunk})
 
             result = self._voice.closing_monologue(target, on_token=on_token)
             text = result["text"]
@@ -692,7 +695,7 @@ class SoldierBoyAPI:
             if result.get("rate_limited"):
                 self._emit("rate_limited", {})
 
-        self._memory.add("joe", text)
+        self._memory.add("soldierboy", text)
         self._emit("investigation_done", {
             "target": target.to_dict(),
             "monologue": text,
@@ -929,7 +932,7 @@ class SoldierBoyAPI:
                     if speech_start_count >= 2 and not is_speaking:
                         is_speaking = True
                         print(f"[voice listener] Voice detected (Energy: {energy:.1f} > Threshold: {threshold:.1f}) -> HUD set to LISTENING...")
-                        self._emit("joe_speech_started", {})
+                        self._emit("soldierboy_speech_started", {})
                 else:
                     speech_start_count = 0
                     # Ambient background noise tracking
@@ -938,24 +941,24 @@ class SoldierBoyAPI:
                         pcm_buffer.append(raw_chunk)
                         silence_chunks += 1
 
-                        # 4 consecutive silence chunks = 0.4s silence -> speech completed!
-                        if silence_chunks >= 4:
+                        # 12 consecutive silence chunks = 1.2s silence -> speech completed naturally!
+                        if silence_chunks >= 12:
                             is_speaking = False
                             silence_chunks = 0
                             captured_pcm = b"".join(pcm_buffer)
                             pcm_buffer = []
 
                             duration_sec = len(captured_pcm) / 32000.0
-                            print(f"[voice listener] Speech completed (0.4s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
+                            print(f"[voice listener] Speech completed (1.2s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
 
-                            if len(captured_pcm) >= 16000:
+                            if len(captured_pcm) >= 32000:
                                 threading.Thread(
                                     target=self._process_captured_speech,
                                     args=(captured_pcm,),
                                     daemon=True
                                 ).start()
                             else:
-                                self._emit("joe_speech_ended", {})
+                                self._emit("soldierboy_speech_ended", {})
         except Exception as e:
             import traceback
             print(f"[desktop] Background voice loop error: {e}")
@@ -969,8 +972,8 @@ class SoldierBoyAPI:
                     pass
 
     def _process_captured_speech(self, pcm_bytes: bytes):
-        """Transcribe captured speech and trigger HUD / JoeVoice response."""
-        wav_path = f"/tmp/joe_speech_{int(time.time()*1000)}.wav"
+        """Transcribe captured speech and trigger HUD / SoldierBoyVoice response."""
+        wav_path = f"/tmp/soldierboy_speech_{int(time.time()*1000)}.wav"
         try:
             with wave.open(wav_path, 'wb') as wf:
                 wf.setnchannels(1)
@@ -985,43 +988,61 @@ class SoldierBoyAPI:
 
             if text:
                 print(f"[voice listener] Recognized text: '{text}'")
-                pattern = r'^(?:(?:hey|hi|hai|yo|hello)\s+)?(?:soldier|soldja|soldierboy|solger|solja)\b\s*,?\s*|\b(?:soldier|soldja|soldierboy|solger|solja)\b\s*,?\s*'
+                
+                # Check for explicit Stop commands first
+                stop_pattern = r'\b(?:stop|shut\s*up|be\s*quiet|quiet|hush|silence|cancel)\b'
+                if re.search(stop_pattern, text, re.IGNORECASE):
+                    print(f"[voice listener] Stop command detected: '{text}'")
+                    self._emit("soldierboy_stop_command", {"text": text})
+                    self._wake_window_expires = 0.0
+                    return
+
+                # Comprehensive Soldier Boy wake word pattern (handling all Google STT acoustic mishears: Suraj, search, shoes, soulja, etc.)
+                pattern = r'^(?:(?:hey|hi|hai|yo|hello|ok|okay|play)\s+)?(?:soldier\s*boy|soldier|soldi|soldja|solger|solja|soja|solda|suraj\s*boy|suraj|search\s*boy|shoes\s*boy|soulja\s*boy|soulja|shoulda\s*boy|sol)\b\s*,?\s*'
                 match = re.search(pattern, text, re.IGNORECASE)
                 now = time.time()
+
+                # Direct identity / interaction questions bypass wake word check
+                implicit_match = re.search(r'\b(?:who\s+are\s+you|who\s+are\s+u|who\s+u\s+are|what\s+can\s+you\s+do|who\s+the\s+fuck\s+are\s+you)\b', text, re.IGNORECASE)
 
                 if match:
                     clean = text[match.end():].strip()
                     print(f"[voice listener] Wake word match! Raw: '{text}', Clean command: '{clean}'")
-                    self._emit("joe_wake_word_detected", {"raw": text, "clean": clean})
+                    self._emit("soldierboy_wake_word_detected", {"raw": text, "clean": clean})
                     if clean:
                         print(f"[voice listener] Sending voice command to Soldier Boy: '{clean}'")
-                        self._emit("joe_voice_detected", {"text": clean, "raw": text})
+                        self._emit("soldierboy_voice_detected", {"text": clean, "raw": text})
                         self._wake_window_expires = now + 30.0
                     else:
                         print(f"[voice listener] Wake word only spoken ('{text}'). Opening 30s follow-up window...")
                         self._wake_window_expires = now + 30.0
+                elif implicit_match:
+                    print(f"[voice listener] Direct query match ('{text}')! Triggering Soldier Boy command...")
+                    self._emit("soldierboy_wake_word_detected", {"raw": text, "clean": text})
+                    self._emit("soldierboy_voice_detected", {"text": text, "raw": text})
+                    self._wake_window_expires = now + 30.0
                 elif now < getattr(self, '_wake_window_expires', 0.0):
                     print(f"[voice listener] Active wake window! Sending follow-up command to Soldier Boy: '{text}'")
-                    self._emit("joe_voice_detected", {"text": text, "raw": text})
+                    self._emit("soldierboy_voice_detected", {"text": text, "raw": text})
                     self._wake_window_expires = now + 30.0
                 else:
                     print(f"[voice listener] No wake word detected in ambient audio: '{text}'")
-                    self._emit("joe_speech_ended", {})
+                    self._emit("soldierboy_speech_ended", {})
             else:
                 print("[voice listener] Audio transcribed to empty text.")
-                self._emit("joe_speech_ended", {})
+                self._emit("soldierboy_speech_ended", {})
 
         except sr.UnknownValueError:
             print("[voice listener] Audio was unintelligible.")
-            self._emit("joe_speech_ended", {})
+            self._emit("soldierboy_speech_ended", {})
         except sr.RequestError as req_err:
             print(f"[voice listener] Google Speech Recognition API error: {req_err}")
-            self._emit("joe_speech_ended", {})
+            self._emit("soldierboy_speech_ended", {})
         except Exception as e:
             import traceback
             print(f"[desktop] Processing error: {e}")
             traceback.print_exc()
-            self._emit("joe_speech_ended", {})
+            self._emit("soldierboy_speech_ended", {})
         finally:
             if os.path.exists(wav_path):
                 try:
@@ -1032,7 +1053,7 @@ class SoldierBoyAPI:
     def _emit(self, event: str, data: dict):
         if self._window:
             try:
-                js_code = f"window.joe && window.joe.receive && window.joe.receive('{event}', {json.dumps(data)})"
+                js_code = f"(window.soldierboy || window.joe) && (window.soldierboy || window.joe).receive && (window.soldierboy || window.joe).receive('{event}', {json.dumps(data)})"
                 self._window.evaluate_js(js_code)
             except Exception as e:
                 print(f"[desktop] JS evaluate error for {event}: {e}")

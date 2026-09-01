@@ -1,5 +1,5 @@
 """
-narrative/grounding_check.py — Anti-Hallucination & Grounding Audit for Joe Goldberg Monologues.
+narrative/grounding_check.py — Anti-Hallucination & Grounding Audit for Soldier Boy Monologues.
 """
 import re
 from typing import Tuple, List

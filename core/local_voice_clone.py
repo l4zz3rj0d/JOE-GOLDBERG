@@ -1,7 +1,7 @@
 # core/local_voice_clone.py
 """
-100% Local Zero-Shot Voice Cloning Engine for Joe Goldberg.
-Synthesizes speech matching Penn Badgley's vocal timbre from assets/joe_reference.wav.
+100% Local Zero-Shot Voice Cloning Engine for Soldier Boy.
+Synthesizes speech matching Soldier Boy's vocal timbre from assets/soldierboy_reference.wav.
 Runs entirely on-device (CPU/GPU) with zero external API calls or credit limits.
 """
 

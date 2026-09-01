@@ -1,6 +1,6 @@
 # Legal Disclaimer
 
-Joe Goldberg is intended for authorized security research, penetration testing,
+Soldier Boy is intended for authorized security research, penetration testing,
 bug bounty hunting, and CTF challenges only.
 
 By using this tool you agree that:

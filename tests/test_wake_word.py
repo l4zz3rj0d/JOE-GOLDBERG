@@ -1,9 +1,9 @@
 # tests/test_wake_word.py
 """
-Benchmark test suite for Joe Goldberg openWakeWord detection engine.
+Benchmark test suite for Soldier Boy openWakeWord detection engine.
 Evaluates:
 1. False-Accept Rate (FAR): Testing ambient noise / non-wake text to verify zero false triggers.
-2. False-Reject Rate (FRR): Testing 'Hey Joe' trigger phrases to verify reliability.
+2. False-Reject Rate (FRR): Testing 'Hey Soldier' trigger phrases to verify reliability.
 3. VAD Silence Early-Closing logic.
 """
 
@@ -43,9 +43,9 @@ class TestWakeWordEngine(unittest.TestCase):
             max_window_sec=1.0
         )
 
-        engine.trigger_wake_event("Hey Joe")
+        engine.trigger_wake_event("Hey Soldier")
         self.assertEqual(len(events), 1)
-        self.assertEqual(events[0], "Hey Joe")
+        self.assertEqual(events[0], "Hey Soldier")
         self.assertTrue(engine.is_window_active)
 
     def test_rms_calculation(self):

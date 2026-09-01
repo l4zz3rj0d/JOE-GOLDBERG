@@ -1,8 +1,8 @@
 # core/wake_word.py
 """
-Local openWakeWord engine & VAD command-window management for Joe Goldberg.
+Local openWakeWord engine & VAD command-window management for Soldier Boy.
 Features:
-- Continuous 100% on-device CPU prediction for 'Hey Joe' (ONNX).
+- Continuous 100% on-device CPU prediction for 'Hey Soldier' / 'Hey Dean' (ONNX).
 - Hardware mic detection with graceful fallback to browser Web Speech API.
 - Voice Activity Detection (VAD) for 1.2s post-speech silence early-closing (30s safety cap).
 """

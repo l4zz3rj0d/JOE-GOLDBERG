@@ -152,7 +152,7 @@ async def check_avatar_match(entity_a: Entity, entity_b: Entity) -> bool:
     if path_a == path_b:
         return False
         
-    PROJECT_ROOT = Path("/home/joe/Project-Hellhound/JOE-GOLDBERG")
+    PROJECT_ROOT = Path(__file__).parent.parent
     file_a = PROJECT_ROOT / path_a
     file_b = PROJECT_ROOT / path_b
     

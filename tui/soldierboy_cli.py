@@ -79,13 +79,16 @@ def print_breach(entity: Entity):
     )
 
 
-def print_joe_quote(quote: str):
-    if not quote.strip():
-        return
-    console.print()
-    for line in quote.strip().splitlines():
-        console.print(f"       [{C_GOLD}]│  {line}[/]")
-    console.print()
+def print_soldierboy_quote(quote: str):
+    """Print an in-character quote panel."""
+    console.print(Panel(
+        f"[italic grey70]\"{quote}\"[/italic grey70]",
+        border_style="bright_blue",
+        title="[bold blue]SOLDIER BOY[/bold blue]",
+        expand=False
+    ))
+
+print_joe_quote = print_soldierboy_quote
 
 
 def print_findings(target: Target):
@@ -332,7 +335,7 @@ class SoldierBoyCLI:
             parsed_input = parse(target_str)
             plan = plan_investigation(brief_text, target_str, parsed_input.target_type)
             if plan.reasoning:
-                print_joe_quote(plan.reasoning)
+                print_soldierboy_quote(plan.reasoning)
             
             # If plan did not yield hints, fall back to default parser
             if not plan.extra_hints:
@@ -376,7 +379,7 @@ class SoldierBoyCLI:
             result = self.voice.chat(question, self.current_target)
 
         self.memory.add("user", question)
-        self.memory.add("joe", result["text"])
+        self.memory.add("soldierboy", result["text"])
 
         if result.get("rate_limited"):
             console.print(f"\n  [{C_ORANGE}]  ⚠ Rate limited — using local SLM[/]")
@@ -432,7 +435,7 @@ class SoldierBoyCLI:
         result = self.voice.closing_monologue(target)
         if result.get("rate_limited"):
             console.print(f"  [{C_ORANGE}]  ⚠ Gemini rate limited — using local SLM for monologue[/]")
-        self.memory.add("joe", result["text"])
+        self.memory.add("soldierboy", result["text"])
         print_monologue(result["text"])
 
 

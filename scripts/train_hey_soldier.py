@@ -26,7 +26,7 @@ import onnx
 from onnx import helper, TensorProto
 from pathlib import Path
 
-# Ensure joe-env modules are importable
+# Ensure soldier-env modules are importable
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from openwakeword.utils import AudioFeatures

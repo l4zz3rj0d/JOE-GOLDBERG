@@ -1094,7 +1094,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div style="flex:1;">
-        <div class="title" id="case-title">Hello, You.</div>
+        <div class="title" id="case-title">SOLDIER BOY</div>
         <div class="sub" id="case-sub">Type a target below to start an investigation</div>
       </div>
       <button id="export-report-btn" class="hud-color-btn" title="Export HTML Investigation Report" style="display:none; margin-right: 8px;">
@@ -2190,12 +2190,12 @@ function renderCaseList(cases) {
 }
 
 function setCaseHeader(name, sub, risk) {
-  $('#case-title').textContent = name || 'Hello, You.';
+  $('#case-title').textContent = name || 'SOLDIER BOY';
   $('#case-sub').textContent = sub || 'Type a target below to start an investigation';
   $('#risk-chip').textContent = risk != null ? `risk ${risk}` : 'risk —';
   const exportBtn = $('#export-report-btn');
   if (exportBtn) {
-    exportBtn.style.display = (name && name !== 'Hello, You.') ? 'inline-flex' : 'none';
+    exportBtn.style.display = (name && name !== 'SOLDIER BOY' && name !== 'Hello, You.') ? 'inline-flex' : 'none';
   }
 }
 
@@ -3135,9 +3135,10 @@ function playJoeAudio(text, audioData) {
 
 let joeWakeTimer = null;
 
-window.joe = {
+window.soldierboy = window.joe = {
   receive(event, data) {
     switch (event) {
+      case 'soldierboy_audio_chunk':
       case 'joe_audio_chunk':
         if (data && data.audio) {
           enqueueJoeAudio(data.audio, data.text);
@@ -3149,22 +3150,36 @@ window.joe = {
           showSubtitles(`JARVIS Live Intel: ${data.query}`, 'JARVIS SEARCH');
         }
         break;
+      case 'soldierboy_stt_interim':
       case 'joe_stt_interim':
         if (data && data.text) showSubtitles(data.text, 'VOICE STT (RECORDING)');
         break;
+      case 'soldierboy_stt_final':
       case 'joe_stt_final':
         if (data && data.text) showSubtitles(data.text, 'VOICE COMMAND');
         break;
-      case 'joe_speech_started':
+      case 'soldierboy_stop_command':
+      case 'joe_stop_command':
+        resetJoeAudioQueue();
+        setHudState('idle');
+        showSubtitles('STOP COMMAND DETECTED — Voice playback cancelled.', 'VOICE CONTROL');
+        break;
+      case 'soldierboy_wake_word_detected':
       case 'joe_wake_word_detected':
         resetJoeAudioQueue();
-        showSubtitles('HEY SOLDIER (WAKE DETECTED) — Listening...', 'VOICE STT');
-        if (joeHudState === 'idle' || joeHudState === 'listening' || joeHudState === 'speaking') {
+        showSubtitles('SOLDIER BOY (WAKE DETECTED) — Listening...', 'VOICE STT');
+        setHudState('listening');
+        break;
+      case 'soldierboy_speech_started':
+      case 'joe_speech_started':
+        if (joeHudState === 'idle') {
           setHudState('listening');
         }
         break;
 
+      case 'soldierboy_vad_speech_end':
       case 'joe_vad_speech_end':
+      case 'soldierboy_speech_ended':
       case 'joe_speech_ended':
         if (joeHudState === 'listening') {
           if (joeWakeTimer) clearTimeout(joeWakeTimer);
@@ -3173,12 +3188,14 @@ window.joe = {
         }
         break;
 
+      case 'soldierboy_grounding_warning':
       case 'joe_grounding_warning':
         if (data && data.warnings && data.warnings.length > 0) {
           showSubtitles(`⚠️ GROUNDING AUDIT: ${data.warnings.join(' | ')}`, 'GROUNDING AUDIT');
         }
         break;
 
+      case 'soldierboy_voice_detected':
       case 'joe_voice_detected':
         if (joeWakeTimer) clearTimeout(joeWakeTimer);
         resetJoeAudioQueue();
@@ -3230,16 +3247,19 @@ window.joe = {
         playJoeAudio(data.monologue, data.audio);
         break;
 
+      case 'soldierboy_stream_start':
       case 'joe_stream_start':
         hasReceivedAudioChunk = false;
         setHudState('speaking');
         startStreamingAnswer();
         break;
 
+      case 'soldierboy_stream_chunk':
       case 'joe_stream_chunk':
         updateStreamingChunk(data.chunk);
         break;
 
+      case 'soldierboy_answer':
       case 'joe_answer':
         showThinking(false);
         setHudState('idle');

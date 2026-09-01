@@ -19,7 +19,6 @@ setup(
     entry_points={
         "console_scripts": [
             "soldierboy=soldierboy:main",
-            "joe=soldierboy:main",
         ],
     },
 )

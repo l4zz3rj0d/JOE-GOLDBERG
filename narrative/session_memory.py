@@ -9,7 +9,7 @@ class SessionMemory:
         self.started_at = datetime.now().isoformat()
 
     def add(self, role: str, content: str):
-        """Append a message. role = 'user' | 'joe'"""
+        """Append a message. role = 'user' | 'soldierboy'"""
         self.history.append({
             "role": role,
             "content": content,

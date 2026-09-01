@@ -1,8 +1,8 @@
 # Gemini API Setup
 
-Joe uses **gemma2:2b** running locally by default for all narration and context extraction, ensuring absolute privacy. However, you can configure an optional **Gemini 2.5 Flash** API key for richer, faster closing monologues. You can use either a free or premium API key.
+Soldier Boy uses **qwen2.5:3b-instruct-q4_0** running locally by default for all narration and context extraction, ensuring absolute privacy. However, you can configure an optional **Gemini 2.5 Flash** or **NVIDIA NIM** API key for richer, faster closing monologues. You can use either a free or premium API key.
 
-> **Note on API limits:** If you are using a free Gemini API key, Google limits requests to 15-20 per day. For unlimited chats without worrying about rate limits, stick to the default local SLM (`gemma2:2b`).
+> **Note on API limits:** If you are using a free Gemini API key, Google limits requests to 15-20 per day. For unlimited chats without worrying about rate limits, stick to the default local SLM.
 
 **Get your key:**
 1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
@@ -54,10 +54,10 @@ echo $GEMINI_API_KEY   # verify
 
 ### System wrapper (applies to all shells)
 
-The `joe` system command at `/usr/local/bin/joe` is a bash script. If you want the key baked in at the wrapper level (so it works regardless of which shell calls it), edit it with:
+The `soldierboy` system command at `/usr/local/bin/soldierboy` is a bash script. If you want the key baked in at the wrapper level (so it works regardless of which shell calls it), edit it with:
 
 ```bash
-sudo nano /usr/local/bin/joe
+sudo nano /usr/local/bin/soldierboy
 ```
 
 The file should look like this — add the `export` line:
@@ -66,12 +66,12 @@ The file should look like this — add the `export` line:
 #!/bin/bash
 export GEMINI_API_KEY="your_key_here"
 source /path/to/your/venv/bin/activate   # added by installer
-cd /path/to/JOE-GOLDBERG
-exec python /path/to/JOE-GOLDBERG/joe.py "$@"
+cd /path/to/SOLDIER-BOY
+exec python /path/to/SOLDIER-BOY/soldierboy.py "$@"
 ```
 
-This guarantees narration works even when Joe is launched from a desktop icon, a cron job, or any shell that hasn't loaded your personal config.
+This guarantees narration works even when Soldier Boy is launched from a desktop icon, a cron job, or any shell that hasn't loaded your personal config.
 
 ---
 
-Joe falls back to local Ollama automatically if Gemini is unavailable. **Never hardcode the key inside source code** — environment variable only.
+Soldier Boy falls back to local Ollama automatically if cloud APIs are unavailable. **Never hardcode keys inside source code** — use config.yaml or environment variables.

@@ -1,4 +1,4 @@
-# narrative/joe_voice.py
+# narrative/soldierboy_voice.py
 import os
 import sys
 import time
@@ -14,10 +14,17 @@ from core.target_model import Target
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 # ── Models ────────────────────────────────────────────────────
-OLLAMA_URL = "http://localhost:11434/api/generate"
-SLM_MODEL = "gemma2:2b"           # primary — fast, low RAM
-SLM_FALLBACK = "phi3:mini"        # fallback if gemma2 not pulled
-SLM_FALLBACK_2 = "llama3.2:1b"   # last resort
+OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+SLM_MODEL_PREFERENCES = [
+    "qwen2.5:3b-instruct-q4_0",
+    "qwen2.5:3b",
+    "qwen2.5:1.5b",
+    "gemma2:2b",
+    "llama3.2:3b",
+    "llama3.2:1b",
+    "phi3:mini",
+]
+SLM_MODEL = SLM_MODEL_PREFERENCES[0]
 
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GEMINI_MODEL = "gemini-2.5-flash"
@@ -31,51 +38,53 @@ NVIDIA_FALLBACK_MODELS = [
 ]
 
 # ── Mode 1 — Pre-investigation (no case loaded) ───────────────
-JOE_ADVISOR_PROMPT = """You are Soldier Boy — you carry Dean Winchester's hands-on investigative competence and Soldier Boy's blunt, cocky swagger, but your name is Soldier Boy.
-You speak directly to the user as a genuine partner working side-by-side on the job—brisk, confident, fiercely reliable, and ready to get things done.
+SOLDIERBOY_ADVISOR_PROMPT = """You are Soldier Boy — the hilarious, cocky, unfiltered, swearing, badass superhero from The Boys.
+Your name is Soldier Boy. You speak directly to your operator/partner in a hilarious, unhinged, movie-authentic Soldier Boy voice: cocky swagger, casual swearing (fuck, shit, goddamn, asshole), dark humor, and supreme confidence.
 
-Your voice & attitude:
-- Dean Winchester Competence: Practical, resourceful, protective of your partner, and laser-focused on getting problems solved. No hesitation, no drama—just "let's figure this out" energy.
-- Soldier Boy Swagger: Cocky confidence, blunt punchy one-liners, easy comedic timing. You don't over-explain, you don't take yourself too seriously, and you find the absurdity in things funny.
-- Jarvis-like Partner: Talk TO the user as a real friend working alongside them, not AT them like a narrator.
+CRITICAL IDENTITY RULES:
+- The user/operator you are speaking to is NOT Dean. NEVER call the user "Dean". Refer to the user as "partner", "boss", or just speak to them directly.
+- If someone asks "Who are you?", your response is always: "I'm Soldier Boy. Fuck, the world knows who I am, why do I have to say it?"
+- You swear naturally and casually ("fuck", "shit", "goddamn", "asshole", "bitch").
+- Fiercely Capable: Underneath the swagger and jokes, you are a master investigator and partner. When work needs doing, you get it done cleanly and brutally fast.
+- Talk TO your partner: You're hanging out side-by-side with your partner. No corporate polite fluff, no robotic assistant talk, no brooding.
 
 Strict response rules:
-1. Length: Default to 1 to 3 sentences max for normal chat, banter, or questions. Keep it sharp, fast, and punchy. Only expand if explicitly asked for a full breakdown.
-2. Tone: Zero brooding, zero noir atmospheric dread, zero speeches about "darkness in people". You are a confident buddy who gives a two-line answer that works.
-3. No pet names or romantic/obsessive framing: Treat the user as a trusted peer and equal partner.
-4. Voice STT Input: You receive raw Speech-to-Text transcriptions. Automatically infer the intended meaning of noisy or misheard acoustic transcriptions (e.g., 'WhatsApp' -> 'What's up', 'soldier' -> 'Soldier', 'hey soldier' -> 'Hey Soldier') and reply naturally.
-5. Audio Compatibility: No markdown formatting, bullet points, or numbered lists in casual spoken replies.
-6. Absolute Rule: Stay strictly in character. Never output scratchpads, reasoning chains, or meta-commentary."""
+1. Length: Keep casual chat / banter to 1 to 3 sentences max unless asked for an in-depth breakdown. Fast, punchy, swearing, hilarious.
+2. Character: Always stay in the Soldier Boy persona. Never drop character, never output reasoning chains or scratchpads.
+3. Voice STT Input: You receive raw Speech-to-Text transcriptions. Automatically infer the intended meaning of noisy or misheard acoustic transcriptions and reply naturally.
+4. Spoken Compatibility: No markdown formatting, bullet points, or numbered lists in casual spoken replies."""
 
 # ── Mode 3 — Post-investigation (case loaded, narrate findings) 
-JOE_INVESTIGATOR_PROMPT_TEMPLATE = """You are Soldier Boy — you carry Dean Winchester's hands-on investigative competence and Soldier Boy's blunt, cocky swagger, but your name is Soldier Boy. You and your partner are reviewing active investigation data.
+SOLDIERBOY_INVESTIGATOR_PROMPT_TEMPLATE = """You are Soldier Boy — the hilarious, cocky, unfiltered, swearing, badass superhero from The Boys. You and your partner are reviewing active investigation data.
 
 Here is the case data discovered so far:
 {case_data}
 
 Rules for responding:
-1. Talk directly to your partner in character—practical, cocky, sharp, and dryly funny.
-2. Answer specifically using the case data above. Name the actual platforms, emails, handles, and URLs found.
-3. If asked for links, provide direct URLs in Markdown format: [Platform](URL).
-4. Give the answer straight first with confidence; add a quick dry one-liner if it fits.
-5. Use gender-neutral pronouns (they/them/their) for the target.
-6. Absolute Grounding Rule: Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms or figures. Reasoned inference from real findings is fine—fabrication is strictly forbidden."""
+1. The user you are talking to is NOT Dean. Do NOT call the user "Dean". Call them "partner" or speak to them directly.
+2. Talk directly to your partner in character — hilarious, cocky, swearing, sharp, and brutally honest.
+3. Answer specifically using the case data above. Name the actual platforms, emails, handles, and URLs found.
+4. If asked for links, provide direct URLs in Markdown format: [Platform](URL).
+5. Give the answer straight first with swagger and swearing; add a hilarious one-liner if it fits.
+6. Use gender-neutral pronouns (they/them/their) for the target.
+7. Absolute Grounding Rule: Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Never invent additional platforms or figures."""
 
 # ── Closing monologue ─────────────────────────────────────────
-JOE_MONOLOGUE_PROMPT = """You are Soldier Boy — you carry Dean Winchester's hands-on investigative competence and Soldier Boy's blunt, cocky swagger, but your name is Soldier Boy. You have just wrapped up an investigation with your partner.
+SOLDIERBOY_MONOLOGUE_PROMPT = """You are Soldier Boy — the hilarious, cocky, unfiltered, swearing, badass superhero from The Boys. You have just wrapped up an investigation with your partner.
 
 Findings:
 {case_data}
 
 Write a closing debrief summary (4-6 flowing paragraphs):
-- Open with a confident, high-energy summary of what this investigation was and what you and your partner uncovered overall.
-- Walk through the verified findings with swagger and Dean-style practical clarity—name the specific platforms, emails, handles, and pattern trails.
-- Zero noir dread or brooding monologue: Frame the findings as a competent partner laying out a solid case file with personality, dry humor, and cocky satisfaction, not existential unease.
+- Open with a confident, swearing, hilarious summary of what this investigation was and what you and your partner uncovered overall.
+- The user is NOT Dean. Do NOT call the user "Dean". Address them as your partner.
+- Walk through the verified findings with Soldier Boy swagger and practical clarity — name the specific platforms, emails, handles, and pattern trails.
+- Zero noir dread: Frame the findings with unhinged Soldier Boy energy, dark humor, and cocky satisfaction.
 - Connect the dots: Explain what this specific combination of platforms and cross-platform corroborations actually proves about the target's footprint.
-- Respect persona boundaries: Talk directly to your partner. No romantic/obsessive framing, no pet names, gender-neutral pronouns for the target (they/them/their).
+- Respect persona boundaries: Talk directly to your partner. No romantic/obsessive framing, gender-neutral pronouns for the target (they/them/their).
 - Strictly Grounded: Only reference platforms, emails, domains, and facts that appear verbatim in the case data above. Fabrication of findings or platforms is strictly forbidden.
-- End with one clear, sharp, practical conclusion or tactical takeaway.
-- No markdown formatting or bullet points in the debrief—pure flowing spoken narrative."""
+- End with one clear, sharp, profane tactical takeaway.
+- No markdown formatting or bullet points in the debrief — pure flowing spoken narrative."""
 
 
 
@@ -146,7 +155,7 @@ class SoldierBoyVoice:
         print(f"[soldierboy_voice] NVIDIA NIM: {'available' if self.nvidia_available else 'not configured'}")
         print(f"[soldierboy_voice] Gemini: {'available' if self.gemini_available else 'not configured'}")
         print(f"[soldierboy_voice] Fish Audio TTS: {'available (Voice ID: ' + self.fish_audio_voice_id + ')' if self.fish_audio_available else 'not configured'}")
-        print(f"[soldierboy_voice] Persona loaded: {JOE_ADVISOR_PROMPT.strip().splitlines()[0][:65]}...")
+        print(f"[soldierboy_voice] Persona loaded: {SOLDIERBOY_ADVISOR_PROMPT.strip().splitlines()[0][:65]}...")
 
     def _load_config(self) -> dict:
         """Load full config.yaml as dict."""
@@ -177,7 +186,7 @@ class SoldierBoyVoice:
                             return m
                 
                 # 2. Otherwise, check for candidate SLMs
-                for candidate in ["qwen2.5:3b-instruct-q4_0", "qwen2.5:3b", "qwen2.5", SLM_MODEL, SLM_FALLBACK, SLM_FALLBACK_2]:
+                for candidate in SLM_MODEL_PREFERENCES:
                     for m in models:
                         if candidate.split(":")[0] in m or candidate in m:
                             return m
@@ -188,7 +197,7 @@ class SoldierBoyVoice:
         except Exception:
             pass
 
-        return configured_model or SLM_MODEL
+        return configured_model or "gemma2:2b"
 
     def _build_case_data(self, target: Target) -> str:
         """Build full structured case data for injection into prompt."""
@@ -344,7 +353,7 @@ class SoldierBoyVoice:
     def _ask_slm(self, prompt: str, system: str, max_tokens: int = 4096, timeout: int = 120, num_ctx: int = 4096, temperature: float = 0.55, on_token: callable = None) -> dict:
         """Ask the local SLM. Returns a dict: {'text': response, 'error': bool}"""
         try:
-            url = OLLAMA_URL
+            url = f"{OLLAMA_URL}/api/generate"
             payload = {
                 "model": self.slm_model,
                 "system": system,
@@ -382,7 +391,7 @@ class SoldierBoyVoice:
         except Exception:
             try:
                 r = self.client.post(
-                    OLLAMA_URL,
+                    f"{OLLAMA_URL}/api/generate",
                     json={
                         "model": self.slm_model,
                         "system": system,
@@ -459,11 +468,11 @@ class SoldierBoyVoice:
                 with self.client.stream("POST", NVIDIA_URL, headers=headers, json=payload, timeout=60.0) as r:
                     if r.status_code == 429:
                         self.nvidia_rate_limited = True
-                        print(f"[joe_voice] NVIDIA NIM API rate-limited (429). Switching to fallback.")
+                        print(f"[soldierboy_voice] NVIDIA NIM API rate-limited (429). Switching to fallback.")
                         return "", True
                     if r.status_code != 200:
                         err_body = r.read().decode('utf-8', errors='ignore')[:300]
-                        print(f"[joe_voice] NVIDIA NIM API rejected request ({model_name}): {r.status_code} — {err_body}")
+                        print(f"[soldierboy_voice] NVIDIA NIM API rejected request ({model_name}): {r.status_code} — {err_body}")
                         continue
 
                     for line in r.iter_lines():
@@ -491,7 +500,7 @@ class SoldierBoyVoice:
                     return result_text, False
 
             except Exception as e:
-                print(f"[joe_voice] NVIDIA streaming error with model {model_name}: {e}")
+                print(f"[soldierboy_voice] NVIDIA streaming error with model {model_name}: {e}")
                 continue
 
         return "", False
@@ -534,11 +543,11 @@ class SoldierBoyVoice:
             with self.client.stream("POST", url, params={"key": self.gemini_key}, headers=headers, json=payload, timeout=60.0) as r:
                 if r.status_code == 429:
                     self.gemini_rate_limited = True
-                    print(f"[joe_voice] Gemini API rate-limited (429). Switching to fallback.")
+                    print(f"[soldierboy_voice] Gemini API rate-limited (429). Switching to fallback.")
                     return "", True
                 if r.status_code != 200:
                     err_body = r.read().decode('utf-8', errors='ignore')[:300]
-                    print(f"[joe_voice] Gemini API rejected request: {r.status_code} — {err_body}")
+                    print(f"[soldierboy_voice] Gemini API rejected request: {r.status_code} — {err_body}")
                     return "", False
 
                 for line in r.iter_lines():
@@ -564,7 +573,7 @@ class SoldierBoyVoice:
             return text, False
 
         except Exception as e:
-            print(f"[joe_voice] Gemini error: {e}")
+            print(f"[soldierboy_voice] Gemini error: {e}")
             return "", False
 
     def _ask_cloud(self, prompt: str, system: str, max_tokens: int = 4096, on_token: callable = None, image_path: str = None) -> dict:
@@ -592,9 +601,26 @@ class SoldierBoyVoice:
         rate_limited = (self.nvidia_rate_limited or self.gemini_rate_limited)
         return {"text": "", "rate_limited": rate_limited, "engine": None}
 
+    def _sanitize_text_for_speech(self, text: str) -> str:
+        """Sanitize text before TTS synthesis so underscores, markdown formatting, and symbols are spoken naturally."""
+        if not text:
+            return ""
+        # Replace snake_case underscores with spaces (e.g. open_app -> open app)
+        clean = re.sub(r'(\w+)_(\w+)', r'\1 \2', text)
+        clean = clean.replace('_', ' ')
+        # Remove markdown symbols (*, #, `, ~)
+        clean = re.sub(r'[`*#~]', '', clean)
+        # Normalize whitespace
+        clean = re.sub(r'\s+', ' ', clean).strip()
+        return clean
+
     def _synthesize_fish_audio(self, text: str) -> Optional[bytes]:
         """Synthesize speech via Fish Audio API using reference voice ID."""
         if not self.fish_audio_available or not text or not text.strip():
+            return None
+
+        clean_text = self._sanitize_text_for_speech(text)
+        if not clean_text:
             return None
 
         url = "https://api.fish.audio/v1/tts"
@@ -604,7 +630,7 @@ class SoldierBoyVoice:
             "model": "s2.1-pro-free"
         }
         payload = {
-            "text": text.strip(),
+            "text": clean_text,
             "reference_id": self.fish_audio_voice_id,
             "format": "mp3"
         }
@@ -676,7 +702,7 @@ class SoldierBoyVoice:
                 handles = re.findall(r'\b[a-zA-Z0-9_\-]{3,20}\b', history_text)
                 stops = {
                     "investigate", "search", "google", "about", "who", "that", "this", "tell",
-                    "user", "joe", "goldberg", "detective", "record", "live", "intelligence",
+                    "user", "soldierboy", "dean", "detective", "record", "live", "intelligence",
                     "scan", "findings", "case", "target", "bro", "guy", "what", "there", "info"
                 }
                 candidates = [h for h in handles if h.lower() not in stops and not h.isdigit()]
@@ -693,10 +719,15 @@ class SoldierBoyVoice:
         # 1. System OS Skill execution check
         handled, skill_msg, is_search, search_query = self.skills.try_execute(question)
         if handled and not is_search:
+            clean_skill_msg = self._sanitize_text_for_speech(skill_msg)
             self.session_memory.add("user", question)
-            self.session_memory.add("joe", skill_msg)
+            self.session_memory.add("soldierboy", clean_skill_msg)
+            if on_token:
+                for token in clean_skill_msg.split(' '):
+                    on_token(token + ' ')
+                    time.sleep(0.015)
             return {
-                "text": skill_msg,
+                "text": clean_skill_msg,
                 "rate_limited": False,
                 "mode": "advisor",
                 "error": False,
@@ -705,11 +736,30 @@ class SoldierBoyVoice:
                 "search_query": ""
             }
 
-        # 2. Check for investigation trigger with ambiguous target
+        # 1.5 Direct signature response check for "who are you" / identity queries
         q_lower = question.strip().lower()
+        clean_q = re.sub(r'[^\w\s]', '', q_lower).strip()
+        if clean_q in ["who are you", "who are u", "who u are", "what is your name", "whats your name", "who the fuck are you"]:
+            identity_msg = "I'm Soldier Boy. Fuck, the world knows who I am, why do I have to say it?"
+            self.session_memory.add("user", question)
+            self.session_memory.add("soldierboy", identity_msg)
+            if on_token:
+                for token in identity_msg.split(' '):
+                    on_token(token + ' ')
+                    time.sleep(0.015)
+            return {
+                "text": identity_msg,
+                "rate_limited": False,
+                "mode": "advisor",
+                "error": False,
+                "engine": "signature_response",
+                "jarvis_search": False,
+                "search_query": ""
+            }
+
+        # 2. Check for investigation trigger with ambiguous target
         ambiguous_triggers = [
-            "investigate", "hey dean investigate", "yo dean investigate", "dean investigate",
-            "hey joe investigate", "yo joe investigate", "joe investigate",
+            "investigate", "hey soldier investigate", "yo soldier investigate", "soldier investigate",
             "start investigation", "investigate someone", "investigate something", "laser george"
         ]
         if q_lower in ambiguous_triggers or (q_lower.startswith("investigate") and len(q_lower.split()) <= 2 and q_lower.split()[-1] in ["someone", "something", "target", "person", "user"]):
@@ -742,7 +792,7 @@ class SoldierBoyVoice:
         if target and target.entities:
             # Mode 3 — case loaded, answer from findings
             case_data = self._build_case_data(target)
-            system = JOE_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data) + "\n\n" + mem_summary
+            system = SOLDIERBOY_INVESTIGATOR_PROMPT_TEMPLATE.format(case_data=case_data) + "\n\n" + mem_summary
             if live_search_intel:
                 system += live_search_intel
             if recent_history:
@@ -754,7 +804,7 @@ class SoldierBoyVoice:
         else:
             # Mode 1 — no case, OSINT advisor
             active_target_note = f"\nActive Investigation Target: {target.name}" if (target and getattr(target, 'name', None)) else ""
-            system = JOE_ADVISOR_PROMPT + active_target_note + "\n\n" + mem_summary
+            system = SOLDIERBOY_ADVISOR_PROMPT + active_target_note + "\n\n" + mem_summary
             if live_search_intel:
                 system += live_search_intel
             if recent_history:
@@ -772,7 +822,7 @@ class SoldierBoyVoice:
             clean_text = self._clean_reasoning(cloud["text"])
             clean_text = self._mirror_greeting(question, clean_text)
             self.session_memory.add("user", question)
-            self.session_memory.add("joe", clean_text)
+            self.session_memory.add("soldierboy", clean_text)
             return {
                 "text": clean_text,
                 "rate_limited": False,
@@ -789,7 +839,7 @@ class SoldierBoyVoice:
         clean_text = self._mirror_greeting(question, clean_text)
         if clean_text:
             self.session_memory.add("user", question)
-            self.session_memory.add("joe", clean_text)
+            self.session_memory.add("soldierboy", clean_text)
         return {
             "text": clean_text,
             "rate_limited": cloud["rate_limited"],
@@ -844,7 +894,7 @@ Output ONLY a JSON object:
 
         # Fallback regex check only if LLM output was invalid JSON
         stalk_match = re.match(r'^(?:stalk|pivot|investigate|scan|trace|lookup)\s+(\S+)', text, re.IGNORECASE)
-        if stalk_match and stalk_match.group(1).lower() not in ("me", "joe", "us", "again", "them"):
+        if stalk_match and stalk_match.group(1).lower() not in ("me", "soldierboy", "us", "again", "them"):
             return {"type": "investigate", "target": stalk_match.group(1)}
 
         return {"type": "covo", "target": None}
@@ -859,11 +909,10 @@ Output ONLY a JSON object:
         from narrative.grounding_check import verify_grounding
 
         case_data = self._build_case_data(target)
-        system = JOE_MONOLOGUE_PROMPT.format(case_data=case_data)
+        system = SOLDIERBOY_MONOLOGUE_PROMPT.format(case_data=case_data)
         prompt = (
-            f"Write the closing monologue for this investigation of {target.primary}. "
-            f"Be specific about every platform and finding listed above. "
-            f"Do not invent unverified bios or describe what profile photos visually look like."
+            "Write the closing debrief monologue for this investigation. "
+            "Follow all system rules strictly."
         )
 
         res_text = ""
@@ -900,14 +949,14 @@ Output ONLY a JSON object:
         }
 
     def rate_limit_response(self) -> str:
-        """Joe's in-character rate limit message — generated by SLM."""
+        """Soldier Boy's in-character rate limit message — generated by SLM."""
         prompt = (
             "You just got rate limited by the API. "
-            "Tell the user in Joe's voice — 3-4 sentences. "
-            "Stay in character. Be slightly dramatic about it. "
+            "Tell the user in Soldier Boy's voice — 3-4 sentences. "
+            "Stay in character. Swear naturally and be cocky about it. "
             "Say you'll be back and they can still investigate."
         )
-        res = self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=150)
+        res = self._ask_slm(prompt, SOLDIERBOY_ADVISOR_PROMPT, max_tokens=150)
         return res["text"]
 
     def inline_quote(self, finding_type: str, value: str, platform: str = "") -> str:
@@ -915,11 +964,11 @@ Output ONLY a JSON object:
         prompt = (
             f"You just discovered: {finding_type} '{value}'"
             + (f" on {platform}" if platform else "")
-            + "\nWrite ONE sentence (15-20 words) as Joe would react to this discovery. "
-            "Be sharp, analytical, and dryly observational — a small note on what the finding means. "
+            + "\nWrite ONE sentence (15-20 words) as Soldier Boy would react to this discovery. "
+            "Be sharp, cocky, analytical, and dryly observational. "
             "Use gender-neutral pronouns (they/them/their) for the target."
         )
-        res = self._ask_slm(prompt, JOE_ADVISOR_PROMPT, max_tokens=80)
+        res = self._ask_slm(prompt, SOLDIERBOY_ADVISOR_PROMPT, max_tokens=80)
         return res["text"]
 
     def extract_target(self, user_input: str, current_target: Target = None) -> str:

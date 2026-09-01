@@ -70,7 +70,7 @@ def main():
         print(f"[!] Audio player binary finished or not available. You can manually listen to: {output_file}")
 
     print("\nTip: Pass custom text to synthesize your own line:")
-    print("  python3 listen_joe_voice.py \"Hello there. What are you up to today?\"\n")
+    print("  python3 listen_soldierboy_voice.py \"Hello there. What are you up to today?\"\n")
 
 if __name__ == "__main__":
     main()
