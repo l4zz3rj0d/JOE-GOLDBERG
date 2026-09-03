@@ -86,3 +86,10 @@ data/
 !data/models/hey_soldier.onnx
 memory/
 scratch/
+
+# Development, testing & internal training scripts
+tests/
+scripts/
+soldierboy_project_overview.md
+*.md
+!README.md
