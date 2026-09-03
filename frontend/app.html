@@ -122,7 +122,7 @@
     transition: transform 0.1s ease, filter 0.25s ease;
   }
   #joe-hud-canvas.listening {
-    animation: jarvis-pulse 1.8s ease-in-out infinite alternate;
+    animation: soldierboy-pulse 1.8s ease-in-out infinite alternate;
   }
   #joe-hud-floating-status {
     position: absolute;
@@ -177,7 +177,7 @@
     0% { transform: translateX(-50%) scale(1); }
     100% { transform: translateX(-50%) scale(1.1); }
   }
-  @keyframes jarvis-pulse {
+  @keyframes soldierboy-pulse {
     0% { transform: scale(1.0); }
     100% { transform: scale(1.03); }
   }
@@ -451,6 +451,17 @@
 
   /* Inline Visualization Cards */
   .viz-card { align-self: stretch; width: 100%; background: rgba(15,6,6,0.85); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 10px 12px; margin: 4px 0; }
+  .viz-card-3d {
+    align-self: stretch; width: 100%; background: rgba(12, 4, 4, 0.92);
+    border: 1px solid #3d1010; border-radius: 8px; padding: 10px 14px; margin: 8px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 0 15px rgba(255, 90, 95, 0.05);
+    position: relative; overflow: hidden;
+  }
+  .viz-canvas-container {
+    width: 100%; height: 220px; position: relative; border-radius: 6px; overflow: hidden;
+    background: radial-gradient(circle at center, #1c0808 0%, #0a0303 100%);
+    border: 1px solid rgba(255, 90, 95, 0.15);
+  }
   .viz-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .viz-head .lbl { font-size: 11px; color: var(--text-secondary); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; }
   .viz-head a { font-size: 11px; color: var(--accent-text); cursor: pointer; text-decoration: none; font-weight: 600; }
@@ -592,8 +603,8 @@
     font-size: 15.5px !important;
   }
 
-  /* Holographic Jarvis Search Popup Overlay */
-  #jarvis-search-popup {
+  /* Holographic Soldier Boy Action Panel Overlay */
+  #soldierboy-action-panel {
     position: fixed;
     top: 85px;
     left: 50%;
@@ -612,12 +623,12 @@
     font-family: 'JetBrains Mono', monospace;
     color: #e0f2fe;
   }
-  #jarvis-search-popup.jarvis-popup-hidden {
+  #soldierboy-action-panel.soldierboy-panel-hidden {
     opacity: 0;
     transform: translate(-50%, -30px) scale(0.92);
     pointer-events: none;
   }
-  .jarvis-popup-header {
+  .soldierboy-panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -625,7 +636,7 @@
     padding-bottom: 8px;
     margin-bottom: 10px;
   }
-  .jarvis-popup-title {
+  .soldierboy-panel-title {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -633,20 +644,20 @@
     color: #70d6ff;
     text-shadow: 0 0 10px rgba(112, 214, 255, 0.6);
   }
-  .jarvis-close-btn {
+  .soldierboy-panel-close-btn {
     cursor: pointer;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.5);
     transition: color 0.2s;
   }
-  .jarvis-close-btn:hover {
+  .soldierboy-panel-close-btn:hover {
     color: #ff4a4a;
   }
-  .jarvis-popup-body {
+  .soldierboy-panel-body {
     position: relative;
     overflow: hidden;
   }
-  .jarvis-scan-line {
+  .soldierboy-scan-line {
     position: absolute;
     top: 0;
     left: 0;
@@ -654,9 +665,9 @@
     height: 2px;
     background: linear-gradient(90deg, transparent, #70d6ff, transparent);
     box-shadow: 0 0 10px #70d6ff;
-    animation: jarvis-scan 2s linear infinite;
+    animation: soldierboy-scan 2s linear infinite;
   }
-  @keyframes jarvis-scan {
+  @keyframes soldierboy-scan {
     0% { top: 0; opacity: 0.8; }
     50% { opacity: 1; }
     100% { top: 100%; opacity: 0.2; }
@@ -751,7 +762,7 @@
     color: rgba(160, 185, 215, 0.7);
     margin-top: 4px;
   }
-  .jarvis-query-box {
+  .soldierboy-query-box {
     background: rgba(112, 214, 255, 0.08);
     border-left: 3px solid #70d6ff;
     padding: 8px 10px;
@@ -759,7 +770,7 @@
     font-size: 12px;
     margin-bottom: 10px;
   }
-  .jarvis-status-box {
+  .soldierboy-status-box {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -767,15 +778,15 @@
     letter-spacing: 1px;
     color: rgba(224, 242, 254, 0.8);
   }
-  .jarvis-pulse-dot {
+  .soldierboy-pulse-dot {
     width: 6px;
     height: 6px;
     background: #70d6ff;
     border-radius: 50%;
     box-shadow: 0 0 8px #70d6ff;
-    animation: jarvis-pulse-dot 1s ease-in-out infinite alternate;
+    animation: soldierboy-pulse-dot 1s ease-in-out infinite alternate;
   }
-  @keyframes jarvis-pulse-dot {
+  @keyframes soldierboy-pulse-dot {
     0% { transform: scale(0.8); opacity: 0.5; }
     100% { transform: scale(1.4); opacity: 1; }
   }
@@ -1498,26 +1509,26 @@
   </div>
 </div>
 
-<!-- Holographic Jarvis Search Screen Popup Overlay -->
-<div id="jarvis-search-popup" class="jarvis-popup-hidden">
-  <div class="jarvis-popup-header">
-    <div class="jarvis-popup-title">
+<!-- Holographic Soldier Boy Action Panel Overlay -->
+<div id="soldierboy-action-panel" class="soldierboy-panel-hidden">
+  <div class="soldierboy-panel-header">
+    <div class="soldierboy-panel-title">
       <span style="color:#70d6ff;">⚡</span>
-      <span style="letter-spacing:1.5px; font-weight:700;">JARVIS SEARCH PROTOCOL</span>
+      <span style="letter-spacing:1.5px; font-weight:700;">SOLDIER BOY SEARCH PROTOCOL</span>
     </div>
-    <span class="jarvis-close-btn" onclick="closeJarvisPopup()">✕</span>
+    <span class="soldierboy-panel-close-btn" onclick="closeSoldierBoyPanel()">✕</span>
   </div>
-  <div class="jarvis-popup-body">
-    <div class="jarvis-scan-line"></div>
-    <div class="jarvis-query-box">
+  <div class="soldierboy-panel-body">
+    <div class="soldierboy-scan-line"></div>
+    <div class="soldierboy-query-box">
       <span style="color:#70d6ff; font-weight:700; margin-right:6px;">QUERY:</span>
-      <span id="jarvis-query-text" style="color:#ffffff; font-weight:600;">Searching Google...</span>
+      <span id="soldierboy-query-text" style="color:#ffffff; font-weight:600;">Searching Google...</span>
     </div>
-    <div class="jarvis-status-box">
-      <span class="jarvis-pulse-dot"></span>
-      <span id="jarvis-status-text">SCANNING GOOGLE INDEX & READING OUT FINDINGS...</span>
+    <div class="soldierboy-status-box">
+      <span class="soldierboy-pulse-dot"></span>
+      <span id="soldierboy-status-text">SCANNING GOOGLE INDEX & READING OUT FINDINGS...</span>
     </div>
-    <div class="jarvis-results-preview" id="jarvis-results-preview" style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(112, 214, 255, 0.2);">
+    <div class="soldierboy-results-preview" id="soldierboy-results-preview" style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(112, 214, 255, 0.2);">
       <div style="font-size:11px; color:#70d6ff; font-family:var(--mono);">
         🌐 Live Google search window opened in desktop browser
       </div>
@@ -1525,9 +1536,9 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
+<script src="three.min.js"></script>
+<script src="3d-force-graph.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-<script src="https://unpkg.com/3d-force-graph"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
@@ -1929,15 +1940,68 @@ function buildMiniGraphSvg(entities, width, height, rootLabel) {
 function maybeAddInlineViz(entity) {
   if (state.entities.length >= 2 && state.entities.length !== state.lastVizEntityCount) {
     state.lastVizEntityCount = state.entities.length;
+    const cardId = `inline-viz-3d-${Date.now()}-${state.entities.length}`;
     const card = document.createElement('div');
-    card.className = 'viz-card';
+    card.className = 'viz-card-3d';
     card.innerHTML = `
-      <div class="viz-head"><span class="lbl">correlation graph</span><a id="expand-graph-${state.entities.length}">expand ↗</a></div>
-      ${buildMiniGraphSvg(state.entities, 380, 150, state.activeCase)}
+      <div class="viz-head">
+        <span class="lbl">⚡ DYNAMIC CORRELATION 3D GRAPH (${state.entities.length} ENTITIES)</span>
+        <a id="expand-graph-${state.entities.length}">EXPAND FULL GRAPH ↗</a>
+      </div>
+      <div class="viz-canvas-container" id="${cardId}"></div>
     `;
     thread.appendChild(card);
     card.querySelector(`#expand-graph-${state.entities.length}`).addEventListener('click', openGraphOverlay);
     scrollThreadToBottom();
+
+    setTimeout(() => {
+      const containerEl = document.getElementById(cardId);
+      if (!containerEl) return;
+      
+      const miniData = buildGraphData(state.entities, []);
+      if (typeof ForceGraph3D !== 'undefined' && typeof THREE !== 'undefined') {
+        try {
+          const mini3D = ForceGraph3D()(containerEl)
+            .backgroundColor('#0a0303')
+            .showNavInfo(false)
+            .width(containerEl.clientWidth || 360)
+            .height(220)
+            .linkDirectionalArrowLength(3)
+            .linkWidth(1.2)
+            .nodeThreeObject(node => {
+              const group = new THREE.Group();
+              const isRoot = node.type === 'target';
+              const radius = isRoot ? 10 : 5 + (node.confidence || 0.5) * 4;
+              const color = getNodeBorderColor(node);
+
+              const sphereGeo = new THREE.SphereGeometry(radius, 12, 12);
+              const sphereMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+              group.add(new THREE.Mesh(sphereGeo, sphereMat));
+
+              const wireGeo = new THREE.SphereGeometry(radius + 1.5, 6, 6);
+              const wireMat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.3 });
+              group.add(new THREE.Mesh(wireGeo, wireMat));
+              return group;
+            })
+            .linkColor(link => getLinkColor(link.signal));
+
+          mini3D.graphData({
+            nodes: miniData.nodes.map(n => ({ ...n })),
+            links: miniData.links.map(l => ({
+              source: typeof l.source === 'object' ? l.source.id : l.source,
+              target: typeof l.target === 'object' ? l.target.id : l.target,
+              signal: l.signal
+            }))
+          });
+          setTimeout(() => { if (mini3D) mini3D.zoomToFit(300); }, 250);
+        } catch (err) {
+          console.warn("Inline 3D mini-graph error, falling back to 2D SVG:", err);
+          containerEl.innerHTML = buildMiniGraphSvg(state.entities, containerEl.clientWidth || 360, 220, state.activeCase);
+        }
+      } else {
+        containerEl.innerHTML = buildMiniGraphSvg(state.entities, containerEl.clientWidth || 360, 220, state.activeCase);
+      }
+    }, 50);
   }
 }
 
@@ -2008,6 +2072,51 @@ function loadEvidenceGallery() {
     });
   } else {
     if (emptyMsg) emptyMsg.style.display = 'block';
+  }
+}
+
+function addInlineEvidenceCard(data) {
+  const shotPath = (data.metadata || {}).screenshot_path || data.screenshot_path;
+  if (!shotPath) return;
+
+  const thread = $('#thread');
+  if (!thread) return;
+
+  let card = document.getElementById('active-inline-evidence-card');
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'active-inline-evidence-card';
+    card.className = 'viz-card';
+    card.style.background = 'rgba(15, 8, 20, 0.9)';
+    card.style.border = '1px solid rgba(112, 214, 255, 0.3)';
+    card.innerHTML = `
+      <div class="viz-head">
+        <span class="lbl" style="color:#70d6ff;">📸 LIVE EVIDENCE SCREENSHOT GALLERY</span>
+        <a onclick="openEvidenceOverlay()" style="color:#70d6ff;">View All ↗</a>
+      </div>
+      <div id="inline-evidence-grid" style="display:flex; gap:12px; overflow-x:auto; padding:6px 0;"></div>
+    `;
+    thread.appendChild(card);
+    scrollThreadToBottom();
+  }
+
+  const grid = document.getElementById('inline-evidence-grid');
+  if (grid && api() && api().get_evidence_uri) {
+    api().get_evidence_uri(shotPath).then(uri => {
+      if (uri) {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.flex = '0 0 170px';
+        itemDiv.style.cursor = 'pointer';
+        itemDiv.onclick = openEvidenceOverlay;
+        itemDiv.innerHTML = `
+          <img src="${uri}" style="width:170px; height:100px; object-fit:cover; border-radius:6px; border:1px solid #3d1010; transition:all 0.2s;" />
+          <div style="font-size:10px; color:#ffddcc; font-family:var(--mono); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${esc(data.value || data.platform || 'Screenshot')}
+          </div>
+        `;
+        grid.appendChild(itemDiv);
+      }
+    });
   }
 }
 
@@ -2243,8 +2352,8 @@ function handleSend() {
   if (!text && !state.pendingImagePath) return;
 
   const now = Date.now();
-  if (text && text === lastSentText && (now - lastSendTime) < 2000) {
-    console.warn('[desktop] Duplicate input suppressed:', text);
+  if (text && text === lastSentText && (now - lastSendTime) < 600) {
+    console.warn('[desktop] Fast duplicate input suppressed:', text);
     input.value = '';
     return;
   }
@@ -2256,6 +2365,7 @@ function handleSend() {
   if (text === '/skills') {
     openSkillsOverlay();
     input.value = '';
+    input.focus();
     return;
   }
 
@@ -2265,11 +2375,13 @@ function handleSend() {
       addUserMessage(text);
       if (api() && api().add_note) api().add_note(noteText);
       input.value = '';
+      input.focus();
       return;
     }
   }
 
   input.value = '';
+  input.focus();
 
   if (state.pendingImagePath) {
     addUserMessage(text ? `[screenshot] ${text}` : '[screenshot]');
@@ -2289,9 +2401,11 @@ function handleSend() {
         api().ask(text);
       } else {
         console.warn('[desktop] pywebview api unavailable');
+        showThinking(false);
       }
     } catch (err) {
       console.error('[desktop] handleSend api call error:', err);
+      showThinking(false);
     }
   }
 }
@@ -2865,7 +2979,7 @@ async function startMicListening() {
             autoSendTimeout = setTimeout(() => {
               stopMicListening();
               handleSend();
-            }, 1200);
+            }, 2500);
           }
         };
         speechRecognizer.onerror = (e) => {
@@ -3027,7 +3141,7 @@ let joeAudioQueue = [];
 let isPlayingJoeQueue = false;
 let currentJoeAudioElement = null;
 let hasReceivedAudioChunk = false;
-let jarvisPopupTimer = null;
+let soldierBoyPanelTimer = null;
 let recentAgentTexts = [];
 let ttsPlaybackEndTime = 0;
 
@@ -3043,31 +3157,126 @@ function resetJoeAudioQueue() {
   }
 }
 
-function openJarvisSearchPopup(query, text) {
-  const popup = $('#jarvis-search-popup');
+let soldierBoyTypewriterInterval = null;
+
+function openSoldierBoyPanel(query, text, payload) {
+  const popup = $('#soldierboy-action-panel');
   if (!popup) return;
 
-  const queryElem = $('#jarvis-query-text');
-  if (queryElem) queryElem.textContent = query ? query.toUpperCase() : 'SEARCHING GOOGLE...';
+  popup.classList.remove('soldierboy-panel-hidden');
 
-  const previewElem = $('#jarvis-results-preview');
-  if (previewElem && text) {
-    const clean = text.replace(/[*#_`]/g, '').trim();
-    previewElem.innerHTML = `<div style="font-size:11.5px; color:#70d6ff; line-height:1.45; font-family:var(--mono);">⚡ Live Intel: ${clean.substring(0, 160)}...</div>`;
+  const queryElem = $('#soldierboy-query-text');
+  const previewElem = $('#soldierboy-results-preview');
+  const statusElem = $('#soldierboy-status-text');
+
+  if (statusElem) statusElem.textContent = 'STARK HUD — LIVE STRUCTURED JSON INTEL STREAM';
+
+  // Typewriter effect
+  if (queryElem) {
+    if (soldierBoyTypewriterInterval) clearInterval(soldierBoyTypewriterInterval);
+    queryElem.textContent = '';
+    const fullText = (query || 'SYSTEM_SKILL()').toUpperCase();
+    let charIdx = 0;
+    soldierBoyTypewriterInterval = setInterval(() => {
+      if (charIdx < fullText.length) {
+        queryElem.textContent += fullText[charIdx];
+        charIdx++;
+      } else {
+        clearInterval(soldierBoyTypewriterInterval);
+      }
+    }, 15);
   }
 
-  popup.classList.remove('jarvis-popup-hidden');
+  if (previewElem) {
+    let contentHtml = '';
+    
+    if (payload && payload.findings && payload.findings.length > 0) {
+      const findings = payload.findings;
+      const isBreaking = payload.has_breaking_news;
+      const domSentiment = payload.dominant_sentiment || 'neutral';
+      
+      let findingsCardsHtml = findings.map((item, idx) => {
+        const sentBg = item.sentiment === 'negative' ? 'rgba(239, 68, 68, 0.2)' : (item.sentiment === 'positive' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(100, 116, 139, 0.2)');
+        const sentBorder = item.sentiment === 'negative' ? '#ef4444' : (item.sentiment === 'positive' ? '#22c55e' : '#64748b');
+        const breakingBadge = item.is_breaking ? `<span style="background:#ef4444; color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; margin-right:4px;">🚨 BREAKING</span>` : '';
+        const relBadge = `<span style="background:rgba(56, 189, 248, 0.2); color:#38bdf8; border:1px solid #38bdf8; font-size:9px; padding:1px 5px; border-radius:3px;">REL: ${item.source_reliability}</span>`;
+        
+        const keyPointsHtml = item.key_points && item.key_points.length > 0
+          ? `<ul style="margin:4px 0 0 14px; padding:0; color:#94a3b8; font-size:10.5px;">` + item.key_points.map(kp => `<li>${kp}</li>`).join('') + `</ul>`
+          : '';
 
-  if (jarvisPopupTimer) clearTimeout(jarvisPopupTimer);
-  jarvisPopupTimer = setTimeout(() => {
-    closeJarvisPopup();
-  }, 12000);
+        return `
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(112, 214, 255, 0.25); border-left: 3px solid ${sentBorder}; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="font-weight:700; color:#f8fafc; font-size:11px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:6px;">
+                ${breakingBadge} #${idx + 1} ${item.headline}
+              </div>
+              <div style="display:flex; gap:4px;">
+                ${relBadge}
+                <span style="background:${sentBg}; color:${sentBorder}; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:700;">${item.sentiment.toUpperCase()}</span>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">${item.summary}</div>
+            ${keyPointsHtml}
+            ${item.url && item.url !== 'N/A' ? `<div style="margin-top:4px; font-size:9.5px;"><a href="${item.url}" target="_blank" style="color:#70d6ff; text-decoration:none;">🔗 ${item.url.substring(0, 50)}...</a></div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      contentHtml = `
+        <div style="margin-top: 6px; font-family: var(--mono);">
+          <div style="display:flex; justify-content:space-between; align-items:center; background: rgba(30, 41, 59, 0.8); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(112, 214, 255, 0.2); margin-bottom: 8px;">
+            <div style="font-size:10px; font-weight:700; color:#70d6ff;">
+              ⚡ JSON SCHEMAS (${payload.findings_count} FINDINGS) ${isBreaking ? '<span style="color:#ef4444;">[BREAKING ALERT]</span>' : ''}
+            </div>
+            <button onclick="toggleRawJsonView()" style="background:rgba(112, 214, 255, 0.15); border:1px solid #70d6ff; color:#70d6ff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; cursor:pointer;">
+              { } RAW JSON SCHEMA
+            </button>
+          </div>
+          <div id="soldierboy-findings-grid" style="max-height: 240px; overflow-y: auto;">
+            ${findingsCardsHtml}
+          </div>
+          <div id="soldierboy-raw-json-block" style="display:none; max-height: 240px; overflow-y: auto; background:#090d16; border:1px solid #334155; padding:8px; border-radius:6px; font-size:10px; color:#38bdf8; white-space:pre-wrap;">
+            ${JSON.stringify(payload, null, 2)}
+          </div>
+        </div>
+      `;
+    } else {
+      const clean = (text || '').replace(/[*#_`]/g, '').trim();
+      contentHtml = `
+        <div style="margin-top: 6px; font-size: 11.5px; color: #e2f1ff; line-height: 1.5; font-family: var(--mono); background: rgba(10, 18, 30, 0.8); border: 1px solid rgba(112, 214, 255, 0.3); border-radius: 6px; padding: 8px 12px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+          <div style="font-weight:700; color:#70d6ff; font-size:10px; letter-spacing:1px; margin-bottom:4px;">⚡ SOLDIER BOY ACTION PANEL OUTPUT</div>
+          <div>${clean.length > 280 ? clean.substring(0, 280) + '...' : clean}</div>
+        </div>
+      `;
+    }
+    previewElem.innerHTML = contentHtml;
+  }
+
+  if (soldierBoyPanelTimer) clearTimeout(soldierBoyPanelTimer);
+  soldierBoyPanelTimer = setTimeout(() => {
+    closeSoldierBoyPanel();
+  }, 20000);
 }
 
-function closeJarvisPopup() {
-  const popup = $('#jarvis-search-popup');
-  if (popup) popup.classList.add('jarvis-popup-hidden');
-  if (jarvisPopupTimer) clearTimeout(jarvisPopupTimer);
+function toggleRawJsonView() {
+  const grid = $('#soldierboy-findings-grid');
+  const jsonBlock = $('#soldierboy-raw-json-block');
+  if (grid && jsonBlock) {
+    if (jsonBlock.style.display === 'none') {
+      jsonBlock.style.display = 'block';
+      grid.style.display = 'none';
+    } else {
+      jsonBlock.style.display = 'none';
+      grid.style.display = 'block';
+    }
+  }
+}
+
+function closeSoldierBoyPanel() {
+  const popup = $('#soldierboy-action-panel');
+  if (popup) popup.classList.add('soldierboy-panel-hidden');
+  if (soldierBoyPanelTimer) clearTimeout(soldierBoyPanelTimer);
 }
 
 function enqueueJoeAudio(audioData, text) {
@@ -3149,10 +3358,15 @@ window.soldierboy = window.joe = {
           enqueueJoeAudio(data.audio, data.text);
         }
         break;
-      case 'open_jarvis_popup':
+      case 'open_soldierboy_panel':
         if (data) {
-          openJarvisSearchPopup(data.query, data.text);
-          showSubtitles(`JARVIS Live Intel: ${data.query}`, 'JARVIS SEARCH');
+          openSoldierBoyPanel(data.query, data.text, data.structured_payload);
+          showSubtitles(`SOLDIER BOY Live Intel: ${data.query}`, 'SOLDIER BOY SEARCH');
+        }
+        break;
+      case 'soldierboy_structured_json_feed':
+        if (data && data.topic) {
+          console.log('[STARK HUD] Received structured JSON feed:', data);
         }
         break;
       case 'soldierboy_stt_interim':
@@ -3233,6 +3447,7 @@ window.soldierboy = window.joe = {
       case 'entity_found':
         state.entities.push(data);
         addEvidenceCard(data);
+        addInlineEvidenceCard(data);
         maybeAddInlineViz(data);
         $('#findings-count').textContent = state.entities.length;
         if (typeof addNodeToGraph === 'function') {
@@ -3563,57 +3778,206 @@ function renderGraph() {
   }
 }
 
+let overlay3DAnimFrame = null;
+let overlay3DRotX = 0;
+let overlay3DRotY = 0;
+let overlayIsDragging = false;
+let overlayLastMouse = { x: 0, y: 0 };
+
 function render2DGraphFallback(container, data) {
+  render3DCanvasGraph(container, data);
+}
+
+function render3DCanvasGraph(container, data) {
+  if (!container) return;
   const width = container.clientWidth || 700;
   const height = container.clientHeight || 500;
-  const cx = width / 2, cy = height / 2;
-  const r = Math.min(width, height) / 2 - 60;
   
+  container.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.display = 'block';
+  canvas.style.cursor = 'grab';
+  container.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const cx = width / 2;
+  const cy = height / 2;
+
   const nodes = (data && data.nodes) ? data.nodes : [];
   const root = nodes.find(n => n.type === 'target') || nodes[0] || { value: state.activeCase || 'Target' };
-  const childNodes = nodes.filter(n => n !== root);
-  const angleStep = (Math.PI * 2) / Math.max(childNodes.length, 1);
-  
-  let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="width:100%; height:100%; background:#0a0505; position:absolute; top:0; left:0;">`;
-  svg += `<defs>
-    <radialGradient id="rootGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ff5a5f" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#3d0a0a" stop-opacity="0"/>
-    </radialGradient>
-  </defs>`;
+  const children = nodes.filter(n => n !== root);
 
-  childNodes.forEach((n, i) => {
-    const angle = i * angleStep - Math.PI / 2;
-    const nx = cx + r * Math.cos(angle);
-    const ny = cy + r * Math.sin(angle);
-    const color = getLinkColor(n.metadata ? n.metadata.correlation_signal : 'discovered');
-    svg += `<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${color}" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.75" />`;
+  canvas.addEventListener('mousedown', (e) => {
+    overlayIsDragging = true;
+    canvas.style.cursor = 'grabbing';
+    overlayLastMouse = { x: e.clientX, y: e.clientY };
   });
 
-  svg += `<g class="svg-graph-node root" onclick="selectNodeByName('${escapeHtml(root.value)}')" style="cursor:pointer;">
-    <circle cx="${cx}" cy="${cy}" r="28" fill="url(#rootGlow)" />
-    <circle cx="${cx}" cy="${cy}" r="18" fill="#1e0606" stroke="#ff5a5f" stroke-width="2.5" />
-    <text x="${cx}" y="${cy+38}" text-anchor="middle" fill="#ffddcc" font-size="12px" font-family="monospace" font-weight="bold">${escapeHtml(truncateLabel(root.value))}</text>
-  </g>`;
+  window.addEventListener('mouseup', () => {
+    overlayIsDragging = false;
+    canvas.style.cursor = 'grab';
+  });
 
-  childNodes.forEach((n, i) => {
-    const angle = i * angleStep - Math.PI / 2;
-    const nx = cx + r * Math.cos(angle);
-    const ny = cy + r * Math.sin(angle);
-    const borderCol = getNodeBorderColor(n);
-    const label = n.value || n.platform || n.type || 'Entity';
-    const subLabel = n.platform || n.type || '';
+  canvas.addEventListener('mousemove', (e) => {
+    if (!overlayIsDragging) return;
+    const dx = e.clientX - overlayLastMouse.x;
+    const dy = e.clientY - overlayLastMouse.y;
+    overlay3DRotY += dx * 0.008;
+    overlay3DRotX += dy * 0.008;
+    overlayLastMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  if (overlay3DAnimFrame) cancelAnimationFrame(overlay3DAnimFrame);
+
+  function animate() {
+    if (!overlayIsDragging) {
+      overlay3DRotY += 0.008; // smooth 3D auto rotation
+    }
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Deep 3D Space radial background
+    const bg = ctx.createRadialGradient(cx, cy, 20, cx, cy, width / 1.2);
+    bg.addColorStop(0, '#1c0808');
+    bg.addColorStop(1, '#060202');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    const focalLength = 400;
+    const radius = Math.min(width, height) / 2.6;
+    const projected = [];
+
+    // Root node at 3D origin
+    projected.push({
+      node: root,
+      x: cx,
+      y: cy,
+      z: 0,
+      scale: 1,
+      isRoot: true,
+      color: '#ff5a5f'
+    });
+
+    children.forEach((n, i) => {
+      const phi = Math.acos(-1 + (2 * i + 1) / children.length);
+      const theta = Math.sqrt(children.length * Math.PI) * phi;
+
+      // 3D sphere point coordinates
+      let wx = radius * Math.cos(theta) * Math.sin(phi);
+      let wy = radius * Math.sin(theta) * Math.sin(phi);
+      let wz = radius * Math.cos(phi);
+
+      // Rotate around X and Y axes
+      const cosX = Math.cos(overlay3DRotX), sinX = Math.sin(overlay3DRotX);
+      const cosY = Math.cos(overlay3DRotY), sinY = Math.sin(overlay3DRotY);
+
+      let y1 = wy * cosX - wz * sinX;
+      let z1 = wy * sinX + wz * cosX;
+
+      let rx = wx * cosY + z1 * sinY;
+      let ry = y1;
+      let rz = -wx * sinY + z1 * cosY;
+
+      const scale = focalLength / (focalLength + rz + 200);
+      const px = cx + rx * scale;
+      const py = cy + ry * scale;
+
+      projected.push({
+        node: n,
+        x: px,
+        y: py,
+        z: rz,
+        scale: scale,
+        isRoot: false,
+        color: getNodeBorderColor(n)
+      });
+    });
+
+    // Z-Sort for 3D depth layering
+    projected.sort((a, b) => a.z - b.z);
+
+    const rootP = projected.find(p => p.isRoot);
+
+    // Render 3D connecting lines
+    projected.forEach(p => {
+      if (!p.isRoot && rootP) {
+        ctx.beginPath();
+        ctx.moveTo(rootP.x, rootP.y);
+        ctx.lineTo(p.x, p.y);
+        const col = getLinkColor(p.node.metadata ? p.node.metadata.correlation_signal : 'discovered');
+        ctx.strokeStyle = col;
+        ctx.globalAlpha = Math.max(0.2, Math.min(0.85, p.scale * 0.8));
+        ctx.lineWidth = Math.max(1, 2 * p.scale);
+        ctx.setLineDash([5, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1.0;
+      }
+    });
+
+    // Render 3D sphere nodes
+    projected.forEach(p => {
+      const r = p.isRoot ? 22 * p.scale : 11 * p.scale;
+
+      // Glowing outer wireframe ring
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 6 * p.scale, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.25 * p.scale;
+      ctx.fill();
+
+      // Main 3D Sphere mesh representation
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = p.isRoot ? '#ff5a5f' : '#180606';
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2.5 * p.scale;
+      ctx.globalAlpha = Math.max(0.35, Math.min(1.0, p.scale));
+      ctx.fill();
+      ctx.stroke();
+
+      // 3D label
+      ctx.font = `bold ${Math.max(9, Math.round(12 * p.scale))}px monospace`;
+      ctx.fillStyle = '#ffddcc';
+      ctx.textAlign = 'center';
+      ctx.fillText(truncateLabel(p.node.value || p.node.platform), p.x, p.y + r + 15 * p.scale);
+      ctx.globalAlpha = 1.0;
+    });
+
+    overlay3DAnimFrame = requestAnimationFrame(animate);
+  }
+
+  // Handle click on 3D node
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
     
-    svg += `<g class="svg-graph-node" onclick="selectNodeByName('${escapeHtml(label)}')" style="cursor:pointer;">
-      <circle cx="${nx}" cy="${ny}" r="14" fill="#140404" stroke="${borderCol}" stroke-width="2" />
-      <circle cx="${nx}" cy="${ny}" r="6" fill="${borderCol}" opacity="0.8" />
-      <text x="${nx}" y="${ny + 24}" text-anchor="middle" fill="#ffccbb" font-size="10.5px" font-family="monospace">${escapeHtml(truncateLabel(label))}</text>
-      ${subLabel ? `<text x="${nx}" y="${ny + 36}" text-anchor="middle" fill="#8a4040" font-size="9px" font-family="monospace">${escapeHtml(truncateLabel(subLabel))}</text>` : ''}
-    </g>`;
+    // Find closest node to click
+    const focalLength = 400;
+    const radius = Math.min(width, height) / 2.6;
+    let closest = null;
+    let minDist = 999;
+
+    nodes.forEach(n => {
+      const p = projected.find(pr => pr.node === n);
+      if (p) {
+        const dist = Math.hypot(p.x - mx, p.y - my);
+        if (dist < minDist && dist < 30) {
+          minDist = dist;
+          closest = n;
+        }
+      }
+    });
+
+    if (closest) selectNode(closest);
   });
 
-  svg += `</svg>`;
-  container.innerHTML = svg;
+  animate();
 }
 
 function selectNodeByName(val) {

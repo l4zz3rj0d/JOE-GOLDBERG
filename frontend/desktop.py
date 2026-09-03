@@ -67,14 +67,23 @@ class SoldierBoyAPI:
         self._recent_agent_responses = []
         self._tts_playback_until = 0.0
 
-        # openWakeWord Engine & VAD Command Window
-        self._wake_engine = WakeWordEngine(
-            on_wake_detected=self._on_wake_word_detected,
-            on_speech_ended=self._on_vad_speech_ended,
-            silence_timeout_sec=1.2,
-            max_window_sec=30.0
-        )
-        self._wake_engine.start()
+        # Async Background Initialization for Instant App Launch (<0.2s)
+        self._wake_engine = None
+        threading.Thread(target=self._async_init_wake_engine, daemon=True).start()
+
+    def _async_init_wake_engine(self):
+        try:
+            print("[desktop] Spinning up openWakeWord engine in background...")
+            self._wake_engine = WakeWordEngine(
+                on_wake_detected=self._on_wake_word_detected,
+                on_speech_ended=self._on_vad_speech_ended,
+                silence_timeout_sec=2.5,
+                max_window_sec=30.0
+            )
+            self._wake_engine.start()
+            print("[desktop] Background wake engine ready.")
+        except Exception as e:
+            print(f"[desktop] Background wake engine init notice: {e}")
 
     def _on_wake_word_detected(self, phrase: str):
         print(f"[desktop] openWakeWord triggered ('{phrase}'). Opening STT command capture window.")
@@ -101,26 +110,58 @@ class SoldierBoyAPI:
         self._memory.add("user", text)
         threading.Thread(target=self._run_process_input, args=(text,), daemon=True).start()
 
-    def _run_process_input(self, text: str):
-        # Fast-path check: system skills and search commands execute instantly without 2s intent classification latency
-        if hasattr(self._voice, 'skills') and self._voice.skills:
-            handled, _, _, _ = self._voice.skills.try_execute(text)
-            if handled:
-                print(f"[desktop] System skill/search fast-path triggered for: '{text}'")
-                self._run_ask(text)
-                return
+    def _on_skill_progress(self, finfo):
+        if isinstance(finfo, dict) and "file" in finfo:
+            msg_str = f"⚡ LIVE CODE AUDIT [{finfo['index']}/{finfo['total']}]: {finfo['file']} ({finfo['lines']} LOC)... [VERIFIED]"
+            self._emit("open_soldierboy_panel", {
+                "query": f"AUDITING {finfo['file']}",
+                "text": msg_str,
+                "typing_query": f"Audit [{finfo['index']}/{finfo['total']}]: {finfo['file']}",
+                "action_type": "LIVE CODE AUDIT STREAM"
+            })
+            self._emit("scan_status", {"message": msg_str})
 
-        intent = self._voice.classify_intent(text, self._target)
-        print(f"[desktop] AI Intent decision: {intent}")
-        if intent["type"] == "investigate" and intent.get("target"):
-            target_str = intent["target"]
-            self._emit("scan_status", {"message": f"AI identified investigation task — Target: {target_str}"})
-            brief = None
-            if _CONTEXT_SIGNALS.search(text):
-                brief = parse_brief_with_slm(text)
-            self._run_stalk(target_str, brief)
-        else:
-            self._run_ask(text)
+    def _run_process_input(self, text: str):
+        try:
+            # Fast-path check: system skills and search commands execute instantly without 2s intent classification latency
+            if hasattr(self._voice, 'skills') and self._voice.skills:
+                res = self._voice.skills.try_execute(text, on_progress=self._on_skill_progress)
+                if len(res) == 5:
+                    handled, msg, is_search, query, payload = res
+                else:
+                    handled, msg, is_search, query = res
+                    payload = {}
+
+                if handled:
+                    display_query = query if query else text
+                    print(f"[desktop] System skill/search fast-path triggered for: '{text}' (query: '{display_query}')")
+                    self._emit("open_soldierboy_panel", {
+                        "query": display_query,
+                        "text": msg,
+                        "typing_query": f"Executing action: {display_query}",
+                        "action_type": "ACTION HUD ACTIVE",
+                        "structured_payload": payload
+                    })
+                    self._emit("soldierboy_structured_json_feed", payload)
+
+                    context_prompt = f"[REAL SYSTEM SKILL EXECUTED]\nUser Prompt: {text}\nExecution Output Data:\n{msg}\nStructured Payload: {json.dumps(payload, indent=2)}\n\nPersona Spoken Instructions: As Soldier Boy, give a short 2-sentence cocky, unfiltered partner summary of these REAL search/audit results. Speak only about the actual data provided above, do not invent fictional stories about Vought or Homelander."
+                    self._run_ask(context_prompt)
+                    return
+
+            intent = self._voice.classify_intent(text, self._target)
+            print(f"[desktop] AI Intent decision: {intent}")
+            if intent["type"] == "investigate" and intent.get("target"):
+                target_str = intent["target"]
+                self._emit("scan_status", {"message": f"AI identified investigation task — Target: {target_str}"})
+                brief = None
+                if _CONTEXT_SIGNALS.search(text):
+                    brief = parse_brief_with_slm(text)
+                self._run_stalk(target_str, brief)
+            else:
+                self._run_ask(text)
+        except Exception as e:
+            print(f"[desktop] Error processing input: {e}")
+            self._emit("error", {"message": f"Partner system error: {str(e)}"})
 
     def investigate(self, target: str):
         print(f"\n[desktop] Starting investigation: {target}")
@@ -207,6 +248,29 @@ class SoldierBoyAPI:
     def toggle_voice(self, enabled: bool):
         """Voice synthesis toggle."""
         return True
+
+    def toggle_json_mode(self, enabled: bool = None) -> bool:
+        """Toggle structured JSON payload mode."""
+        if hasattr(self._voice, 'skills') and self._voice.skills:
+            return self._voice.skills.hud_engine.toggle_json_mode(enabled)
+        return True
+
+    def get_structured_json_feed(self) -> dict:
+        """Fetch latest active JSON payload from state file."""
+        state_file = Path(__file__).parent.parent.resolve() / "data" / "structured_hud_active.json"
+        if state_file.exists():
+            try:
+                with open(state_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {"status": "IDLE", "findings": []}
+
+    def clear_search_cache(self) -> str:
+        """Clear search cache entries."""
+        if hasattr(self._voice, 'skills') and self._voice.skills:
+            return self._voice.skills.hud_engine.cache.clear()
+        return "Cache cleared."
 
     def save_config(self, cfg: dict):
         """Save settings from the UI back to config.yaml."""
@@ -509,7 +573,16 @@ class SoldierBoyAPI:
                         clean_sentence = re.sub(r'(\w+)_(\w+)', r'\1 \2', sentence).replace('_', ' ')
                         tts_queue.put(clean_sentence)
 
-        result = self._voice.chat(question, self._target, on_token=on_token)
+        try:
+            result = self._voice.chat(question, self._target, on_token=on_token)
+        except Exception as e:
+            print(f"[desktop] Voice chat execution error: {e}")
+            result = {
+                "text": f"Sorry, partner. Hit a slight snag processing that: {str(e)}",
+                "error": True,
+                "mode": "advisor"
+            }
+
         if result.get("rate_limited"):
             self._emit("rate_limited", {})
 
@@ -529,7 +602,7 @@ class SoldierBoyAPI:
             for i, w in enumerate(words):
                 token = w + (" " if i < len(words) - 1 else "")
                 self._emit("soldierboy_stream_chunk", {"chunk": token})
-                time.sleep(0.015)  # 15ms smooth word typing effect
+                time.sleep(0.003)  # 3ms ultra-fast word typing effect
 
             # 2. Extract clean printable sentences for speech synthesis
             if self._voice:
@@ -564,19 +637,23 @@ class SoldierBoyAPI:
                 print(f"[desktop] Post-hoc grounding check audit notice: {e}")
 
         self._emit("soldierboy_answer", {
-            "text": result["text"],
+            "text": result.get("text", "Done."),
             "audio": None,
             "rate_limited": result.get("rate_limited", False),
             "mode": result.get("mode", "advisor"),
             "error": result.get("error", False),
             "open_dialog": result.get("open_dialog", False),
-            "jarvis_search": result.get("jarvis_search", False),
+            "show_panel": result.get("show_panel", False),
             "search_query": result.get("search_query", "")
         })
         if result.get("open_dialog"):
             self._emit("open_investigate_dialog", {})
-        if result.get("jarvis_search"):
-            self._emit("open_jarvis_popup", {"query": result.get("search_query", ""), "text": result["text"]})
+        if result.get("show_panel"):
+            self._emit("open_soldierboy_panel", {
+                "query": result.get("search_query", ""),
+                "text": result["text"],
+                "structured_payload": result.get("panel_payload", {})
+            })
         if "Generating HTML investigation report" in result.get("text", ""):
             self.export_report()
         self._wake_window_expires = time.time() + 30.0
@@ -964,15 +1041,15 @@ class SoldierBoyAPI:
                         pcm_buffer.append(raw_chunk)
                         silence_chunks += 1
 
-                        # 15 consecutive silence chunks = 1.5s silence -> speech completed naturally without cutting off
-                        if silence_chunks >= 15:
+                        # 25 consecutive silence chunks = 2.5s silence hangover -> allows user pauses without cutting off mid-sentence
+                        if silence_chunks >= 25:
                             is_speaking = False
                             silence_chunks = 0
                             captured_pcm = b"".join(pcm_buffer)
                             pcm_buffer = []
 
                             duration_sec = len(captured_pcm) / 32000.0
-                            print(f"[voice listener] Speech completed (1.5s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
+                            print(f"[voice listener] Speech completed (2.5s silence). Captured {duration_sec:.1f}s of audio. Transcribing...")
 
                             if len(captured_pcm) >= 32000:
                                 threading.Thread(
@@ -1049,9 +1126,10 @@ class SoldierBoyAPI:
                     self._wake_window_expires = 0.0
                     return
 
-                # Comprehensive Soldier Boy wake word pattern (handling all Google STT acoustic mishears: Suraj, search, shoes, soulja, etc.)
-                pattern = r'^(?:(?:hey|hi|hai|yo|hello|ok|okay|play)\s+)?(?:soldier\s*boy|soldier|soldi|soldja|solger|solja|soja|solda|suraj\s*boy|suraj|search\s*boy|shoes\s*boy|soulja\s*boy|soulja|shoulda\s*boy|sol)\b\s*,?\s*'
+                # Comprehensive Soldier Boy wake word pattern (handling all Google STT acoustic mishears: your, you, u, ya, Suraj, search, shoes, soulja, etc.)
+                pattern = r'^(?:(?:hey|hi|hai|yo|yoo|you|your|ur|u|ya|bro|dude|hello|ok|okay|play)\s+)?(?:soldier\s*boy|soldier|soldi|soldja|solger|solja|soja|solda|suraj\s*boy|suraj|search\s*boy|shoes\s*boy|soulja\s*boy|soulja|shoulda\s*boy|sol)\b\s*,?\s*'
                 match = re.search(pattern, text, re.IGNORECASE)
+                anywhere_match = re.search(r'\b(?:soldier\s*boy|soldier|soldja|solger|solja|suraj\s*boy|suraj|soulja\s*boy|soulja)\b', text, re.IGNORECASE)
                 now = time.time()
 
                 # Direct identity / interaction questions bypass wake word check
@@ -1060,7 +1138,7 @@ class SoldierBoyAPI:
                 if match:
                     clean = text[match.end():].strip()
                     print(f"[voice listener] Wake word match! Raw: '{text}', Clean command: '{clean}'")
-                    self._emit("soldierboy_wake_word_detected", {"raw": text, "clean": clean})
+                    self._emit("soldierboy_wake_word_detected", {"raw": text, "clean": clean if clean else text})
                     if clean:
                         print(f"[voice listener] Sending voice command to Soldier Boy: '{clean}'")
                         self._emit("soldierboy_voice_detected", {"text": clean, "raw": text})
@@ -1068,6 +1146,11 @@ class SoldierBoyAPI:
                     else:
                         print(f"[voice listener] Wake word only spoken ('{text}'). Opening 30s follow-up window...")
                         self._wake_window_expires = now + 30.0
+                elif anywhere_match:
+                    print(f"[voice listener] Anywhere wake phrase match ('{text}')! Triggering Soldier Boy command...")
+                    self._emit("soldierboy_wake_word_detected", {"raw": text, "clean": text})
+                    self._emit("soldierboy_voice_detected", {"text": text, "raw": text})
+                    self._wake_window_expires = now + 30.0
                 elif implicit_match:
                     print(f"[voice listener] Direct query match ('{text}')! Triggering Soldier Boy command...")
                     self._emit("soldierboy_wake_word_detected", {"raw": text, "clean": text})

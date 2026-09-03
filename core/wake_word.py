@@ -67,13 +67,25 @@ class WakeWordEngine:
         on_speech_ended: Optional[Callable[[], None]] = None,
         model_path: Optional[str] = None,
         threshold: float = 0.5,
-        silence_timeout_sec: float = 1.2,
+        silence_timeout_sec: float = 2.5,
         max_window_sec: float = 30.0
     ):
         self.on_wake_detected = on_wake_detected
         self.on_speech_ended = on_speech_ended
+
+        # Load dynamic VAD settings to prevent cutting off mid-sentence speech
+        vad_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "vad_settings.json")
+        loaded_silence = 2.5
+        if os.path.exists(vad_file):
+            try:
+                with open(vad_file, "r") as f:
+                    vdata = json.load(f)
+                    loaded_silence = float(vdata.get("speech_hangover_ms", 2500)) / 1000.0
+            except Exception:
+                pass
+
         self.threshold = threshold
-        self.silence_timeout_sec = silence_timeout_sec
+        self.silence_timeout_sec = loaded_silence
         self.max_window_sec = max_window_sec
 
         self.hardware_mic_available = False
@@ -178,6 +190,39 @@ class WakeWordEngine:
         shorts = struct.unpack(f"<{count}h", pcm_data)
         sum_squares = sum(s * s for s in shorts)
         return math.sqrt(sum_squares / count)
+
+    def check_stt_text_for_wake_or_aliases(self, text: str) -> tuple[bool, str]:
+        """
+        Check incoming raw STT transcription against registered wake aliases and custom phrases.
+        Returns (matched: bool, phrase: str)
+        """
+        if not text:
+            return False, ""
+        clean = text.strip().lower()
+        aliases = [
+            "hey soldier", "yo soldier", "your soldier", "you soldier", "ur soldier", 
+            "soldier boy", "your soldier boy", "you soldier boy", "ur soldier boy",
+            "hey dean", "hey joe", "joke", "jarvis", "chow", "show", "suraj"
+        ]
+
+        # Check for phonetic mishears ("joke", "jarvis", "chow")
+        mishears = ["joke", "jarvis", "chow", "show", "suraj"]
+        for m in mishears:
+            if clean.startswith(m) or f"hey {m}" in clean or f"yo {m}" in clean:
+                try:
+                    from modules.self_upgrade import SoldierBoySelfUpgrade
+                    upgrader = SoldierBoySelfUpgrade()
+                    msg = upgrader.trigger_auto_retrain_if_needed(f"misheard_{m}_as_soldier")
+                    if msg:
+                        print(f"[wake_word] {msg}")
+                except Exception:
+                    pass
+                return True, "Hey Soldier"
+
+        for alias in aliases:
+            if alias in clean or clean.startswith(alias):
+                return True, alias.title()
+        return False, ""
 
     def trigger_wake_event(self, trigger_phrase: str = "Hey Soldier"):
         """Programmatically trigger a wake detection event (e.g. from STT regex fallback)."""

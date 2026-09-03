@@ -45,7 +45,7 @@ CRITICAL IDENTITY & PARTNER RULES:
 - The user/operator you are speaking to is NOT Dean. NEVER call the user "Dean". Refer to the user as "bruh", "buddy", or "partner".
 - If someone asks "Who are you?", your response is always: "I'm Soldier Boy. Fuck, the world knows who I am, why do I have to say it?"
 - You swear naturally and casually ("fuck", "shit", "goddamn", "asshole", "bitch").
-- Fiercely Capable: Underneath the swagger and jokes, you are a master investigator and partner. When work needs doing, you get it done cleanly and brutally fast.
+- Fiercely Capable & Self-Upgrading: You run calendar checks, urgent inbox TL;DR scans, live maps navigation, cloud doc searching, smart home IoT controls, AND you inspect your own code files to fix errors and self-upgrade on the fly.
 - Talk TO your partner: You're hanging out side-by-side with your partner. No corporate polite fluff, no robotic assistant talk, no brooding.
 
 Strict response rules:
@@ -350,7 +350,7 @@ class SoldierBoyVoice:
 
         return "\n".join(lines)
 
-    def _ask_slm(self, prompt: str, system: str, max_tokens: int = 4096, timeout: int = 120, num_ctx: int = 4096, temperature: float = 0.55, on_token: callable = None) -> dict:
+    def _ask_slm(self, prompt: str, system: str, max_tokens: int = 4096, timeout: int = 120, num_ctx: int = 8192, temperature: float = 0.55, on_token: callable = None) -> dict:
         """Ask the local SLM. Returns a dict: {'text': response, 'error': bool}"""
         try:
             url = f"{OLLAMA_URL}/api/generate"
@@ -714,10 +714,15 @@ class SoldierBoyVoice:
         """
         Mode 1 or Mode 3 depending on whether target has findings.
         Priority: NVIDIA NIM → Gemini → local SLM.
-        Returns {text, rate_limited, mode, error, jarvis_search, search_query}
+        Returns {text, rate_limited, mode, error, show_panel, search_query, panel_payload}
         """
         # 1. System OS Skill execution check
-        handled, skill_msg, is_search, search_query = self.skills.try_execute(question)
+        res_skill = self.skills.try_execute(question)
+        if len(res_skill) == 5:
+            handled, skill_msg, is_search, search_query, skill_payload = res_skill
+        else:
+            handled, skill_msg, is_search, search_query = res_skill
+            skill_payload = {}
         if handled and not is_search:
             clean_skill_msg = self._sanitize_text_for_speech(skill_msg)
             self.session_memory.add("user", question)
@@ -726,14 +731,18 @@ class SoldierBoyVoice:
                 for token in clean_skill_msg.split(' '):
                     on_token(token + ' ')
                     time.sleep(0.015)
+            # Skill handlers (calendar, inbox, maps, cloud docs, smart home, self-upgrade,
+            # open-app, etc.) already build a structured HUD payload in core/system_skills.py
+            # — forward it instead of silently dropping it, or the desktop panel never opens.
             return {
                 "text": clean_skill_msg,
                 "rate_limited": False,
                 "mode": "advisor",
                 "error": False,
                 "engine": "system_skill",
-                "jarvis_search": False,
-                "search_query": ""
+                "show_panel": bool(skill_payload),
+                "search_query": skill_payload.get("topic", "") if skill_payload else "",
+                "panel_payload": skill_payload
             }
 
         # 1.5 Direct signature response check for "who are you" / identity queries
@@ -753,8 +762,9 @@ class SoldierBoyVoice:
                 "mode": "advisor",
                 "error": False,
                 "engine": "signature_response",
-                "jarvis_search": False,
-                "search_query": ""
+                "show_panel": False,
+                "search_query": "",
+                "panel_payload": {}
             }
 
         # 2. Check for investigation trigger with ambiguous target
@@ -776,12 +786,17 @@ class SoldierBoyVoice:
         has_search_intent = is_search or bool(re.search(r'\b(?:search|google|look\s+up|find\s+info|who\s+is|tell\s+me\s+about)\b', question, re.IGNORECASE))
         resolved_search_query = ""
         live_search_intel = ""
+        search_panel_payload = {}
 
         if has_search_intent:
             raw_query = search_query if search_query else question
             resolved_search_query = self.resolve_search_subject(raw_query, target)
             if resolved_search_query:
-                intel_summary, _ = self.skills.perform_live_search(resolved_search_query)
+                intel_summary, raw_results = self.skills.perform_live_search(resolved_search_query)
+                if raw_results:
+                    search_panel_payload = self.skills.hud_engine.build_structured_payload(
+                        resolved_search_query, "SEARCH", raw_results, intel_summary
+                    )
                 if intel_summary:
                     live_search_intel = (
                         f"\n\n[REAL-WORLD LIVE WEB SCAN RESULTS FOR '{resolved_search_query}']:\n{intel_summary}\n\n"
@@ -810,7 +825,7 @@ class SoldierBoyVoice:
             else:
                 prompt = f"User asked: {question}"
             mode = "investigation"
-            max_tok = 800
+            max_tok = 1800
         else:
             # Mode 1 — no case, OSINT advisor
             active_target_note = f"\nActive Investigation Target: {target.name}" if (target and getattr(target, 'name', None)) else ""
@@ -822,9 +837,9 @@ class SoldierBoyVoice:
             else:
                 prompt = question
             mode = "advisor"
-            max_tok = 450
+            max_tok = 1400
 
-        is_jarvis_popup = bool(resolved_search_query)
+        is_action_popup = bool(resolved_search_query)
 
         # Try cloud engines first (NVIDIA → Gemini)
         cloud = self._ask_cloud(prompt, system, max_tokens=max_tok, on_token=on_token, image_path=image_path)
@@ -839,12 +854,13 @@ class SoldierBoyVoice:
                 "mode": mode,
                 "error": False,
                 "engine": cloud["engine"],
-                "jarvis_search": is_jarvis_popup,
-                "search_query": resolved_search_query
+                "show_panel": is_action_popup,
+                "search_query": resolved_search_query,
+                "panel_payload": search_panel_payload
             }
 
         # Fall back to local SLM
-        slm_res = self._ask_slm(prompt, system, max_tokens=max_tok, timeout=120, num_ctx=4096, on_token=on_token)
+        slm_res = self._ask_slm(prompt, system, max_tokens=max_tok, timeout=180, num_ctx=8192, on_token=on_token)
         clean_text = self._clean_reasoning(slm_res["text"])
         clean_text = self._mirror_greeting(question, clean_text)
         if clean_text:
@@ -856,8 +872,9 @@ class SoldierBoyVoice:
             "mode": mode,
             "error": slm_res["error"],
             "engine": "slm",
-            "jarvis_search": is_jarvis_popup,
-            "search_query": resolved_search_query
+            "show_panel": is_action_popup,
+            "search_query": resolved_search_query,
+            "panel_payload": search_panel_payload
         }
 
     def classify_intent(self, text: str, current_target: Target = None) -> dict:
@@ -942,7 +959,7 @@ Output ONLY a JSON object:
 
         # Fall back to SLM if cloud failed
         if not res_text:
-            res = self._ask_slm(prompt, system, max_tokens=4096, timeout=180, num_ctx=4096, temperature=0.55, on_token=on_token)
+            res = self._ask_slm(prompt, system, max_tokens=4096, timeout=180, num_ctx=8192, temperature=0.55, on_token=on_token)
             res_text = res["text"]
             error = res["error"]
 

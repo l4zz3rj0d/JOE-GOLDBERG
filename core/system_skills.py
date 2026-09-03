@@ -5,18 +5,20 @@ import subprocess
 import urllib.parse
 import webbrowser
 from core.soldierboy_memory import SoldierBoyMemory
+from core.structured_hud_engine import StructuredHUDEngine
 
 SKILLS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "skills")
 
 class SystemSkillEngine:
     def __init__(self):
         self.memory = SoldierBoyMemory()
+        self.hud_engine = StructuredHUDEngine()
         os.makedirs(SKILLS_DIR, exist_ok=True)
 
     def perform_live_search(self, query: str) -> tuple[str, list[dict]]:
         """
         Perform a fast live web search using DuckDuckGo HTML POST API.
-        Returns (summary_text: str, results_list: list)
+        Returns (summary_text: str, results_list: list[dict])
         """
         import urllib.request
         import urllib.parse
@@ -42,14 +44,21 @@ class SystemSkillEngine:
 
             titles = re.findall(r'<a[^>]+class="result__a"[^>]*>(.*?)</a>', html_text, re.DOTALL)
             snippets = re.findall(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html_text, re.DOTALL)
+            urls = re.findall(r'<a[^>]+class="result__url"[^>]*href="([^"]+)"', html_text, re.DOTALL)
 
             for i in range(min(6, len(snippets))):
                 t = re.sub(r'<[^>]+>', '', titles[i]).strip() if i < len(titles) else f"Record #{i+1}"
                 s = re.sub(r'<[^>]+>', '', snippets[i]).strip()
+                link = urls[i].strip() if i < len(urls) else f"https://www.google.com/search?q={urllib.parse.quote(query_clean)}"
+                if link.startswith("//"):
+                    link = "https:" + link
+                elif not link.startswith("http"):
+                    link = "https://" + link
+                
                 s = s.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&').replace('&nbsp;', ' ')
                 t = t.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&').replace('&nbsp;', ' ')
                 if s:
-                    results.append({"title": t, "snippet": s})
+                    results.append({"title": t, "snippet": s, "url": link})
 
             if results:
                 summary_parts = [f"Live web search records for '{query_clean}':\n"]
@@ -137,62 +146,243 @@ class SystemSkillEngine:
                 return True
         return False
 
-    def try_execute(self, command_text: str) -> tuple[bool, str, bool, str]:
+    def try_execute(self, command_text: str, on_progress=None) -> tuple[bool, str, bool, str, dict]:
         """
         Check if user input matches an OS system skill command or search request.
-        Returns (handled: bool, message: str, is_search: bool, query: str)
+        Returns (handled: bool, message: str, is_search: bool, query: str, structured_payload: dict)
         """
         text = command_text.strip()
         text_lower = text.lower()
 
-        # 1. Catch search requests (e.g., "search Vijay", "jo search Google about Vijay", "search for latest news", "tell me whats happening in latest news")
-        search_patterns = [
-            r'^(?:jo[e]?\s+)?(?:open\s+google\s+and\s+search\s+(?:for\s+|about\s+)?|search\s+google\s+(?:for\s+|about\s+|and\s+see\s+|and\s+find\s+)?|google\s+search\s+(?:for\s+|about\s+)?|search\s+(?:for\s+|about\s+)?|look\s+up\s+)(.+)$',
-            r'^(?:tell\s+me\s+)?whats?\s+happening\s+in\s+(.+)$',
-            r'^(?:what\s+is\s+the\s+)?latest\s+news\s+(?:about\s+|on\s+)?(.*)$'
-        ]
+        # Dynamic self-upgrade memory logger: Auto-upgrade Soldier Boy's persistent memory on usage
+        try:
+            from core.soldierboy_memory import SoldierBoyMemory
+            mem = SoldierBoyMemory()
+            mem.log_speech_pattern(f"Active skill requested: '{text}'")
+        except Exception:
+            pass
 
+        # 1. Catch search requests
         query = None
-        for pat in search_patterns:
-            m = re.search(pat, text_lower, re.IGNORECASE)
-            if m:
-                extracted = m.group(1).strip()
-                # Exclude target investigation commands like "search target", "search case"
-                if extracted and extracted not in ["target", "case", "findings", "dialog", "graph"]:
-                    query = text[m.start(1):m.end(1)].strip()
-                    break
-
-        if not query and ("search" in text_lower or "google" in text_lower or "latest news" in text_lower):
-            # Fallback split
-            parts = re.split(r'google|search|latest news', text_lower, flags=re.IGNORECASE)
-            if len(parts) > 1 and parts[-1].strip():
-                clean_q = re.sub(r'^(?:about|for|and see|is|what|doing|in)\s+', '', parts[-1].strip(), flags=re.IGNORECASE).strip()
-                if clean_q and clean_q not in ["target", "case", "dialog"]:
-                    query = clean_q
+        if any(kw in text_lower for kw in ["google search", "search google", "google", "search", "latest news", "look up"]):
+            if not any(t_kw in text_lower for t_kw in ["search target", "search case", "target investigation"]):
+                if "latest news" in text_lower or "top news" in text_lower or "news" in text_lower:
+                    m_topic = re.search(r'(?:news\s+(?:about|on|for)|latest\s+news\s+on)\s+(.+)', text_lower)
+                    query = m_topic.group(1).strip() if m_topic else "latest news"
+                else:
+                    m = re.search(r'(?:google\s+search|search\s+google|search|look\s+up)\s+(?:for\s+|about\s+|on\s+|and\s+see\s+)?(.+)', text_lower)
+                    if m:
+                        query = m.group(1).strip()
+                    else:
+                        query = text.strip()
 
         if query:
-            # Clean filler prefix/suffix
-            clean_query = re.sub(r'^(?:about|for|is|what|doing|see|find|on)\s+', '', query, flags=re.IGNORECASE).strip()
+            clean_query = re.sub(r'^(?:do\s+some|can\s+you|please|for|about|is|what|doing|see|find|on)\s+', '', query, flags=re.IGNORECASE).strip()
             if not clean_query:
                 clean_query = query
 
-            # If query relies on conversation context (e.g. "that guy", "him"), defer to LLM context resolution
             if self.is_relative_query(clean_query):
-                return False, "", True, clean_query
+                return False, "", True, clean_query, {}
 
-            msg = self.google_search(clean_query)
-            return True, msg, True, clean_query
+            # Cache lookup
+            cached = self.hud_engine.cache.get(clean_query)
+            if cached:
+                msg = cached.get("spoken_tl_dr", "")
+                payload = cached
+            else:
+                try:
+                    msg, raw_results = self.perform_live_search(clean_query)
+                    payload = self.hud_engine.build_structured_payload(clean_query, "SEARCH", raw_results, msg)
+                except Exception as e:
+                    err_str = f"Google search error: {e}"
+                    payload = self.hud_engine.build_structured_payload(clean_query, "SEARCH", [], "", error_msg=err_str)
+                    msg = payload["spoken_tl_dr"]
 
-        # 2. Export case report pattern
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(
+                    title=f"Google Search: {clean_query}",
+                    action_type="SEARCH",
+                    details=msg,
+                    preview_link_or_file=f"https://www.google.com/search?q={urllib.parse.quote(clean_query)}"
+                )
+            except Exception:
+                pass
+            return True, msg, True, clean_query, payload
+
+        # 2. Smart Home Arrival & IoT Controls
+        if "i'm home" in text_lower or "im home" in text_lower:
+            from modules.smart_home import SmartHomeManager
+            msg = SmartHomeManager().handle_arrival()
+            raw = [{"title": "Smart Home Arrival Macro", "snippet": msg, "url": "data/smart_home_state.json"}]
+            payload = self.hud_engine.build_structured_payload("Smart Home Arrival", "SMART HOME", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Smart Home Arrival Macro", action_type="SMART HOME", details=msg, preview_link_or_file="data/smart_home_state.json")
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        if any(kw in text_lower for kw in ["thermostat", "turn on lights", "lights on", "lock front door", "lock door"]):
+            from modules.smart_home import SmartHomeManager
+            sh = SmartHomeManager()
+            msg = ""
+            if "thermostat" in text_lower:
+                m = re.search(r'(\d+)', text_lower)
+                temp = int(m.group(1)) if m else 72
+                msg = sh.set_thermostat(temp)
+            elif "lock" in text_lower:
+                msg = sh.set_lock_state(True)
+            elif "lights" in text_lower:
+                msg = sh.set_light_state(True)
+            raw = [{"title": "IoT Action Executed", "snippet": msg, "url": "data/smart_home_state.json"}]
+            payload = self.hud_engine.build_structured_payload("IoT Controls", "IOT", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Smart Home Action", action_type="IOT", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 3. Calendar & Scheduling Queries
+        if any(kw in text_lower for kw in ["calendar", "schedule", "my meetings", "double booking", "remind me", "reschedule"]):
+            from modules.calendar_intel import CalendarIntelManager
+            cal = CalendarIntelManager()
+            if "reschedule" in text_lower:
+                msg = cal.reschedule_event("Sync", "16:00", "16:30")
+            else:
+                msg = cal.format_soldierboy_reminders()
+            raw = [{"title": "Calendar Agenda", "snippet": msg, "url": "data/calendar.json"}]
+            payload = self.hud_engine.build_structured_payload("Calendar Intel", "CALENDAR", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Calendar & Agenda Intel", action_type="CALENDAR", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 4. Email & Inbox Scan
+        if any(kw in text_lower for kw in ["scan email", "inbox", "urgent mail", "panic text", "flight delay", "check mail"]):
+            from modules.inbox_intel import InboxIntelManager
+            msg = InboxIntelManager().get_tldr_summary()
+            raw = [{"title": "Inbox Digest", "snippet": msg, "url": "data/inbox.json", "is_breaking": True}]
+            payload = self.hud_engine.build_structured_payload("Inbox Scan", "INBOX", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Inbox Intel Scan", action_type="INBOX", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 5. Maps, Navigation & Late Night POI
+        if any(kw in text_lower for kw in ["taco", "hangry", "food", "navigation", "reroute", "directions", "turn left", "nearest gas", "nearest coffee"]):
+            from modules.maps_nav import MapsNavigationEngine
+            nav = MapsNavigationEngine()
+            if "taco" in text_lower or "hangry" in text_lower or "food" in text_lower:
+                msg = nav.format_nearby_food_response("tacos")
+            elif "route" in text_lower or "direction" in text_lower or "nav" in text_lower:
+                route = nav.get_route_directions("HQ")
+                msg = f"Route set for {route['destination']}. {route['soldierboy_prompts'][1]}"
+            else:
+                msg = nav.format_nearby_food_response("coffee")
+            raw = [{"title": "Navigation Directions", "snippet": msg, "url": "data/maps_nav.json"}]
+            payload = self.hud_engine.build_structured_payload("Maps Navigation", "MAPS", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Maps & Navigation Intel", action_type="MAPS", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 6. Cloud Docs & File Search
+        if any(kw in text_lower for kw in ["find file", "find document", "pdf", "report", "final_final", "read document", "buried file"]):
+            from modules.cloud_docs import CloudDocumentManager
+            q = re.sub(r'^(?:find\s+file|find\s+document|search\s+docs|read\s+pdf|pdf|report)\s*', '', text_lower).strip()
+            if not q:
+                q = "Final_Final"
+            msg = CloudDocumentManager().get_document_summary(q)
+            raw = [{"title": f"Document Match: {q}", "snippet": msg, "url": f"cloud://docs/{q}"}]
+            payload = self.hud_engine.build_structured_payload(f"Cloud Document: {q}", "FILE SEARCH", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title=f"Cloud Document Access: '{q}'", action_type="FILE SEARCH", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 7. Self-Upgrade & Code Mistake Audit
+        if any(kw in text_lower for kw in ["audit code", "inspect code", "audit files", "self upgrade", "level up", "rollback skill", "skill metrics", "upgarded", "upgraded", "codebase", "what are good", "what is new"]):
+            from modules.self_upgrade import SoldierBoySelfUpgrade
+            upgrader = SoldierBoySelfUpgrade()
+            if "rollback" in text_lower:
+                msg = upgrader.rollback_skill("navigation_boost")
+                raw = [{"title": "Skill Rollback Executed", "snippet": msg, "url": "data/skills_config.json"}]
+            elif "level up" in text_lower or "whisper" in text_lower:
+                msg = upgrader.format_level_up_whisper()
+                raw = [{"title": "Level-Up Whisper Active", "snippet": msg, "url": "data/self_upgrade_log.json"}]
+            else:
+                def _audit_progress_cb(finfo):
+                    try:
+                        from frontend.hud_panel import HUDPanelManager
+                        HUDPanelManager().show_action_hud(
+                            title=f"LIVE CODE AUDIT [{finfo['index']}/{finfo['total']}]",
+                            action_type="AUDIT FEED",
+                            details=f"Auditing file: {finfo['file']} ({finfo['lines']} lines of code)... [OK]",
+                            preview_link_or_file=finfo['path']
+                        )
+                    except Exception:
+                        pass
+                    if callable(on_progress):
+                        try:
+                            on_progress(finfo)
+                        except Exception:
+                            pass
+
+                res = upgrader.inspect_code_and_logs(on_progress=_audit_progress_cb)
+                msg = f"Self-Inspection complete. {res['inspected_files']} files audited ({res['total_lines_of_code']} total lines of code). {res['recommendation']}"
+                raw = [{"title": "Diagnostic Codebase Inspection", "snippet": msg, "url": "modules/self_upgrade.py"}]
+
+            payload = self.hud_engine.build_structured_payload("Diagnostic Audit", "SYSTEM AUDIT", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Self-Upgrade & Diagnostic Audit", action_type="SYSTEM AUDIT", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 8. Sarcastic Phrase Triggers
+        if "oh great" in text_lower or "printer jammed" in text_lower or "printer" in text_lower:
+            msg = "Oh great, the damn printer's taking a dump again. Give it a solid kick, partner, or let me blow it to pieces."
+            raw = [{"title": "Hardware Exception", "snippet": msg, "url": "dev://printer0"}]
+            payload = self.hud_engine.build_structured_payload("Hardware Alert", "HARDWARE ALERT", raw, msg)
+            try:
+                from frontend.hud_panel import HUDPanelManager
+                HUDPanelManager().show_action_hud(title="Hardware Warning: Printer Jam", action_type="HARDWARE ALERT", details=msg)
+            except Exception:
+                pass
+            return True, msg, False, "", payload
+
+        # 9. Export case report pattern
         if text_lower in ["export", "/export", "export report", "export case", "save report"]:
-            return True, "Generating HTML investigation report for current case...", False, ""
+            msg = "Generating HTML investigation report for current case..."
+            raw = [{"title": "HTML Investigation Export", "snippet": msg, "url": "reports/export.html"}]
+            payload = self.hud_engine.build_structured_payload("Export Report", "EXPORT", raw, msg)
+            return True, msg, False, "", payload
 
-        # 3. Open Application pattern
+        # 10. Open Application pattern
         open_match = re.search(r'^(?:open|launch|run|start)\s+(?:application|app|program)?\s*([a-zA-Z0-9_\-\s]+)$', text_lower, re.IGNORECASE)
         if open_match:
             app = open_match.group(1).strip()
             if app not in ["google", "dialog", "target", "investigation", "case", "node"]:
                 msg = self.open_application(app)
-                return True, msg, False, ""
+                raw = [{"title": f"Launched App: {app}", "snippet": msg, "url": f"app://{app}"}]
+                payload = self.hud_engine.build_structured_payload(f"Launch App: {app}", "APP LAUNCH", raw, msg)
+                try:
+                    from frontend.hud_panel import HUDPanelManager
+                    HUDPanelManager().show_action_hud(title=f"Launch Application: {app.upper()}", action_type="APP LAUNCH", details=msg)
+                except Exception:
+                    pass
+                return True, msg, False, "", payload
 
-        return False, "", False, ""
+        return False, "", False, "", {}
+

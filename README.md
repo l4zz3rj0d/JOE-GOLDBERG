@@ -96,7 +96,7 @@ Soldier Boy features high-fidelity, low-latency conversational speech powered by
 ### 🎧 Trained "Hey Soldier" Wake Word Model
 - **Genuine openWakeWord Engine**: Uses a production-grade `hey_soldier.onnx` neural classifier trained on real synthesized speech datasets and openWakeWord feature embeddings.
 - **Zero-False-Accept Discrimination**: Validated on real audio clips to achieve a 1.0 peak score on spoken `"Hey Soldier"` while maintaining 0.00 false accepts on non-target background speech.
-- **Jarvis Search Protocol**: Speak `"Hey Soldier, search Google for [query]"` to activate live web extractions and trigger the holographic search overlay.
+- **Soldier Boy Search Protocol**: Speak `"Hey Soldier, search Google for [query]"` to activate live web extractions and trigger the holographic action panel.
 - **Muting Guard**: Ambient speech listening is automatically muted while Soldier Boy is speaking to prevent self-triggering audio loops.
 
 ---

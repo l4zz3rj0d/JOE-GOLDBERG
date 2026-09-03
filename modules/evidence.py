@@ -29,8 +29,8 @@ async def capture(url: str, case_slug: str, entity_id: str) -> dict:
     try:
         from playwright.async_api import async_playwright
         from modules.headless_probe import get_browser_context
-    except ImportError:
-        # Playwright not installed — degrade silently
+    except Exception:
+        # Playwright not available — degrade silently
         return result
 
     browser = None
@@ -40,29 +40,32 @@ async def capture(url: str, case_slug: str, entity_id: str) -> dict:
         screenshot_path = str(evidence_dir / f"{entity_id}.png")
 
         async with async_playwright() as pw:
-            browser, context = await get_browser_context(pw)
-            page = await context.new_page()
-
             try:
-                await page.goto(url, wait_until="networkidle", timeout=12000)
-            except Exception:
+                browser, context = await get_browser_context(pw)
+                page = await context.new_page()
+
                 try:
-                    await page.goto(url, wait_until="domcontentloaded", timeout=8000)
+                    await page.goto(url, wait_until="networkidle", timeout=10000)
                 except Exception:
-                    return result
+                    try:
+                        await page.goto(url, wait_until="domcontentloaded", timeout=6000)
+                    except Exception:
+                        return result
 
-            # Extra settle time
-            await asyncio.sleep(1.5)
+                # Extra settle time
+                await asyncio.sleep(1.0)
 
-            # Capture screenshot
-            await page.screenshot(path=screenshot_path, full_page=True)
-            await context.close()
+                # Capture screenshot
+                await page.screenshot(path=screenshot_path, full_page=True)
+                await context.close()
 
-            result["screenshot_path"] = f"cases/{case_slug}/evidence/{entity_id}.png"
-            result["success"] = True
+                result["screenshot_path"] = f"cases/{case_slug}/evidence/{entity_id}.png"
+                result["success"] = True
+            except Exception:
+                pass
 
     except Exception:
-        # Graceful degradation: log or handle silently
+        # Graceful degradation: handle silently
         pass
     finally:
         if browser:
@@ -72,3 +75,4 @@ async def capture(url: str, case_slug: str, entity_id: str) -> dict:
                 pass
 
     return result
+

@@ -37,6 +37,13 @@ class Entity:
         default_factory=lambda: datetime.now().isoformat()
     )
 
+    @property
+    def entity_id(self) -> str:
+        plat = self.platform or "api"
+        clean_val = re.sub(r"[^a-zA-Z0-9_\-]", "_", str(self.value).lower())
+        return f"{self.entity_type}_{clean_val}_{plat.lower()}"
+
+
 
 @dataclass
 class Breach:
