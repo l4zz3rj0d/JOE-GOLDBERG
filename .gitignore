@@ -20,7 +20,7 @@ tools/
 joe-env/
 soldier-env/
 
-# Joe case files — don't commit investigations
+# Soldier Boy case files — don't commit investigations
 cases/
 /*.txt
 

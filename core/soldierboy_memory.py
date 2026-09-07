@@ -3,7 +3,6 @@ import json
 import time
 
 MEMORY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "soldierboy_memory.json")
-LEGACY_MEMORY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "joe_memory.json")
 
 class SoldierBoyMemory:
     def __init__(self, filepath=MEMORY_FILE_PATH):
@@ -64,13 +63,6 @@ class SoldierBoyMemory:
         if os.path.exists(self.filepath):
             try:
                 with open(self.filepath, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception:
-                data = None
-
-        if not data and os.path.exists(LEGACY_MEMORY_FILE_PATH):
-            try:
-                with open(LEGACY_MEMORY_FILE_PATH, "r", encoding="utf-8") as f:
                     data = json.load(f)
             except Exception:
                 data = None

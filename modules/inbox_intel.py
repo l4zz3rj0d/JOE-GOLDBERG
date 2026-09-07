@@ -33,7 +33,7 @@ class InboxIntelManager:
                     "id": "msg_101",
                     "sender": "Boss <vought_boss@company.com>",
                     "subject": "WE NEED TO TALK - Q3 Review",
-                    "snippet": "Joe, drop what you are doing. We need to talk about the budget deployment ASAP before the 4 PM sync.",
+                    "snippet": "Soldier, drop what you are doing. We need to talk about the budget deployment ASAP before the 4 PM sync.",
                     "date": now_str,
                     "unread": True,
                     "urgent": True

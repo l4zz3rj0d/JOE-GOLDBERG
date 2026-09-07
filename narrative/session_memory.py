@@ -1,5 +1,6 @@
 # Manages full conversation history & persistent cross-session recall
 import json
+import re
 from typing import List, Dict, Optional
 from datetime import datetime
 from pathlib import Path
@@ -47,6 +48,8 @@ class SessionMemory:
 
     def add(self, role: str, content: str, target: Optional[str] = None):
         """Append a message. role = 'user' | 'soldierboy'"""
+        if role == "soldierboy" and content:
+            content = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', content, flags=re.IGNORECASE).strip()
         entry = {
             "role": role,
             "content": content,
@@ -72,10 +75,12 @@ class SessionMemory:
         self._save_to_disk()
 
     def to_text(self, n: int = 12) -> str:
-        return "\n".join(
-            f"{m['role'].upper()}: {m['content']}"
-            for m in self.last_n(n)
-        )
+        lines = []
+        for m in self.last_n(n):
+            role_label = "User" if m.get("role") == "user" else "Soldier Boy"
+            clean_content = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', m.get("content", ""), flags=re.IGNORECASE).strip()
+            lines.append(f"{role_label}: {clean_content}")
+        return "\n".join(lines)
 
     def get_last_session_summary(self) -> Optional[str]:
         """Return a human-friendly string summarizing the previous session's user topics/targets."""

@@ -68,7 +68,58 @@ class SystemSkillEngine:
         except Exception as e:
             print(f"[system_skills] Live search error: {e}")
 
-        return "", []
+        fallback_url = f"https://www.google.com/search?q={urllib.parse.quote(query_clean)}"
+        return f"Google search complete for '{query_clean}'.", [{"title": f"Google Search: {query_clean}", "snippet": f"Search results for {query_clean}", "url": fallback_url}]
+
+    def perform_youtube_search(self, query: str) -> tuple[str, list[dict]]:
+        """
+        Perform a live YouTube video search using DuckDuckGo HTML search.
+        Returns (summary_text: str, results_list: list[dict])
+        """
+        import urllib.request
+        import urllib.parse
+        query_clean = query.strip()
+        if not query_clean:
+            return "", []
+
+        url = f"https://html.duckduckgo.com/html/?q=site:youtube.com+{urllib.parse.quote(query_clean)}"
+        req = urllib.request.Request(
+            url,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            }
+        )
+        results = []
+        try:
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                html_text = resp.read().decode('utf-8', errors='ignore')
+
+            titles = re.findall(r'<a[^>]+class="result__a"[^>]*>(.*?)</a>', html_text, re.DOTALL)
+            snippets = re.findall(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html_text, re.DOTALL)
+            urls = re.findall(r'<a[^>]+class="result__url"[^>]*href="([^"]+)"', html_text, re.DOTALL)
+
+            for i in range(min(6, len(snippets))):
+                t = re.sub(r'<[^>]+>', '', titles[i]).strip() if i < len(titles) else f"YouTube Video #{i+1}"
+                s = re.sub(r'<[^>]+>', '', snippets[i]).strip()
+                link = urls[i].strip() if i < len(urls) else f"https://www.youtube.com/results?search_query={urllib.parse.quote(query_clean)}"
+                if "uddg=" in link:
+                    m = re.search(r'uddg=([^&]+)', link)
+                    if m:
+                        link = urllib.parse.unquote(m.group(1))
+                t = t.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&').replace('&nbsp;', ' ')
+                s = s.replace('&#x27;', "'").replace('&quot;', '"').replace('&amp;', '&').replace('&nbsp;', ' ')
+                results.append({"title": t, "snippet": s, "url": link, "type": "youtube"})
+
+            if results:
+                summary_parts = [f"YouTube video search records for '{query_clean}':\n"]
+                for idx, item in enumerate(results[:5], 1):
+                    summary_parts.append(f"{idx}. {item['title']}: {item['snippet']}")
+                return "\n".join(summary_parts), results
+        except Exception as e:
+            print(f"[system_skills] YouTube search error: {e}")
+
+        yt_fallback_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query_clean)}"
+        return f"YouTube video search initialized for '{query_clean}'.", [{"title": f"YouTube: {query_clean}", "snippet": f"Watch YouTube results for {query_clean}", "url": yt_fallback_url}]
 
     def google_search(self, query: str) -> str:
         query_clean = query.strip()
@@ -154,7 +205,7 @@ class SystemSkillEngine:
         text = command_text.strip()
         text_lower = text.lower()
 
-        # Dynamic self-upgrade memory logger: Auto-upgrade Soldier Boy's persistent memory on usage
+        # Dynamic self-upgrade memory logger
         try:
             from core.soldierboy_memory import SoldierBoyMemory
             mem = SoldierBoyMemory()
@@ -162,7 +213,84 @@ class SystemSkillEngine:
         except Exception:
             pass
 
-        # 1. Catch search requests
+        # ── Agent Router & Task Manager Integration ──────────────
+        from core.agent_router import AgentRouter
+        from core.task_manager import get_task_manager
+        from core.task import TaskType, TaskFinding
+
+        task_mgr = get_task_manager()
+        router = AgentRouter()
+        handled, ack_msg, task, action_cat = router.route_input(text)
+
+        if handled:
+            if action_cat.startswith("followup_"):
+                return True, ack_msg, False, "", {}
+
+            if task:
+                if task.type == TaskType.YOUTUBE_SEARCH.value:
+                    query = task.data.get("query", text)
+                    task_mgr.update_progress(task.task_id, 30, f"Searching YouTube for '{query}'...")
+                    msg, raw_results = self.perform_youtube_search(query)
+                    for item in raw_results:
+                        task_mgr.add_finding(task.task_id, TaskFinding(
+                            title=item.get("title", "YouTube Video"),
+                            url=item.get("url", ""),
+                            snippet=item.get("snippet", ""),
+                            source="youtube"
+                        ))
+                    task_mgr.complete_task(task.task_id, summary=f"{len(raw_results)} YouTube results found")
+                    payload = self.hud_engine.build_structured_payload(f"YouTube: {query}", "YOUTUBE", raw_results, msg)
+                    return True, msg, True, query, payload
+
+                elif task.type == TaskType.GOOGLE_SEARCH.value:
+                    query = task.data.get("query", text)
+                    task_mgr.update_progress(task.task_id, 30, f"Searching Google for '{query}'...")
+                    msg, raw_results = self.perform_live_search(query)
+                    for item in raw_results:
+                        task_mgr.add_finding(task.task_id, TaskFinding(
+                            title=item.get("title", "Result"),
+                            url=item.get("url", ""),
+                            snippet=item.get("snippet", ""),
+                            source="google"
+                        ))
+                    task_mgr.complete_task(task.task_id, summary=f"{len(raw_results)} Google results found")
+                    payload = self.hud_engine.build_structured_payload(f"Google: {query}", "SEARCH", raw_results, msg)
+                    return True, msg, True, query, payload
+
+                elif task.type == TaskType.SYSTEM_ACTION.value:
+                    app = task.data.get("app_name", "")
+                    task_mgr.update_progress(task.task_id, 50, f"Launching process '{app}'...")
+                    msg = self.open_application(app)
+                    task_mgr.add_finding(task.task_id, TaskFinding(
+                        title=f"Launch App: {app}",
+                        url=f"app://{app}",
+                        snippet=msg,
+                        source="system"
+                    ))
+                    task_mgr.complete_task(task.task_id, summary=msg)
+                    raw_results = [{"title": f"Launched App: {app}", "snippet": msg, "url": f"app://{app}"}]
+                    payload = self.hud_engine.build_structured_payload(f"Launch App: {app}", "APP LAUNCH", raw_results, msg)
+                    return True, msg, False, "", payload
+
+                elif task.type == TaskType.MEMORY_RECALL.value:
+                    task_mgr.update_progress(task.task_id, 40, "Retrieving memory entries...")
+                    mem_history = self.memory.get_recent_speech_patterns(limit=5)
+                    msg = f"Retrieved {len(mem_history)} recent context logs from memory."
+                    raw_results = []
+                    for idx, entry in enumerate(mem_history, 1):
+                        f_item = {"title": f"Memory Context #{idx}", "snippet": entry, "url": "memory://log"}
+                        raw_results.append(f_item)
+                        task_mgr.add_finding(task.task_id, TaskFinding(
+                            title=f"Memory Context #{idx}",
+                            url="memory://log",
+                            snippet=entry,
+                            source="memory"
+                        ))
+                    task_mgr.complete_task(task.task_id, summary=msg)
+                    payload = self.hud_engine.build_structured_payload("Memory Recall", "MEMORY", raw_results, msg)
+                    return True, msg, False, "", payload
+
+        # Fallback to existing skill branches
         query = None
         if any(kw in text_lower for kw in ["google search", "search google", "google", "search", "latest news", "look up"]):
             if not any(t_kw in text_lower for t_kw in ["search target", "search case", "target investigation"]):

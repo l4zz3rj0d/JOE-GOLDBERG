@@ -6,7 +6,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 CONFIG_PATH = Path(__file__).parent.parent / "config.yaml"
 
-import webview
+try:
+    import webview
+except ImportError:
+    webview = None
 import asyncio
 import threading
 import queue
@@ -33,7 +36,6 @@ try:
     import speech_recognition as sr
 except ImportError:
     sr = None
-from core.orchestrator import Orchestrator
 from core.target_model import Target
 from core.case_brief import CaseBrief, parse_brief_with_slm
 from core.wake_word import WakeWordEngine
@@ -50,6 +52,49 @@ _CONTEXT_SIGNALS = re.compile(
     r"used to|might have|previously|formerly|known as)",
     re.IGNORECASE,
 )
+
+
+class _StreamingPrefixFilter:
+    CANDIDATES = ("SOLDIER BOY:", "SOLDIERBOY:", "SOLDIER-BOY:", "ASSISTANT:", "AI:")
+    CLEAN_REGEX = re.compile(r'^\s*(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', re.IGNORECASE)
+
+    def __init__(self, on_chunk):
+        self.on_chunk = on_chunk
+        self.buffer = ""
+        self.cleared = False
+
+    def feed(self, chunk: str):
+        if self.cleared:
+            self.on_chunk(chunk)
+            return
+
+        self.buffer += chunk
+        clean_buf = self.buffer.lstrip()
+
+        m = self.CLEAN_REGEX.match(clean_buf)
+        if m:
+            self.cleared = True
+            remaining = clean_buf[m.end():]
+            self.buffer = ""
+            if remaining:
+                self.on_chunk(remaining)
+            return
+
+        upper = clean_buf.upper()
+        could_match = any(cand.startswith(upper) for cand in self.CANDIDATES)
+        if not could_match or len(clean_buf) > 25:
+            self.cleared = True
+            to_flush = self.buffer
+            self.buffer = ""
+            self.on_chunk(to_flush)
+
+    def flush(self):
+        if not self.cleared and self.buffer:
+            clean_buf = self.CLEAN_REGEX.sub('', self.buffer.lstrip())
+            self.cleared = True
+            self.buffer = ""
+            if clean_buf:
+                self.on_chunk(clean_buf)
 
 
 class SoldierBoyAPI:
@@ -96,17 +141,32 @@ class SoldierBoyAPI:
         self._wake_window_expires = 0.0
         self._emit("soldierboy_vad_speech_end", {})
 
+    def _get_orchestrator(self):
+        if self._orch is None:
+            from core.orchestrator import Orchestrator
+            self._orch = Orchestrator(
+                on_status=self._on_status,
+                on_find=self._on_find,
+                on_done=lambda t: self._on_done(t, aborted=False),
+                lessons_store=self._lessons_store,
+            )
+        return self._orch
+
     def set_window(self, window):
         self._window = window
-        self._orch = Orchestrator(
-            on_status=self._on_status,
-            on_find=self._on_find,
-            on_done=lambda t: self._on_done(t, aborted=False),
-            lessons_store=self._lessons_store,
-        )
+        try:
+            from core.event_bus import get_event_bus
+            get_event_bus().set_bridge_callback(self._emit)
+        except Exception as e:
+            print(f"[desktop] EventBus bridge hook error: {e}")
 
     def process_input(self, text: str):
         print(f"\n[desktop] Unified AI input received: {text}")
+        if self._wake_engine:
+            try:
+                self._wake_engine.reset_cooldown(2.0)
+            except Exception:
+                pass
         self._memory.add("user", text)
         threading.Thread(target=self._run_process_input, args=(text,), daemon=True).start()
 
@@ -271,6 +331,52 @@ class SoldierBoyAPI:
         if hasattr(self._voice, 'skills') and self._voice.skills:
             return self._voice.skills.hud_engine.cache.clear()
         return "Cache cleared."
+
+    # ── Task Manager & Barge-In JS API ──────────────────────────────
+    def minimize_task(self, task_id: str = ""):
+        from core.task_manager import get_task_manager
+        get_task_manager().minimize_task(task_id)
+        return True
+
+    def expand_task(self, task_id: str):
+        from core.task_manager import get_task_manager
+        get_task_manager().expand_task(task_id)
+        return True
+
+    def close_task(self, task_id: str):
+        from core.task_manager import get_task_manager
+        get_task_manager().close_task(task_id)
+        return True
+
+    def select_task_item(self, task_id: str, index: int):
+        from core.task_manager import get_task_manager
+        finding = get_task_manager().select_task_item(task_id, index)
+        if finding and hasattr(finding, "to_dict"):
+            return finding.to_dict()
+        elif isinstance(finding, dict):
+            return finding
+        return None
+
+    def get_task(self, task_id: str):
+        from core.task_manager import get_task_manager
+        task = get_task_manager().get_task(task_id)
+        return task.to_dict() if task and hasattr(task, "to_dict") else None
+
+    def get_active_task(self):
+        from core.task_manager import get_task_manager
+        task = get_task_manager().get_active_task()
+        return task.to_dict() if task and hasattr(task, "to_dict") else None
+
+    def list_tasks(self):
+        from core.task_manager import get_task_manager
+        tasks = get_task_manager().list_tasks()
+        return [t.to_dict() if hasattr(t, "to_dict") else t for t in tasks]
+
+    def interrupt_speech(self):
+        """Barge-in: Interrupt TTS audio speech playback immediately when user speaks."""
+        self._tts_playback_until = 0.0
+        self._emit("soldierboy_interrupt_speech", {})
+        return True
 
     def save_config(self, cfg: dict):
         """Save settings from the UI back to config.yaml."""
@@ -486,7 +592,8 @@ class SoldierBoyAPI:
     def _run_stalk(self, target: str, brief: CaseBrief = None):
         self._stalk_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._stalk_loop)
-        self._stalk_task = self._stalk_loop.create_task(self._orch.stalk(target, brief=brief))
+        orch = self._get_orchestrator()
+        self._stalk_task = self._stalk_loop.create_task(orch.stalk(target, brief=brief))
         try:
             self._stalk_loop.run_until_complete(self._stalk_task)
         except asyncio.CancelledError:
@@ -557,12 +664,11 @@ class SoldierBoyAPI:
             worker_thread = threading.Thread(target=tts_worker, daemon=True)
             worker_thread.start()
 
-        def on_token(chunk: str):
+        def emit_clean_chunk(tok: str):
             nonlocal sentence_buffer, sent_count
-            self._emit("soldierboy_stream_chunk", {"chunk": chunk})
-
+            self._emit("soldierboy_stream_chunk", {"chunk": tok})
             if self._voice:
-                sentence_buffer += chunk
+                sentence_buffer += tok
                 # Python 3.14 safe sentence boundary matching
                 m = re.search(r'([.!?\n]+)', sentence_buffer)
                 if m:
@@ -571,7 +677,14 @@ class SoldierBoyAPI:
                     if len(sentence) > 3:
                         sent_count += 1
                         clean_sentence = re.sub(r'(\w+)_(\w+)', r'\1 \2', sentence).replace('_', ' ')
-                        tts_queue.put(clean_sentence)
+                        clean_sentence = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', clean_sentence, flags=re.IGNORECASE).strip()
+                        if clean_sentence:
+                            tts_queue.put(clean_sentence)
+
+        prefix_filter = _StreamingPrefixFilter(emit_clean_chunk)
+
+        def on_token(chunk: str):
+            prefix_filter.feed(chunk)
 
         try:
             result = self._voice.chat(question, self._target, on_token=on_token)
@@ -583,12 +696,15 @@ class SoldierBoyAPI:
                 "mode": "advisor"
             }
 
+        prefix_filter.flush()
+
         if result.get("rate_limited"):
             self._emit("rate_limited", {})
 
         # Flush any remaining sentence buffer
         if sentence_buffer.strip() and self._voice:
             frag = sentence_buffer.strip()
+            frag = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', frag, flags=re.IGNORECASE).strip()
             if len(frag) > 2:
                 sent_count += 1
                 tts_queue.put(frag)
@@ -597,6 +713,7 @@ class SoldierBoyAPI:
         # simulate word-by-word text streaming on screen AND enqueue clean spoken sentences for local voice engine!
         if sent_count == 0 and result.get("text"):
             raw_text = result["text"]
+            raw_text = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', raw_text, flags=re.IGNORECASE).strip()
             # 1. Simulate streaming text on screen word-by-word
             words = raw_text.split(' ')
             for i, w in enumerate(words):
@@ -683,7 +800,8 @@ class SoldierBoyAPI:
             return
         try:
             file_types = ('Image Files (*.png;*.jpg;*.jpeg;*.gif;*.webp)', 'All files (*.*)')
-            result = self._window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types)
+            dialog_type = getattr(webview, 'OPEN_DIALOG', 10) if webview else 10
+            result = self._window.create_file_dialog(dialog_type, allow_multiple=False, file_types=file_types)
             if result and len(result) > 0:
                 src_path = Path(result[0])
                 if src_path.exists():
@@ -857,7 +975,7 @@ class SoldierBoyAPI:
         if hasattr(self, '_mic_proc') and self._mic_proc and self._mic_proc.poll() is None:
             return {"success": True, "recording": True}
 
-        wav_path = "/tmp/joe_mic_rec.wav"
+        wav_path = "/tmp/soldierboy_mic_rec.wav"
         if os.path.exists(wav_path):
             try:
                 os.remove(wav_path)
@@ -914,7 +1032,7 @@ class SoldierBoyAPI:
         finally:
             self._mic_proc = None
 
-        wav_path = "/tmp/joe_mic_rec.wav"
+        wav_path = "/tmp/soldierboy_mic_rec.wav"
         if not os.path.exists(wav_path) or os.path.getsize(wav_path) == 0:
             return {"success": False, "error": "No audio captured from microphone"}
 
@@ -1188,7 +1306,14 @@ class SoldierBoyAPI:
     def _emit(self, event: str, data: dict):
         if self._window:
             try:
-                js_code = f"(window.soldierboy || window.joe) && (window.soldierboy || window.joe).receive && (window.soldierboy || window.joe).receive('{event}', {json.dumps(data)})"
+                def _json_default(obj):
+                    if hasattr(obj, "to_dict"):
+                        return obj.to_dict()
+                    if hasattr(obj, "__dict__"):
+                        return obj.__dict__
+                    return str(obj)
+                json_str = json.dumps(data, default=_json_default)
+                js_code = f"(window.soldierboy || window.joe) && (window.soldierboy || window.joe).receive && (window.soldierboy || window.joe).receive('{event}', {json_str})"
                 self._window.evaluate_js(js_code)
             except Exception as e:
                 print(f"[desktop] JS evaluate error for {event}: {e}")
@@ -1203,11 +1328,6 @@ class SoldierBoyDesktop:
         dst_icon = ROOT / "soldierboy-icon.png"
         if src_icon.exists():
             shutil.copy(src_icon, dst_icon)
-
-        src_back = ROOT.parent / "assets" / "soldierboygui.png"
-        dst_back = ROOT / "soldierboygui.png"
-        if src_back.exists():
-            shutil.copy(src_back, dst_back)
 
         src_geo = ROOT.parent / "assets" / "world_outline.jpg"
         dst_geo = ROOT / "world_outline.jpg"
@@ -1234,8 +1354,11 @@ class SoldierBoyDesktop:
             "width": 1200,
             "height": 780,
             "min_size": (900, 600),
-            "background_color": "#120e0b",
+            "background_color": "#030405",
         }
+
+        if webview is None:
+            raise ImportError("pywebview is required to run SoldierBoyDesktop. Install pywebview or run with CLI mode.")
 
         window = webview.create_window(**window_kwargs)
 

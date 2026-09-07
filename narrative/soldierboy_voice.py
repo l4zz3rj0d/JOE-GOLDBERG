@@ -174,8 +174,16 @@ class SoldierBoyVoice:
         config = self._load_config()
         configured_model = config.get("model")
         
+        # Fast socket connectivity pre-check to prevent blocking startup when Ollama is offline
+        import socket
         try:
-            r = httpx.get("http://localhost:11434/api/tags", timeout=3)
+            with socket.create_connection(("127.0.0.1", 11434), timeout=0.05):
+                pass
+        except Exception:
+            return configured_model or "gemma2:2b"
+
+        try:
+            r = httpx.get("http://localhost:11434/api/tags", timeout=1.0)
             if r.status_code == 200:
                 models = [m["name"] for m in r.json().get("models", [])]
                 
@@ -602,11 +610,17 @@ class SoldierBoyVoice:
         return {"text": "", "rate_limited": rate_limited, "engine": None}
 
     def _sanitize_text_for_speech(self, text: str) -> str:
-        """Sanitize text before TTS synthesis so underscores, markdown formatting, and symbols are spoken naturally."""
+        """Sanitize text before TTS synthesis so underscores, markdown formatting, URLs, and symbols are spoken naturally."""
         if not text:
             return ""
+        # Remove markdown URLs [Title](url) -> Title
+        clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+        # Remove raw URLs
+        clean = re.sub(r'https?://\S+', '', clean)
+        # Strip speaker labels
+        clean = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', clean, flags=re.IGNORECASE)
         # Replace snake_case underscores with spaces (e.g. open_app -> open app)
-        clean = re.sub(r'(\w+)_(\w+)', r'\1 \2', text)
+        clean = re.sub(r'(\w+)_(\w+)', r'\1 \2', clean)
         clean = clean.replace('_', ' ')
         # Remove markdown symbols (*, #, `, ~)
         clean = re.sub(r'[`*#~]', '', clean)
@@ -883,6 +897,20 @@ class SoldierBoyVoice:
         Returns {"type": "investigate" | "covo", "target": str | None}
         """
         curr = current_target.primary if current_target else "None"
+
+        # 1. Fast deterministic check for investigation commands (0ms)
+        stalk_match = re.match(r'^(?:stalk|pivot|investigate|scan|trace|lookup|dox)\s+(\S+)', text, re.IGNORECASE)
+        if stalk_match and stalk_match.group(1).lower() not in ("me", "soldierboy", "us", "again", "them"):
+            return {"type": "investigate", "target": stalk_match.group(1)}
+
+        if current_target and any(w in text.lower() for w in ["investigate again", "pivot to them", "scan again", "run it again", "re-scan"]):
+            return {"type": "investigate", "target": current_target.primary}
+
+        # 2. Fast heuristic: If query contains no investigation triggers, route to covo instantly (saves 2s round trip)
+        investigate_keywords = ("investigate", "stalk", "recon", "dox", "trace", "pivot", "whois", "shodan", "scan target", "inspect target")
+        if not any(kw in text.lower() for kw in investigate_keywords):
+            return {"type": "covo", "target": None}
+
         prompt = f"""Analyze this user message and determine if it is an OSINT investigation request (task) or general conversation/question (covo).
 
 User message: "{text}"
@@ -1088,5 +1116,8 @@ Output only the raw target string. No markdown, no quotes, no explanation."""
 
         # 5. Sanitize accidental "Dean" name references to "bruh"
         result = re.sub(r'\bDean\b', 'bruh', result)
+
+        # 6. Strip leading speaker labels (e.g. "SOLDIERBOY:", "SOLDIER BOY:", "ASSISTANT:", "AI:")
+        result = re.sub(r'^(?:SOLDIER\s*BOY|SOLDIERBOY|SOLDIER-BOY|ASSISTANT|AI)\s*:\s*', '', result, flags=re.IGNORECASE).strip()
 
         return result if result else text.strip()

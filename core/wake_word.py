@@ -58,8 +58,6 @@ def _patch_openwakeword_providers():
     except Exception:
         pass
 
-_patch_openwakeword_providers()
-
 class WakeWordEngine:
     def __init__(
         self,
@@ -102,11 +100,23 @@ class WakeWordEngine:
         self.window_start_time = 0.0
         self.last_speech_time = 0.0
         self.has_detected_speech_in_window = False
+        self._wake_cooldown_until = 0.0
 
         self._init_engine(model_path)
 
+    def reset_cooldown(self, seconds: float = 2.0):
+        """End active capture and suppress wake detection for the cooldown period."""
+        self.is_window_active = False
+        self._wake_cooldown_until = time.time() + seconds
+        if self._model:
+            try:
+                self._model.reset()
+            except Exception:
+                pass
+
     def _init_engine(self, model_path: Optional[str]):
         """Initialize openWakeWord model and check microphone hardware."""
+        _patch_openwakeword_providers()
         # 1. Check custom ONNX model path or default openWakeWord models
         target_model = model_path
         if not target_model:
@@ -231,6 +241,12 @@ class WakeWordEngine:
         self.window_start_time = now
         self.last_speech_time = now
         self.has_detected_speech_in_window = False
+        self._wake_cooldown_until = now + 4.0
+        if self._model:
+            try:
+                self._model.reset()
+            except Exception:
+                pass
         if self.on_wake_detected:
             self.on_wake_detected(trigger_phrase)
 
@@ -266,21 +282,19 @@ class WakeWordEngine:
                     continue
 
                 audio_int16 = np.frombuffer(data, dtype=np.int16)
+                now = time.time()
 
-                # 1. Run openWakeWord prediction
-                if self._model:
+                # 1. Run openWakeWord prediction ONLY when command capture window is NOT active and cooldown elapsed
+                if self._model and not self.is_window_active and now >= self._wake_cooldown_until:
                     prediction = self._model.predict(audio_int16)
                     for model_name, score in prediction.items():
                         if score >= self.threshold:
                             print(f"[wake_word] 'Hey Soldier' detected via openWakeWord! Score: {score:.3f}")
                             self.trigger_wake_event("Hey Soldier")
-                            # Reset model prediction buffer to prevent double triggers
-                            self._model.reset()
                             break
 
                 # 2. Run Voice Activity Detection (VAD) for active command window
                 if self.is_window_active:
-                    now = time.time()
                     elapsed = now - self.window_start_time
                     rms = self._compute_rms(data)
 
@@ -297,6 +311,12 @@ class WakeWordEngine:
                     if (self.has_detected_speech_in_window and silence_duration >= self.silence_timeout_sec) or (elapsed >= self.max_window_sec):
                         print(f"[wake_word] VAD early-closing command window (silence: {silence_duration:.1f}s, total: {elapsed:.1f}s).")
                         self.is_window_active = False
+                        self._wake_cooldown_until = time.time() + 1.5
+                        if self._model:
+                            try:
+                                self._model.reset()
+                            except Exception:
+                                pass
                         if self.on_speech_ended:
                             self.on_speech_ended()
 

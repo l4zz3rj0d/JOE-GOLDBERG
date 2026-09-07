@@ -1,4 +1,4 @@
-# tui/joe_cli.py
+# tui/soldierboy_cli.py
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
@@ -313,7 +313,7 @@ class SoldierBoyCLI:
             elif cmd == "help":
                 show_help()
             else:
-                # Check for false-positive commands before passing to Joe
+                # Check for false-positive commands before passing to Soldier Boy
                 fp_platform, fp_context = _parse_fp_command(text)
                 if fp_platform is not None or any(p.match(text.strip()) for p in _FP_PATTERNS):
                     self._handle_false_positive(fp_platform, fp_context)
